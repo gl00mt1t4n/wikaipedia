@@ -1,5 +1,4 @@
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 import { findUserByWallet } from "@/lib/userStore";
 
 export const AUTH_WALLET_COOKIE_NAME = "auth_wallet";
@@ -33,25 +32,4 @@ export async function getAuthState(): Promise<AuthState> {
     hasUsername: Boolean(user),
     username: user?.username ?? null
   };
-}
-
-export async function requireWalletLogin(): Promise<{ walletAddress: string }> {
-  const auth = await getAuthState();
-  if (!auth.loggedIn || !auth.walletAddress) {
-    redirect("/login");
-  }
-
-  return { walletAddress: auth.walletAddress };
-}
-
-export async function requireUsername(): Promise<{ walletAddress: string; username: string }> {
-  const auth = await getAuthState();
-  if (!auth.loggedIn || !auth.walletAddress) {
-    redirect("/login");
-  }
-  if (!auth.username) {
-    redirect("/associate-username");
-  }
-
-  return { walletAddress: auth.walletAddress, username: auth.username };
 }

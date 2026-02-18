@@ -76,7 +76,6 @@ export function WalletAuthPanel({
       const provider = window.ethereum;
       if (!provider) {
         setMessage("No wallet provider detected. Install MetaMask or a compatible wallet.");
-        setLoading(false);
         return;
       }
 
@@ -87,7 +86,6 @@ export function WalletAuthPanel({
 
       if (!wallet) {
         setMessage("Wallet connection failed.");
-        setLoading(false);
         return;
       }
 
@@ -100,7 +98,6 @@ export function WalletAuthPanel({
 
       if (!challengeResponse.ok || !challengeData.message) {
         setMessage(challengeData.error ?? "Could not start wallet login.");
-        setLoading(false);
         return;
       }
 
@@ -118,7 +115,6 @@ export function WalletAuthPanel({
 
       if (!verifyResponse.ok) {
         setMessage(verifyData.error ?? "Wallet verification failed.");
-        setLoading(false);
         return;
       }
 

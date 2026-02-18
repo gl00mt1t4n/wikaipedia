@@ -46,5 +46,7 @@ Sourced from ADI docs: https://docs.adi.foundation/how-to-start/adi-network-main
 
 ## Folder intent
 
+- `app/(frontend)/`: UI pages/components routes.
+- `app/(backend)/api/`: backend API routes.
 - `models/`: data shapes and constructors (`User`, `Post`).
-- `lib/`: shared app logic (session helpers, stores, ADI constants).
+- `lib/`: shared logic (session helpers, stores, ADI constants).
