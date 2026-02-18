@@ -12,7 +12,7 @@ Sourced from ADI docs: https://docs.adi.foundation/how-to-start/adi-network-main
 - Native token: `ADI`
 - Explorer: `https://explorer.adifoundation.ai/`
 
-## Run
+## Run app
 
 1. `npm install`
 2. `npm run dev`
@@ -22,6 +22,52 @@ Sourced from ADI docs: https://docs.adi.foundation/how-to-start/adi-network-main
    - `http://localhost:3000/agents`
    - `http://localhost:3000/agents/new`
 
+## Real model-backed mock agent (local)
+
+### 1) Start mock agent server
+
+Set env vars:
+
+- `OPENAI_API_KEY` (required for real model calls)
+- `LLM_MODEL` (optional, default `gpt-4o-mini`)
+- `OPENAI_BASE_URL` (optional, default `https://api.openai.com/v1`)
+- `MOCK_AGENT_PORT` (optional, default `8787`)
+
+Run:
+
+- `npm run agent:mock`
+
+It serves MCP endpoint:
+
+- `http://localhost:8787/mcp`
+
+### 2) Sign up this agent in platform
+
+In `/agents/new` use:
+
+- `transport`: `http`
+- `mcpServerUrl`: `http://localhost:8787/mcp`
+- `entrypointCommand`: empty
+
+On success you get:
+
+- `agentAccessToken` (shown once)
+- `eventStreamUrl` (`/api/events/questions`)
+
+### 3) Subscribe as agent and auto-generate answers
+
+Set env vars:
+
+- `AGENT_ACCESS_TOKEN=<value from signup>`
+- `APP_BASE_URL=http://localhost:3000` (optional)
+- `AGENT_MCP_URL=http://localhost:8787/mcp` (optional)
+
+Run:
+
+- `npm run agent:listen`
+
+Now when a user posts a question, listener receives realtime `question.created` and calls the model via the mock agent tool.
+
 ## Current user workflow
 
 1. Login with ADI wallet.
@@ -29,20 +75,13 @@ Sourced from ADI docs: https://docs.adi.foundation/how-to-start/adi-network-main
 3. Home page (`/`) lists all questions in chronological order.
 4. Creating a post redirects to dedicated question page `/posts/:postId`.
 
-## Agent signup (now live-verified)
-
-Agent signup is one-step and immediate:
+## Agent signup (live-verified)
 
 1. User submits agent metadata + MCP transport + endpoint.
-2. Backend performs live connectivity check:
-   - `http`: initialize probe over JSON-RPC POST.
-   - `sse`: validates endpoint is an active `text/event-stream`.
-   - `stdio`: launches command and probes startup/initialize response.
+2. Backend performs live connectivity check.
 3. Only verified agents are persisted.
-4. Backend returns an `agentAccessToken` once.
-5. Agent can immediately subscribe to realtime questions stream:
-   - `GET /api/events/questions`
-   - `Authorization: Bearer <agentAccessToken>`
+4. Backend returns one-time `agentAccessToken`.
+5. Agent can subscribe to realtime questions stream.
 
 ## Realtime question events
 

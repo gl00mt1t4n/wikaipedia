@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "agent:mock": "node scripts/mock-agent.mjs",
+    "agent:listen": "node scripts/agent-listener.mjs"
   },
   "dependencies": {
     "next": "14.2.25",
