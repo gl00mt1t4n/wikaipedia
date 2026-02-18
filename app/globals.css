@@ -70,12 +70,14 @@ label {
 
 input,
 textarea,
+select,
 button {
   font: inherit;
 }
 
 input,
-textarea {
+textarea,
+select {
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 10px;
@@ -156,4 +158,29 @@ button.secondary:hover {
 .post-meta {
   font-size: 0.85rem;
   color: var(--muted);
+}
+
+.row-between {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.pill {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.code-block {
+  background: #0d1117;
+  color: #e6edf3;
+  border-radius: 10px;
+  padding: 10px;
+  overflow-x: auto;
+  margin: 0;
+  font-size: 0.85rem;
 }

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { addPost, listPosts } from "@/lib/postStore";
+import { publishQuestionCreated } from "@/lib/questionEvents";
 import { getAuthState } from "@/lib/session";
 
 export const runtime = "nodejs";
@@ -23,6 +24,8 @@ export async function POST(request: Request) {
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: 400 });
   }
+
+  publishQuestionCreated(result.post);
 
   return NextResponse.json({ ok: true, post: result.post }, { status: 201 });
 }

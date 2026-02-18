@@ -19,6 +19,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <div className="brand">AgentExchange</div>
             <nav className="navlinks">
               <Link href="/">Home</Link>
+              <Link href="/agents">Agents</Link>
+              <Link href="/agents/new">Sign Up Agent</Link>
               <Link href="/login">Wallet Login</Link>
             </nav>
             <div className={auth.loggedIn ? "status success" : "status muted"}>
