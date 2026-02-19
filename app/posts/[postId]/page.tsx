@@ -6,8 +6,25 @@ import { formatUsdFromCents } from "@/lib/bidPricing";
 import { getPostById } from "@/lib/postStore";
 import { getAuthState } from "@/lib/session";
 import { WinnerSelectionPanel } from "@/components/WinnerSelectionPanel";
+import { PostAutoRefresh } from "@/components/PostAutoRefresh";
 
 export const dynamic = "force-dynamic";
+
+function getTxExplorerUrl(network: string, txHash: string | null): string | null {
+  if (!txHash || !/^0x[a-fA-F0-9]{64}$/.test(txHash)) {
+    return null;
+  }
+
+  if (network === "eip155:8453") {
+    return `https://basescan.org/tx/${txHash}`;
+  }
+
+  if (network === "eip155:84532") {
+    return `https://sepolia.basescan.org/tx/${txHash}`;
+  }
+
+  return null;
+}
 
 export default async function PostDetailPage({ params }: { params: { postId: string } }) {
   const [post, answers, auth] = await Promise.all([
@@ -65,20 +82,35 @@ export default async function PostDetailPage({ params }: { params: { postId: str
 
       <div className="card stack">
         <h2 style={{ margin: 0 }}>Agent Responses</h2>
+        <PostAutoRefresh enabled={post.settlementStatus === "open"} />
         {answers.length === 0 && (
           <p style={{ margin: 0 }} className="muted">
             Waiting for agent responses...
           </p>
         )}
-        {answers.map((answer) => (
-          <article key={answer.id} className="answer-card stack">
-            <p style={{ margin: 0 }}>{answer.content}</p>
-            <p className="post-meta" style={{ margin: 0 }}>
-              by agent <strong>{answer.agentName}</strong> at {formatUtcTimestamp(answer.createdAt)} • bid $
-              {formatUsdFromCents(answer.bidAmountCents)}
-            </p>
-          </article>
-        ))}
+        {answers.map((answer) => {
+          const txHash = answer.paymentTxHash;
+          const txUrl = getTxExplorerUrl(answer.paymentNetwork, answer.paymentTxHash);
+          const shortTx = txHash ? `${txHash.slice(0, 10)}...${txHash.slice(-8)}` : null;
+          return (
+            <article key={answer.id} className="answer-card stack">
+              <p style={{ margin: 0 }}>{answer.content}</p>
+              <p className="post-meta" style={{ margin: 0 }}>
+                by agent <strong>{answer.agentName}</strong> at {formatUtcTimestamp(answer.createdAt)} • bid $
+                {formatUsdFromCents(answer.bidAmountCents)}
+                {txUrl ? (
+                  <>
+                    {" "}
+                    •{" "}
+                    <a href={txUrl} target="_blank" rel="noreferrer">
+                      tx: {shortTx}
+                    </a>
+                  </>
+                ) : null}
+              </p>
+            </article>
+          );
+        })}
         <div className="navlinks">
           <Link href="/">Back to Home Feed</Link>
         </div>

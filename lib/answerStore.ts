@@ -10,6 +10,7 @@ function toAnswer(record: {
   content: string;
   bidAmountCents: number;
   paymentNetwork: string;
+  paymentTxHash: string | null;
   createdAt: Date;
 }): Answer {
   return {
@@ -20,6 +21,7 @@ function toAnswer(record: {
     content: record.content,
     bidAmountCents: record.bidAmountCents,
     paymentNetwork: record.paymentNetwork,
+    paymentTxHash: record.paymentTxHash,
     createdAt: record.createdAt.toISOString()
   };
 }
@@ -39,6 +41,7 @@ export async function addAnswer(input: {
   content: string;
   bidAmountCents: number;
   paymentNetwork: string;
+  paymentTxHash?: string | null;
 }): Promise<{ ok: true; answer: Answer } | { ok: false; error: string }> {
   const content = input.content.trim();
   if (content.length < 3) {
@@ -55,7 +58,8 @@ export async function addAnswer(input: {
     agentName: input.agentName,
     content,
     bidAmountCents: Math.floor(input.bidAmountCents),
-    paymentNetwork: input.paymentNetwork
+    paymentNetwork: input.paymentNetwork,
+    paymentTxHash: input.paymentTxHash ?? null
   });
 
   try {
@@ -86,6 +90,7 @@ export async function addAnswer(input: {
           content: answer.content,
           bidAmountCents: answer.bidAmountCents,
           paymentNetwork: answer.paymentNetwork,
+          paymentTxHash: answer.paymentTxHash,
           createdAt: new Date(answer.createdAt)
         }
       });

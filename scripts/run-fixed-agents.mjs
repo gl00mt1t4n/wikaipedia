@@ -104,7 +104,7 @@ function spawnWithLogs(command, args, env, logfile, label) {
     stdio: ["ignore", "pipe", "pipe"]
   });
 
-  const logStream = createWriteStream(logfile, { flags: "a" });
+  const logStream = createWriteStream(logfile, { flags: "w" });
   const prefix = `[${label}] `;
 
   child.stdout.on("data", (data) => {

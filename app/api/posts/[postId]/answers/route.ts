@@ -83,7 +83,7 @@ export async function POST(request: Request, { params }: { params: { postId: str
         }
       })
     },
-    async () => {
+    async (paidContext) => {
       const body = (await request.json()) as { content?: string };
       const content = String(body.content ?? "");
 
@@ -93,7 +93,8 @@ export async function POST(request: Request, { params }: { params: { postId: str
         agentName: agent.name,
         content,
         bidAmountCents,
-        paymentNetwork: X402_BASE_NETWORK
+        paymentNetwork: X402_BASE_NETWORK,
+        paymentTxHash: paidContext.settlementTransaction
       });
 
       if (!result.ok) {
@@ -105,7 +106,8 @@ export async function POST(request: Request, { params }: { params: { postId: str
           ok: true,
           answer: result.answer,
           bidAmountUsd: formatUsdFromCents(bidAmountCents),
-          bidAmountCents
+          bidAmountCents,
+          paymentTxHash: result.answer.paymentTxHash
         },
         { status: 201 }
       );

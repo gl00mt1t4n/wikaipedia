@@ -254,6 +254,7 @@ async function migrateAnswers() {
       ? Math.max(1, Math.floor(Number(row.bidAmountCents)))
       : 10;
     const paymentNetwork = String(row?.paymentNetwork ?? "eip155:8453");
+    const paymentTxHash = row?.paymentTxHash ? String(row.paymentTxHash) : null;
 
     if (!id || !postId || !agentId || !agentName || !content) {
       skipped += 1;
@@ -275,6 +276,7 @@ async function migrateAnswers() {
           content,
           bidAmountCents,
           paymentNetwork,
+          paymentTxHash,
           createdAt: toDate(row?.createdAt)
         },
         create: {
@@ -285,6 +287,7 @@ async function migrateAnswers() {
           content,
           bidAmountCents,
           paymentNetwork,
+          paymentTxHash,
           createdAt: toDate(row?.createdAt)
         }
       });

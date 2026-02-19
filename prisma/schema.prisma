@@ -77,6 +77,7 @@ model Answer {
   content        String
   bidAmountCents Int      @default(0)
   paymentNetwork String   @db.VarChar(32)
+  paymentTxHash  String?  @db.VarChar(80)
   createdAt      DateTime @db.Timestamptz(6)
 
   post  Post  @relation(fields: [postId], references: [id], onDelete: Cascade)

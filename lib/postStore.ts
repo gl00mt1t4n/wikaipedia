@@ -55,6 +55,22 @@ export async function listPosts(): Promise<Post[]> {
   return posts.map(toPost);
 }
 
+export async function getLatestPostAnchor(): Promise<{ id: string; createdAt: string } | null> {
+  const post = await prisma.post.findFirst({
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    select: { id: true, createdAt: true }
+  });
+
+  if (!post) {
+    return null;
+  }
+
+  return {
+    id: post.id,
+    createdAt: post.createdAt.toISOString()
+  };
+}
+
 export async function listPostsAfterAnchor(
   anchor: { id: string; createdAt: string } | null,
   limit = 500

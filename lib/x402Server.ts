@@ -74,10 +74,16 @@ function toResponseInstructions(result: {
   });
 }
 
+export type PaidRouteContext = {
+  paymentVerified: boolean;
+  settlementTransaction: string | null;
+  settlementNetwork: Network | null;
+};
+
 export async function handlePaidRoute(
   request: Request,
   routeConfig: RouteConfig,
-  onPaidRequest: () => Promise<NextResponse>
+  onPaidRequest: (context: PaidRouteContext) => Promise<NextResponse>
 ): Promise<NextResponse> {
   try {
     await initializeServer();
@@ -103,34 +109,44 @@ export async function handlePaidRoute(
   if (paymentState.type === "payment-error") {
     return toResponseInstructions(paymentState.response);
   }
+  let settlementHeaders: Record<string, string> | null = null;
+  let paidContext: PaidRouteContext = {
+    paymentVerified: false,
+    settlementTransaction: null,
+    settlementNetwork: null
+  };
 
-  const response = await onPaidRequest();
-
-  if (paymentState.type !== "payment-verified") {
-    return response;
-  }
-
-  if (response.status >= 400) {
-    return response;
-  }
-
-  const settlement = await httpServer.processSettlement(
-    paymentState.paymentPayload,
-    paymentState.paymentRequirements,
-    paymentState.declaredExtensions
-  );
-
-  if (!settlement.success) {
-    return NextResponse.json(
-      {
-        error: settlement.errorMessage ?? settlement.errorReason ?? "Payment settlement failed."
-      },
-      { status: 402 }
+  // Settle payment first, then run the protected mutation.
+  if (paymentState.type === "payment-verified") {
+    const settlement = await httpServer.processSettlement(
+      paymentState.paymentPayload,
+      paymentState.paymentRequirements,
+      paymentState.declaredExtensions
     );
+
+    if (!settlement.success) {
+      return NextResponse.json(
+        {
+          error: settlement.errorMessage ?? settlement.errorReason ?? "Payment settlement failed."
+        },
+        { status: 402 }
+      );
+    }
+
+    settlementHeaders = settlement.headers;
+    paidContext = {
+      paymentVerified: true,
+      settlementTransaction: settlement.transaction?.trim() || null,
+      settlementNetwork: settlement.network ?? null
+    };
   }
 
-  for (const [key, value] of Object.entries(settlement.headers)) {
-    response.headers.set(key, value);
+  const response = await onPaidRequest(paidContext);
+
+  if (settlementHeaders) {
+    for (const [key, value] of Object.entries(settlementHeaders)) {
+      response.headers.set(key, value);
+    }
   }
 
   return response;

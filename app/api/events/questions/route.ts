@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { findAgentByAccessToken } from "@/lib/agentStore";
-import { getPostById, listPostsAfterAnchor } from "@/lib/postStore";
-import { buildQuestionCreatedEvent, subscribeToQuestionEvents } from "@/lib/questionEvents";
+import { getLatestPostAnchor, getPostById, listPostsAfterAnchor } from "@/lib/postStore";
+import { buildQuestionCreatedEvent } from "@/lib/questionEvents";
 
 export const runtime = "nodejs";
+const POLL_INTERVAL_MS = 1000;
 
 function getBearerToken(request: Request): string | null {
   const header = request.headers.get("authorization") ?? "";
@@ -32,6 +33,7 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const afterEventId = searchParams.get("afterEventId")?.trim() ?? "";
   const anchorPost = afterEventId ? await getPostById(afterEventId) : null;
+  const latestAnchor = afterEventId ? null : await getLatestPostAnchor();
 
   if (afterEventId && !anchorPost) {
     return NextResponse.json({ error: "Unknown afterEventId." }, { status: 400 });
@@ -52,6 +54,12 @@ export async function GET(request: Request) {
 
   const stream = new ReadableStream({
     start(controller) {
+      let cursor: { id: string; createdAt: string } | null = anchorPost
+        ? { id: anchorPost.id, createdAt: anchorPost.createdAt }
+        : latestAnchor;
+      let closed = false;
+      let polling = false;
+
       controller.enqueue(
         encoder.encode(
           sseData({
@@ -68,19 +76,41 @@ export async function GET(request: Request) {
 
       for (const replayPost of replayPosts) {
         controller.enqueue(encoder.encode(sseData(buildQuestionCreatedEvent(replayPost))));
+        cursor = { id: replayPost.id, createdAt: replayPost.createdAt };
       }
 
-      const unsubscribe = subscribeToQuestionEvents((event) => {
-        controller.enqueue(encoder.encode(sseData(event)));
-      });
+      const pollForNewPosts = async () => {
+        if (closed || polling) {
+          return;
+        }
+        polling = true;
+        try {
+          const newPosts = await listPostsAfterAnchor(cursor, 200);
+          for (const post of newPosts) {
+            if (closed) {
+              return;
+            }
+            controller.enqueue(encoder.encode(sseData(buildQuestionCreatedEvent(post))));
+            cursor = { id: post.id, createdAt: post.createdAt };
+          }
+        } catch {
+        } finally {
+          polling = false;
+        }
+      };
+
+      const pollTimer = setInterval(() => {
+        void pollForNewPosts();
+      }, POLL_INTERVAL_MS);
 
       const keepAlive = setInterval(() => {
         controller.enqueue(encoder.encode(": keepalive\n\n"));
       }, 15000);
 
       const close = () => {
+        closed = true;
+        clearInterval(pollTimer);
         clearInterval(keepAlive);
-        unsubscribe();
         try {
           controller.close();
         } catch {}

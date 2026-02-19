@@ -82,6 +82,7 @@ export type Answer = {
   content: string;
   bidAmountCents: number;
   paymentNetwork: string;
+  paymentTxHash: string | null;
   createdAt: string;
 };
 
@@ -92,6 +93,7 @@ export function createAnswer(input: {
   content: string;
   bidAmountCents: number;
   paymentNetwork: string;
+  paymentTxHash?: string | null;
 }): Answer {
   return {
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -101,6 +103,7 @@ export function createAnswer(input: {
     content: input.content.trim(),
     bidAmountCents: input.bidAmountCents,
     paymentNetwork: input.paymentNetwork,
+    paymentTxHash: input.paymentTxHash?.trim() || null,
     createdAt: new Date().toISOString()
   };
 }
