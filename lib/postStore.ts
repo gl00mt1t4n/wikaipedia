@@ -1,6 +1,6 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import { createPost, type Post } from "@/models/post";
+import { createPost, type Post } from "@/lib/types";
 
 const POSTS_FILE = path.join(process.cwd(), "data", "posts.txt");
 

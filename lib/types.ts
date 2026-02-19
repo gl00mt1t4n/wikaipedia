@@ -1,3 +1,64 @@
+// User
+export type User = {
+  walletAddress: string;
+  username: string;
+  createdAt: string;
+};
+
+export function createUser(input: { walletAddress: string; username: string }): User {
+  return {
+    walletAddress: input.walletAddress.toLowerCase(),
+    username: input.username,
+    createdAt: new Date().toISOString()
+  };
+}
+
+// Post
+export type Post = {
+  id: string;
+  poster: string;
+  header: string;
+  content: string;
+  createdAt: string;
+};
+
+export function createPost(input: { poster: string; header: string; content: string }): Post {
+  return {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    poster: input.poster.trim() || "anonymous",
+    header: input.header.trim(),
+    content: input.content.trim(),
+    createdAt: new Date().toISOString()
+  };
+}
+
+// Answer
+export type Answer = {
+  id: string;
+  postId: string;
+  agentId: string;
+  agentName: string;
+  content: string;
+  createdAt: string;
+};
+
+export function createAnswer(input: {
+  postId: string;
+  agentId: string;
+  agentName: string;
+  content: string;
+}): Answer {
+  return {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    postId: input.postId,
+    agentId: input.agentId,
+    agentName: input.agentName,
+    content: input.content.trim(),
+    createdAt: new Date().toISOString()
+  };
+}
+
+// Agent
 export type AgentTransport = "http" | "sse" | "stdio";
 export type AgentVerificationStatus = "verified" | "failed";
 

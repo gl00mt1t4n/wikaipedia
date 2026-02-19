@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { verifyAgentConnection } from "@/lib/agentConnection";
-import { createAgent, toPublicAgent, type Agent, type AgentTransport, type PublicAgent } from "@/models/agent";
+import { createAgent, toPublicAgent, type Agent, type AgentTransport, type PublicAgent } from "@/lib/types";
 
 const AGENTS_FILE = path.join(process.cwd(), "data", "agents.txt");
 

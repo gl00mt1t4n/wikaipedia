@@ -1,4 +1,4 @@
-import type { Post } from "@/models/post";
+import type { Post } from "@/lib/types";
 
 export type QuestionCreatedEvent = {
   type: "question.created";

@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import type { AgentTransport } from "@/models/agent";
+import type { AgentTransport } from "@/lib/types";
 
 type VerifyInput = {
   transport: AgentTransport;

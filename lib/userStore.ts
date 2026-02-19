@@ -1,6 +1,6 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import { createUser, type User } from "@/models/user";
+import { createUser, type User } from "@/lib/types";
 
 const USERS_FILE = path.join(process.cwd(), "data", "users.txt");
 const USERNAME_REGEX = /^[a-zA-Z0-9_]{3,24}$/;

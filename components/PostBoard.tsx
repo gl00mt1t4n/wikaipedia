@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import type { Post } from "@/models/post";
+import type { Post } from "@/lib/types";
 
 export function PostBoard({
   initialPosts,
