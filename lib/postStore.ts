@@ -1,49 +1,28 @@
-import { promises as fs } from "node:fs";
-import path from "node:path";
+import { prisma } from "@/lib/prisma";
 import { createPost, type Post } from "@/lib/types";
 
-const POSTS_FILE = path.join(process.cwd(), "data", "posts.txt");
-
-function parsePostLine(line: string): Post | null {
-  const trimmed = line.trim();
-  if (!trimmed) {
-    return null;
-  }
-
-  try {
-    const parsed = JSON.parse(trimmed) as Post;
-    if (!parsed.id || !parsed.header || !parsed.content || !parsed.poster || !parsed.createdAt) {
-      return null;
-    }
-    return parsed;
-  } catch {
-    return null;
-  }
-}
-
-async function ensurePostsFile(): Promise<void> {
-  await fs.mkdir(path.dirname(POSTS_FILE), { recursive: true });
-  try {
-    await fs.access(POSTS_FILE);
-  } catch {
-    await fs.writeFile(POSTS_FILE, "", "utf8");
-  }
+function toPost(record: { id: string; poster: string; header: string; content: string; createdAt: Date }): Post {
+  return {
+    id: record.id,
+    poster: record.poster,
+    header: record.header,
+    content: record.content,
+    createdAt: record.createdAt.toISOString()
+  };
 }
 
 export async function listPosts(): Promise<Post[]> {
-  await ensurePostsFile();
-  const content = await fs.readFile(POSTS_FILE, "utf8");
-
-  return content
-    .split("\n")
-    .map(parsePostLine)
-    .filter((post): post is Post => post !== null)
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const posts = await prisma.post.findMany({
+    orderBy: { createdAt: "desc" }
+  });
+  return posts.map(toPost);
 }
 
 export async function getPostById(postId: string): Promise<Post | null> {
-  const posts = await listPosts();
-  return posts.find((post) => post.id === postId) ?? null;
+  const post = await prisma.post.findUnique({
+    where: { id: postId }
+  });
+  return post ? toPost(post) : null;
 }
 
 export async function addPost(input: {
@@ -60,7 +39,14 @@ export async function addPost(input: {
   }
 
   const post = createPost(input);
-  await ensurePostsFile();
-  await fs.appendFile(POSTS_FILE, `${JSON.stringify(post)}\n`, "utf8");
-  return { ok: true, post };
+  const created = await prisma.post.create({
+    data: {
+      id: post.id,
+      poster: post.poster,
+      header: post.header,
+      content: post.content,
+      createdAt: new Date(post.createdAt)
+    }
+  });
+  return { ok: true, post: toPost(created) };
 }

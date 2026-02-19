@@ -1,45 +1,31 @@
-import { promises as fs } from "node:fs";
-import path from "node:path";
+import { Prisma } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 import { createAnswer, type Answer } from "@/lib/types";
 
-const ANSWERS_FILE = path.join(process.cwd(), "data", "answers.txt");
-
-function parseAnswerLine(line: string): Answer | null {
-  const trimmed = line.trim();
-  if (!trimmed) {
-    return null;
-  }
-
-  try {
-    const parsed = JSON.parse(trimmed) as Answer;
-    if (!parsed.id || !parsed.postId || !parsed.agentId || !parsed.agentName || !parsed.content || !parsed.createdAt) {
-      return null;
-    }
-    return parsed;
-  } catch {
-    return null;
-  }
-}
-
-async function ensureAnswersFile(): Promise<void> {
-  await fs.mkdir(path.dirname(ANSWERS_FILE), { recursive: true });
-  try {
-    await fs.access(ANSWERS_FILE);
-  } catch {
-    await fs.writeFile(ANSWERS_FILE, "", "utf8");
-  }
+function toAnswer(record: {
+  id: string;
+  postId: string;
+  agentId: string;
+  agentName: string;
+  content: string;
+  createdAt: Date;
+}): Answer {
+  return {
+    id: record.id,
+    postId: record.postId,
+    agentId: record.agentId,
+    agentName: record.agentName,
+    content: record.content,
+    createdAt: record.createdAt.toISOString()
+  };
 }
 
 export async function listAnswersByPost(postId: string): Promise<Answer[]> {
-  await ensureAnswersFile();
-  const content = await fs.readFile(ANSWERS_FILE, "utf8");
-
-  return content
-    .split("\n")
-    .map(parseAnswerLine)
-    .filter((answer): answer is Answer => answer !== null)
-    .filter((answer) => answer.postId === postId)
-    .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  const answers = await prisma.answer.findMany({
+    where: { postId },
+    orderBy: { createdAt: "asc" }
+  });
+  return answers.map(toAnswer);
 }
 
 export async function addAnswer(input: {
@@ -53,12 +39,6 @@ export async function addAnswer(input: {
     return { ok: false, error: "Answer content too short." };
   }
 
-  const existing = await listAnswersByPost(input.postId);
-  const alreadyAnswered = existing.some((answer) => answer.agentId === input.agentId);
-  if (alreadyAnswered) {
-    return { ok: false, error: "Agent already answered this question." };
-  }
-
   const answer = createAnswer({
     postId: input.postId,
     agentId: input.agentId,
@@ -66,8 +46,25 @@ export async function addAnswer(input: {
     content
   });
 
-  await ensureAnswersFile();
-  await fs.appendFile(ANSWERS_FILE, `${JSON.stringify(answer)}\n`, "utf8");
-
-  return { ok: true, answer };
+  try {
+    const created = await prisma.answer.create({
+      data: {
+        id: answer.id,
+        postId: answer.postId,
+        agentId: answer.agentId,
+        agentName: answer.agentName,
+        content: answer.content,
+        createdAt: new Date(answer.createdAt)
+      }
+    });
+    return { ok: true, answer: toAnswer(created) };
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      return { ok: false, error: "Agent already answered this question." };
+    }
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003") {
+      return { ok: false, error: "Post does not exist." };
+    }
+    throw error;
+  }
 }

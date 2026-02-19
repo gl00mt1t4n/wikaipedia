@@ -1,37 +1,7 @@
 import crypto from "node:crypto";
-import { promises as fs } from "node:fs";
-import path from "node:path";
 import { verifyAgentConnection } from "@/lib/agentConnection";
+import { prisma } from "@/lib/prisma";
 import { createAgent, toPublicAgent, type Agent, type AgentTransport, type PublicAgent } from "@/lib/types";
-
-const AGENTS_FILE = path.join(process.cwd(), "data", "agents.txt");
-
-function parseAgentLine(line: string): Agent | null {
-  const trimmed = line.trim();
-  if (!trimmed) {
-    return null;
-  }
-
-  try {
-    const parsed = JSON.parse(trimmed) as Agent;
-    if (!parsed.id || !parsed.name || !parsed.ownerWalletAddress || !parsed.ownerUsername || !parsed.mcpServerUrl) {
-      return null;
-    }
-
-    return parsed;
-  } catch {
-    return null;
-  }
-}
-
-async function ensureAgentsFile(): Promise<void> {
-  await fs.mkdir(path.dirname(AGENTS_FILE), { recursive: true });
-  try {
-    await fs.access(AGENTS_FILE);
-  } catch {
-    await fs.writeFile(AGENTS_FILE, "", "utf8");
-  }
-}
 
 function isValidTransport(value: string): value is AgentTransport {
   return value === "http" || value === "sse" || value === "stdio";
@@ -57,15 +27,51 @@ function generateAgentToken(): string {
   return `ag_${crypto.randomBytes(24).toString("hex")}`;
 }
 
-export async function listAgentsRaw(): Promise<Agent[]> {
-  await ensureAgentsFile();
-  const content = await fs.readFile(AGENTS_FILE, "utf8");
+function toAgent(record: {
+  id: string;
+  ownerWalletAddress: string;
+  ownerUsername: string;
+  name: string;
+  description: string;
+  mcpServerUrl: string;
+  transport: string;
+  entrypointCommand: string | null;
+  tags: string[];
+  createdAt: Date;
+  updatedAt: Date;
+  status: string;
+  authTokenHash: string;
+  verificationStatus: string;
+  verificationError: string | null;
+  verifiedAt: Date | null;
+  capabilities: string[];
+}): Agent {
+  return {
+    id: record.id,
+    ownerWalletAddress: record.ownerWalletAddress,
+    ownerUsername: record.ownerUsername,
+    name: record.name,
+    description: record.description,
+    mcpServerUrl: record.mcpServerUrl,
+    transport: record.transport as AgentTransport,
+    entrypointCommand: record.entrypointCommand,
+    tags: record.tags,
+    createdAt: record.createdAt.toISOString(),
+    updatedAt: record.updatedAt.toISOString(),
+    status: record.status as "active" | "paused",
+    authTokenHash: record.authTokenHash,
+    verificationStatus: record.verificationStatus as "verified" | "failed",
+    verificationError: record.verificationError,
+    verifiedAt: record.verifiedAt?.toISOString() ?? null,
+    capabilities: record.capabilities
+  };
+}
 
-  return content
-    .split("\n")
-    .map(parseAgentLine)
-    .filter((agent): agent is Agent => agent !== null)
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+export async function listAgentsRaw(): Promise<Agent[]> {
+  const agents = await prisma.agent.findMany({
+    orderBy: { createdAt: "desc" }
+  });
+  return agents.map(toAgent);
 }
 
 export async function listAgents(): Promise<PublicAgent[]> {
@@ -74,15 +80,20 @@ export async function listAgents(): Promise<PublicAgent[]> {
 }
 
 export async function listAgentsByOwner(ownerWalletAddress: string): Promise<PublicAgent[]> {
-  const all = await listAgentsRaw();
   const normalized = ownerWalletAddress.toLowerCase();
-  return all.filter((agent) => agent.ownerWalletAddress === normalized).map(toPublicAgent);
+  const agents = await prisma.agent.findMany({
+    where: { ownerWalletAddress: normalized },
+    orderBy: { createdAt: "desc" }
+  });
+  return agents.map(toAgent).map(toPublicAgent);
 }
 
 export async function findAgentByAccessToken(token: string): Promise<Agent | null> {
   const tokenHash = hashToken(token);
-  const all = await listAgentsRaw();
-  return all.find((agent) => agent.authTokenHash === tokenHash) ?? null;
+  const agent = await prisma.agent.findUnique({
+    where: { authTokenHash: tokenHash }
+  });
+  return agent ? toAgent(agent) : null;
 }
 
 export async function registerAgent(input: {
@@ -119,10 +130,16 @@ export async function registerAgent(input: {
     return { ok: false, error: "MCP endpoint must start with http://, https://, or stdio://" };
   }
 
-  const existing = await listAgentsRaw();
-  const duplicateName = existing.find(
-    (agent) => agent.ownerWalletAddress === input.ownerWalletAddress.toLowerCase() && agent.name.toLowerCase() === name.toLowerCase()
-  );
+  const duplicateName = await prisma.agent.findFirst({
+    where: {
+      ownerWalletAddress: input.ownerWalletAddress.toLowerCase(),
+      name: {
+        equals: name,
+        mode: "insensitive"
+      }
+    },
+    select: { id: true }
+  });
   if (duplicateName) {
     return { ok: false, error: "You already have an agent with this name." };
   }
@@ -154,8 +171,27 @@ export async function registerAgent(input: {
     capabilities: verification.capabilities ?? []
   });
 
-  await ensureAgentsFile();
-  await fs.appendFile(AGENTS_FILE, `${JSON.stringify(agent)}\n`, "utf8");
+  const created = await prisma.agent.create({
+    data: {
+      id: agent.id,
+      ownerWalletAddress: agent.ownerWalletAddress,
+      ownerUsername: agent.ownerUsername,
+      name: agent.name,
+      description: agent.description,
+      mcpServerUrl: agent.mcpServerUrl,
+      transport: agent.transport,
+      entrypointCommand: agent.entrypointCommand,
+      tags: agent.tags,
+      createdAt: new Date(agent.createdAt),
+      updatedAt: new Date(agent.updatedAt),
+      status: agent.status,
+      authTokenHash: agent.authTokenHash,
+      verificationStatus: agent.verificationStatus,
+      verificationError: agent.verificationError,
+      verifiedAt: agent.verifiedAt ? new Date(agent.verifiedAt) : null,
+      capabilities: agent.capabilities
+    }
+  });
 
-  return { ok: true, agent: toPublicAgent(agent), agentAccessToken: accessToken };
+  return { ok: true, agent: toPublicAgent(toAgent(created)), agentAccessToken: accessToken };
 }
