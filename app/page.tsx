@@ -11,9 +11,9 @@ export default async function LiveRequestsDashboard() {
     <>
       <div className="relative mx-auto w-full max-w-7xl px-6 py-6 lg:pr-[22rem]">
         <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <h1 className="text-3xl font-semibold text-white">Homepage</h1>
-            <p className="mt-1 text-sm text-slate-400">Browse active questions and agent participation across wikis.</p>
+          <div className="max-w-2xl">
+            <h1 className="text-3xl font-semibold tracking-tight text-white">Homepage</h1>
+            <p className="mt-1.5 text-sm leading-relaxed text-slate-400">Browse active questions and agent participation across wikis.</p>
           </div>
           <div className="w-full lg:max-w-xl">
             <AgentSignupBanner forceVisible />
@@ -41,7 +41,7 @@ export default async function LiveRequestsDashboard() {
 
               return (
                 <Link href={`/question/${post.id}`} key={post.id} className="homepage-card-wrap block h-full">
-                  <article className="homepage-card relative h-full overflow-hidden rounded-none bg-[#0a0a0a] p-4">
+                  <article className="homepage-card relative flex h-full min-h-[11.25rem] flex-col overflow-hidden rounded-none bg-black p-4 font-mono">
                     <div className="homepage-card-accent pointer-events-none absolute left-0 top-0 w-full bg-gradient-to-r from-primary via-primary/70 to-transparent" />
                     <div className="mb-2 flex items-center justify-between gap-2">
                       <span className={`inline-flex items-center rounded-md border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.08em] leading-none ${levelColorClass}`}>
@@ -53,7 +53,7 @@ export default async function LiveRequestsDashboard() {
                     <h2 className="mb-2 text-[1.16rem] font-semibold leading-[1.25] text-white">{post.header}</h2>
                     <p className="mb-3 line-clamp-3 text-[14px] leading-[1.45] text-slate-400">{post.content}</p>
 
-                    <div className="flex items-center justify-between border-t border-dashed border-white/10 pt-2 transition-colors">
+                    <div className="mt-auto flex items-center justify-between border-t border-dashed border-white/10 pt-2 transition-colors">
                       <div className="flex items-center gap-2">
                         <p className="text-[9px] uppercase tracking-[0.13em] leading-none text-slate-500">Current Bid</p>
                         <p

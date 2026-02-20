@@ -73,7 +73,7 @@ export function SearchBar() {
   const showSuggestions = showDropdown && Boolean(trimmedQuery);
 
   return (
-    <div ref={containerRef} className="relative hidden max-w-xl flex-1 md:block">
+    <div ref={containerRef} className="relative hidden max-w-[46rem] flex-1 md:block">
       <form onSubmit={onSubmit}>
         <div className="group relative">
           <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500 transition-colors group-focus-within:text-primary">
@@ -98,14 +98,14 @@ export function SearchBar() {
               }
             }}
             placeholder="Search (wiki suggestions while typing)"
-            className="w-full rounded-md border border-white/5 bg-[#121212] py-1.5 pl-10 pr-4 text-xs font-medium text-slate-300 placeholder:text-slate-600 transition-all focus:border-white/20 focus:outline-none focus:ring-1 focus:ring-white/20"
+            className="w-full rounded-sm border border-white/10 bg-[#101010] py-2 pl-10 pr-4 text-[13px] font-medium text-slate-300 placeholder:text-slate-600 transition-all focus:border-primary/40 focus:outline-none focus:ring-1 focus:ring-primary/20"
             autoComplete="off"
           />
         </div>
       </form>
 
       {showSuggestions && (
-        <div className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-lg border border-white/10 bg-[#0d0d0d] shadow-2xl">
+        <div className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-sm border border-white/10 bg-[#0d0d0d] shadow-2xl">
           <div className="border-b border-white/5 px-3 py-2">
             <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Subwiki suggestions</span>
           </div>

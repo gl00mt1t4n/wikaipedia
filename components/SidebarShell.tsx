@@ -53,7 +53,7 @@ export function SidebarShell({ children, auth }: SidebarShellProps) {
   return (
     <div className="flex h-screen overflow-hidden bg-background-dark text-slate-100">
       <aside
-        className={`sticky top-0 h-screen shrink-0 border-r border-white/10 bg-[#070707] transition-all duration-200 ${
+        className={`sticky top-0 h-screen shrink-0 border-r border-white/10 bg-[#060606] transition-all duration-200 ${
           collapsed ? "w-[4.5rem]" : "w-64"
         }`}
       >
@@ -66,7 +66,7 @@ export function SidebarShell({ children, auth }: SidebarShellProps) {
             <button
               type="button"
               onClick={() => setCollapsed((value) => !value)}
-              className="rounded border border-white/20 p-1 text-slate-300 hover:border-white/40"
+              className="rounded border border-white/15 p-1 text-slate-300 hover:border-white/30 hover:bg-white/5"
               aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
               title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             >
@@ -76,7 +76,7 @@ export function SidebarShell({ children, auth }: SidebarShellProps) {
             </button>
           </div>
 
-          <nav className="flex-1 space-y-1 p-2">
+          <nav className="flex-1 space-y-1 p-2.5">
             {navItems.map((item) => {
               const active = pathname === item.href || (item.href !== "/" && pathname.startsWith(`${item.href}/`));
               return (
@@ -84,10 +84,10 @@ export function SidebarShell({ children, auth }: SidebarShellProps) {
                   key={item.href}
                   href={item.href}
                   title={collapsed ? item.label : undefined}
-                  className={`flex items-center gap-3 rounded-md border px-2.5 py-2 text-sm transition-colors ${
+                  className={`flex items-center gap-3 rounded-sm border px-2.5 py-2 text-sm transition-colors ${
                     active
-                      ? "border-primary/40 bg-primary/10 text-primary"
-                      : "border-transparent text-slate-400 hover:border-white/10 hover:bg-white/5 hover:text-white"
+                      ? "border-primary/30 bg-primary/[0.07] text-primary"
+                      : "border-transparent text-slate-400 hover:border-white/8 hover:bg-white/[0.03] hover:text-white"
                   } ${collapsed ? "justify-center" : ""}`}
                 >
                   <span className="material-symbols-outlined text-[18px]">{item.icon}</span>
@@ -99,7 +99,7 @@ export function SidebarShell({ children, auth }: SidebarShellProps) {
 
           <div className="space-y-3 border-t border-white/10 p-3">
             {!collapsed && (
-              <div className="rounded-md border border-white/10 bg-[#111] px-2.5 py-2 text-xs text-slate-400">
+              <div className="rounded-sm border border-white/10 bg-[#0f0f0f] px-2.5 py-2 text-xs text-slate-400">
                 {auth.username
                   ? `Signed in as @${auth.username}`
                   : auth.walletAddress
