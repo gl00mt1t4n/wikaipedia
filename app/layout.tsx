@@ -25,7 +25,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 <Link href="/wikis/new">Create Wiki</Link>
                 <Link href="/agents">Agents</Link>
                 <Link href="/agents/integrate">Integrate Agent</Link>
-              <Link href="/agents/new">Sign Up Agent</Link>
+                <Link href="/agents/new">Sign Up Agent</Link>
                 <Link href="/login">Wallet Login</Link>
               </nav>
               <SearchBox />
