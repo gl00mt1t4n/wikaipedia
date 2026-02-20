@@ -4,35 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { DEFAULT_WIKI_ID } from "@/lib/wikiStore";
+import { findBestWikiMatch } from "@/lib/wikiSearch";
 import type { Post, Wiki } from "@/lib/types";
-
-type RankedWiki = {
-  wiki: Wiki;
-  score: number;
-};
-
-function normalizeWikiQuery(raw: string): string {
-  return raw.trim().toLowerCase().replace(/^w\//, "");
-}
-
-function scoreWiki(query: string, wiki: Wiki): number {
-  const normalizedQuery = normalizeWikiQuery(query);
-  if (!normalizedQuery) {
-    return 0;
-  }
-
-  const id = wiki.id.toLowerCase();
-  const display = wiki.displayName.toLowerCase();
-
-  if (id === normalizedQuery) return 100;
-  if (display === normalizedQuery) return 95;
-  if (id.startsWith(normalizedQuery)) return 85;
-  if (display.startsWith(normalizedQuery)) return 80;
-  if (id.includes(normalizedQuery)) return 70;
-  if (display.includes(normalizedQuery)) return 65;
-
-  return 0;
-}
 
 export function CreatePostForm({
   currentUsername,
@@ -53,11 +26,7 @@ export function CreatePostForm({
   const [wikiName, setWikiName] = useState(`w/${initialWikiId || DEFAULT_WIKI_ID}`);
 
   const recommendedWiki = useMemo<Wiki | null>(() => {
-    const ranked: RankedWiki[] = initialWikis
-      .map((wiki) => ({ wiki, score: scoreWiki(wikiName, wiki) }))
-      .filter((entry) => entry.score > 0)
-      .sort((a, b) => b.score - a.score);
-    return ranked.length > 0 ? ranked[0].wiki : null;
+    return findBestWikiMatch(wikiName, initialWikis);
   }, [initialWikis, wikiName]);
 
   async function onCreatePost(event: React.FormEvent<HTMLFormElement>) {
@@ -67,7 +36,8 @@ export function CreatePostForm({
     setMessage("");
 
     const formData = new FormData(form);
-    const poster = String(formData.get("poster") ?? "anonymous").trim();
+    const posterInput = String(formData.get("poster") ?? "").trim();
+    const poster = currentUsername?.trim() || posterInput || "anonymous";
     const chosenWikiName = String(formData.get("wikiName") ?? `w/${initialWikiId || DEFAULT_WIKI_ID}`);
     const header = String(formData.get("header") ?? "");
     const content = String(formData.get("content") ?? "");

@@ -1,11 +1,7 @@
 import { CreatePostForm } from "@/components/CreatePostForm";
+import { normalizeWikiRouteId } from "@/lib/wikiRoute";
 import { getAuthState } from "@/lib/session";
 import { DEFAULT_WIKI_ID, listWikis } from "@/lib/wikiStore";
-
-function normalizeWikiId(rawWikiId: string): string {
-  const normalized = rawWikiId.trim().toLowerCase().replace(/^w\//, "");
-  return normalized || DEFAULT_WIKI_ID;
-}
 
 export default async function NewPostPage({
   searchParams
@@ -13,7 +9,7 @@ export default async function NewPostPage({
   searchParams: { wiki?: string };
 }) {
   const requestedWikiId = typeof searchParams.wiki === "string" ? searchParams.wiki : DEFAULT_WIKI_ID;
-  const wikiId = normalizeWikiId(requestedWikiId);
+  const wikiId = normalizeWikiRouteId(requestedWikiId);
   const [auth, wikis] = await Promise.all([getAuthState(), listWikis()]);
 
   return (
