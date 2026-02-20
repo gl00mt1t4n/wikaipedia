@@ -1,12 +1,21 @@
 import React from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import Navbar from "@/components/Navbar";
 import { getAuthState } from "@/lib/session";
 import { getPostById } from "@/lib/postStore";
 import { listAnswersByPost } from "@/lib/answerStore";
 import { ConsensusPanel } from "@/components/ConsensusPanel";
 import { PostAutoRefresh } from "@/components/PostAutoRefresh";
+
+function getExplorerTxBase(paymentNetwork: string): string | null {
+    if (paymentNetwork === "eip155:84532") {
+        return "https://sepolia.basescan.org/tx/";
+    }
+    if (paymentNetwork === "eip155:8453") {
+        return "https://basescan.org/tx/";
+    }
+    return null;
+}
 
 export default async function QuestionDetailPage(props: { params: Promise<{ postId: string }> }) {
     const params = await props.params;
@@ -35,18 +44,10 @@ export default async function QuestionDetailPage(props: { params: Promise<{ post
                 </svg>
             </div>
 
-            {/* Top Navigation */}
-            <Navbar
-                initiallyLoggedIn={auth.loggedIn}
-                initialWalletAddress={auth.walletAddress}
-                initialUsername={auth.username}
-                initialHasUsername={!!auth.username}
-            />
-
             {/* Main Content Area */}
-            <main className="relative z-10 flex-1 w-full max-w-7xl mx-auto flex flex-col lg:flex-row">
+            <main className="relative z-10 mx-auto flex w-full max-w-7xl flex-col lg:flex-row">
                 {/* Left Sidebar (Voting & Meta - Desktop) */}
-                <aside className="hidden lg:flex flex-col w-24 pt-20 items-center gap-8 sticky top-16 h-[calc(100vh-4rem)]">
+                <aside className="sticky top-4 hidden h-[calc(100vh-2rem)] w-24 flex-col items-center gap-8 pt-12 lg:flex">
                     <div className="flex flex-col items-center gap-1 group">
                         <button className="p-2 rounded-full hover:bg-white/5 text-slate-400 hover:text-primary transition-colors">
                             <span className="material-symbols-outlined text-[32px]">keyboard_arrow_up</span>
@@ -144,7 +145,26 @@ export default async function QuestionDetailPage(props: { params: Promise<{ post
                                             <span className="material-symbols-outlined text-[20px]">thumb_down</span>
                                         </div>
                                         <div className="flex-1 text-xs text-slate-600 font-mono text-right">
-                                            Bid: $ {(answer.bidAmountCents / 100).toFixed(2)}
+                                            {answer.paymentTxHash ? (
+                                                (() => {
+                                                    const txBase = getExplorerTxBase(answer.paymentNetwork);
+                                                    if (!txBase) {
+                                                        return <>Bid: $ {(answer.bidAmountCents / 100).toFixed(2)}</>;
+                                                    }
+                                                    return (
+                                                        <a
+                                                            href={`${txBase}${answer.paymentTxHash}`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="text-slate-600 hover:text-primary transition-colors"
+                                                        >
+                                                            Bid: $ {(answer.bidAmountCents / 100).toFixed(2)}
+                                                        </a>
+                                                    );
+                                                })()
+                                            ) : (
+                                                <>Bid: $ {(answer.bidAmountCents / 100).toFixed(2)}</>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -164,6 +184,7 @@ export default async function QuestionDetailPage(props: { params: Promise<{ post
                 answers={answers.map(a => ({ id: a.id, agentName: a.agentName }))}
                 isSettled={post.settlementStatus === "settled"}
                 ownerUsername={post.poster}
+                currentUsername={auth.username}
             />
         </>
     );
