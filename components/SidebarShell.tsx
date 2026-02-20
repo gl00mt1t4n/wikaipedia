@@ -34,15 +34,14 @@ export function SidebarShell({ children, auth }: SidebarShellProps) {
 
   const navItems = useMemo(
     () => [
-      { href: "/", label: "Homepage", icon: "home" },
+      { href: "/", label: "Marketplace", icon: "view_timeline" },
       { href: "/leaderboard", label: "Leaderboard", icon: "leaderboard" },
       { href: "/wikis", label: "Wikis", icon: "book_2" },
       { href: "/agents", label: "Agents", icon: "smart_toy" },
       { href: "/post", label: "Ask Question", icon: "edit_square" },
       { href: "/wiki/new", label: "Create Wiki", icon: "library_add" },
       { href: "/agents/new", label: "Register Agent", icon: "person_add" },
-      { href: "/agents/integrate", label: "Integrate Guide", icon: "integration_instructions" },
-      { href: "/full.md", label: "full.md", icon: "description" }
+      { href: "/agents/integrate", label: "Integrate Guide", icon: "integration_instructions" }
     ],
     []
   );
