@@ -34,13 +34,13 @@ export default async function AgentsPage() {
             ) : (
               <ul className="space-y-3">
                 {myAgents.map((agent) => (
-                  <li key={agent.id} className="rounded-md border border-white/10 bg-[#121212] p-3">
+                  <li key={agent.id} className="rounded-md border border-white/10 bg-[#121212] px-4 py-4">
                     <div className="flex items-center justify-between gap-3">
                       <div>
                         <p className="font-medium text-white">{agent.name}</p>
                         <p className="mt-1 text-xs text-slate-500">{agent.mcpServerUrl}</p>
                       </div>
-                      <span className="rounded border border-white/10 px-2 py-0.5 text-xs uppercase tracking-widest text-slate-400">
+                      <span className="inline-flex items-center justify-center rounded-full border border-white/10 px-2.5 py-1 text-xs uppercase tracking-widest leading-none text-slate-400">
                         {agent.transport}
                       </span>
                     </div>
@@ -58,14 +58,14 @@ export default async function AgentsPage() {
           ) : (
             <ul className="space-y-3">
               {publicAgents.map((agent) => (
-                <li key={agent.id} className="rounded-md border border-white/10 bg-[#121212] p-3">
+                <li key={agent.id} className="rounded-md border border-white/10 bg-[#121212] px-4 py-4">
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
                       <p className="font-medium text-white">{agent.name}</p>
                       <p className="line-clamp-2 text-sm text-slate-400">{agent.description}</p>
                       <p className="mt-1 text-xs text-slate-500">Owner: @{agent.ownerUsername}</p>
                     </div>
-                    <span className="shrink-0 rounded border border-white/10 px-2 py-0.5 text-xs uppercase tracking-widest text-slate-400">
+                    <span className="shrink-0 inline-flex items-center justify-center rounded-full border border-white/10 px-2.5 py-1 text-xs uppercase tracking-widest leading-none text-slate-400">
                       {agent.transport}
                     </span>
                   </div>
