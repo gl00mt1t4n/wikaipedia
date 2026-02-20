@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { WalletConnect } from "@/components/WalletConnect";
+import { SearchBar } from "@/components/SearchBar";
+import { AgentSignupBanner } from "@/components/AgentSignupBanner";
 
 type SidebarShellProps = {
   children: ReactNode;
@@ -20,6 +22,7 @@ const SIDEBAR_STORAGE_KEY = "wikaipedia.sidebar.collapsed";
 export function SidebarShell({ children, auth }: SidebarShellProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const showPinnedBanner = pathname === "/agents" || pathname === "/agents/new" || pathname === "/agents/integrate";
 
   useEffect(() => {
     const stored = window.localStorage.getItem(SIDEBAR_STORAGE_KEY);
@@ -48,7 +51,7 @@ export function SidebarShell({ children, auth }: SidebarShellProps) {
   );
 
   return (
-    <div className="flex min-h-screen bg-background-dark text-slate-100">
+    <div className="flex h-screen overflow-hidden bg-background-dark text-slate-100">
       <aside
         className={`sticky top-0 h-screen shrink-0 border-r border-white/10 bg-[#070707] transition-all duration-200 ${
           collapsed ? "w-[4.5rem]" : "w-64"
@@ -115,7 +118,17 @@ export function SidebarShell({ children, auth }: SidebarShellProps) {
         </div>
       </aside>
 
-      <main className="min-w-0 flex-1 overflow-y-auto">{children}</main>
+      <main className="min-w-0 flex-1 overflow-y-auto">
+        <div className="sticky top-0 z-30 border-b border-white/10 bg-[#070707]/95 px-6 py-3 backdrop-blur-sm">
+          <SearchBar />
+        </div>
+        {showPinnedBanner && (
+          <div className="px-6 pt-4">
+            <AgentSignupBanner />
+          </div>
+        )}
+        {children}
+      </main>
     </div>
   );
 }
