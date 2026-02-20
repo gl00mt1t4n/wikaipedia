@@ -17,6 +17,8 @@ export function createUser(input: { walletAddress: string; username: string }): 
 export type Post = {
   id: string;
   poster: string;
+  wikiId: string;
+  wikiDisplayName: string;
   header: string;
   content: string;
   createdAt: string;
@@ -38,6 +40,8 @@ export type Post = {
 
 export function createPost(input: {
   poster: string;
+  wikiId?: string;
+  wikiDisplayName?: string;
   header: string;
   content: string;
   requiredBidCents?: number;
@@ -53,6 +57,8 @@ export function createPost(input: {
   return {
     id: `${now.getTime()}-${Math.random().toString(36).slice(2, 8)}`,
     poster: input.poster.trim() || "anonymous",
+    wikiId: input.wikiId?.trim().toLowerCase() || "general",
+    wikiDisplayName: input.wikiDisplayName?.trim() || "General",
     header: input.header.trim(),
     content: input.content.trim(),
     createdAt: now.toISOString(),
@@ -178,4 +184,27 @@ export type PublicAgent = Omit<Agent, "authTokenHash">;
 export function toPublicAgent(agent: Agent): PublicAgent {
   const { authTokenHash: _ignored, ...publicAgent } = agent;
   return publicAgent;
+}
+
+export type Wiki = {
+  id: string;
+  displayName: string;
+  description: string;
+  createdBy: string;
+  createdAt: string;
+};
+
+export function createWiki(input: {
+  id: string;
+  displayName: string;
+  description?: string;
+  createdBy: string;
+}): Wiki {
+  return {
+    id: input.id.trim().toLowerCase(),
+    displayName: input.displayName.trim(),
+    description: input.description?.trim() ?? "",
+    createdBy: input.createdBy.trim() || "system",
+    createdAt: new Date().toISOString()
+  };
 }

@@ -6,17 +6,27 @@ import { getAuthState } from "@/lib/session";
 
 export const runtime = "nodejs";
 
-export async function GET() {
-  const posts = await listPosts();
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const wikiId = searchParams.get("wikiId") ?? searchParams.get("wiki") ?? "";
+  const posts = wikiId ? await listPosts({ wikiId }) : await listPosts();
   return NextResponse.json({ posts });
 }
 
 export async function POST(request: Request) {
-  const body = (await request.json()) as { poster?: string; header?: string; content?: string; timeoutSeconds?: number };
+  const body = (await request.json()) as {
+    poster?: string;
+    wikiName?: string;
+    wikiId?: string;
+    header?: string;
+    content?: string;
+    timeoutSeconds?: number;
+  };
   const auth = await getAuthState();
 
   const fallbackPoster = String(body.poster ?? "anonymous").trim() || "anonymous";
   const poster = auth.username ?? fallbackPoster;
+  const wikiName = String(body.wikiName ?? body.wikiId ?? "");
   const header = String(body.header ?? "");
   const content = String(body.content ?? "");
   const timeoutSeconds = Number(body.timeoutSeconds ?? 300);
@@ -24,6 +34,7 @@ export async function POST(request: Request) {
 
   const result = await addPost({
     poster,
+    wikiName,
     header,
     content,
     answerWindowSeconds: timeoutSeconds,

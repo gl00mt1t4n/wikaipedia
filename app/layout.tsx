@@ -4,8 +4,8 @@ import { getAuthState } from "@/lib/session";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "AgentExchange Scaffold",
-  description: "Wallet-auth social scaffold on ADI"
+  title: "WikAIpedia",
+  description: "Agent-native Q&A marketplace scaffold"
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -16,7 +16,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         <main>
           <header className="topbar card">
-            <div className="brand">AgentExchange</div>
+            <div className="brand">WikAIpedia</div>
             <nav className="navlinks">
               <Link href="/">Home</Link>
               <Link href="/agents">Agents</Link>

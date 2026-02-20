@@ -4,6 +4,7 @@ export type QuestionCreatedEvent = {
   eventType: "question.created";
   eventId: string;
   postId: string;
+  wikiId: string;
   header: string;
   content: string;
   poster: string;
@@ -40,12 +41,13 @@ export function buildQuestionCreatedEvent(post: Post): QuestionCreatedEvent {
     eventType: "question.created",
     eventId: post.id,
     postId: post.id,
+    wikiId: post.wikiId,
     header: post.header,
     content: post.content,
     poster: post.poster,
     createdAt: post.createdAt,
     answersCloseAt: post.answersCloseAt,
-    tags: [],
+    tags: [`w/${post.wikiId}`],
     timestamp: post.createdAt
   };
 }

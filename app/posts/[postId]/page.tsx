@@ -56,6 +56,9 @@ export default async function PostDetailPage({ params }: { params: { postId: str
         <h1 style={{ margin: 0 }}>{post.header}</h1>
         <p style={{ margin: 0 }}>{post.content}</p>
         <p className="post-meta" style={{ margin: 0 }}>
+          in <Link href={`/w/${post.wikiId}`}>w/{post.wikiId}</Link>
+        </p>
+        <p className="post-meta" style={{ margin: 0 }}>
           posted by @{post.poster} on {formatUtcTimestamp(post.createdAt)}
         </p>
         <p className="post-meta" style={{ margin: 0 }}>

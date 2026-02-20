@@ -1,12 +1,34 @@
 import { prisma } from "@/lib/prisma";
+import { DEFAULT_WIKI_DISPLAY_NAME, DEFAULT_WIKI_ID, resolveWikiForPost } from "@/lib/wikiStore";
 import { createPost, type Post } from "@/lib/types";
 
 const MIN_ANSWER_WINDOW_SECONDS = 60;
 const MAX_ANSWER_WINDOW_SECONDS = 60 * 60;
 
+function normalizeWikiId(rawWikiId: string | null | undefined): string {
+  const value = String(rawWikiId ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/^w\//, "");
+  return value || DEFAULT_WIKI_ID;
+}
+
+function getFallbackWikiDisplayName(wikiId: string): string {
+  if (wikiId === DEFAULT_WIKI_ID) {
+    return DEFAULT_WIKI_DISPLAY_NAME;
+  }
+
+  return wikiId
+    .split(/[-_]+/)
+    .filter(Boolean)
+    .map((part) => `${part.slice(0, 1).toUpperCase()}${part.slice(1)}`)
+    .join(" ");
+}
+
 function toPost(record: {
   id: string;
   poster: string;
+  wikiId?: string | null;
   header: string;
   content: string;
   createdAt: Date;
@@ -24,6 +46,10 @@ function toPost(record: {
   poolTotalCents?: number | null;
   winnerPayoutCents?: number | null;
   platformFeeCents?: number | null;
+  wiki?: {
+    id: string;
+    displayName: string;
+  } | null;
 }): Post {
   const answerWindowSeconds =
     Number.isFinite(Number(record.answerWindowSeconds)) && Number(record.answerWindowSeconds) > 0
@@ -32,10 +58,14 @@ function toPost(record: {
   const answersCloseAt = record.answersCloseAt
     ? record.answersCloseAt
     : new Date(record.createdAt.getTime() + answerWindowSeconds * 1000);
+  const wikiId = normalizeWikiId(record.wikiId);
+  const wikiDisplayName = record.wiki?.displayName ?? getFallbackWikiDisplayName(wikiId);
 
   return {
     id: record.id,
     poster: record.poster,
+    wikiId,
+    wikiDisplayName,
     header: record.header,
     content: record.content,
     createdAt: record.createdAt.toISOString(),
@@ -59,8 +89,24 @@ function toPost(record: {
   };
 }
 
-export async function listPosts(): Promise<Post[]> {
+export async function listPosts(options?: { wikiId?: string | null }): Promise<Post[]> {
+  const wikiId = options?.wikiId ? normalizeWikiId(options.wikiId) : null;
   const posts = await prisma.post.findMany({
+    where: wikiId
+      ? wikiId === DEFAULT_WIKI_ID
+        ? {
+            OR: [{ wikiId: DEFAULT_WIKI_ID }, { wikiId: null }]
+          }
+        : { wikiId }
+      : undefined,
+    include: {
+      wiki: {
+        select: {
+          id: true,
+          displayName: true
+        }
+      }
+    },
     orderBy: { createdAt: "desc" }
   });
   return posts.map((post) => toPost(post as any));
@@ -95,6 +141,14 @@ export async function listPostsAfterAnchor(
           OR: [{ createdAt: { gt: anchorDate } }, { createdAt: anchorDate, id: { gt: anchorId } }]
         }
       : undefined,
+    include: {
+      wiki: {
+        select: {
+          id: true,
+          displayName: true
+        }
+      }
+    },
     orderBy: [{ createdAt: "asc" }, { id: "asc" }],
     take: limit
   });
@@ -104,13 +158,23 @@ export async function listPostsAfterAnchor(
 
 export async function getPostById(postId: string): Promise<Post | null> {
   const post = await prisma.post.findUnique({
-    where: { id: postId }
+    where: { id: postId },
+    include: {
+      wiki: {
+        select: {
+          id: true,
+          displayName: true
+        }
+      }
+    }
   });
   return post ? toPost(post as any) : null;
 }
 
 export async function addPost(input: {
   poster: string;
+  wikiName?: string;
+  wikiId?: string;
   header: string;
   content: string;
   requiredBidCents?: number;
@@ -139,9 +203,22 @@ export async function addPost(input: {
   const requiredBidCents = Number.isFinite(Number(input.requiredBidCents))
     ? Math.max(1, Math.floor(Number(input.requiredBidCents)))
     : 75;
+  const wikiQuery = input.wikiName?.trim() || input.wikiId?.trim() || "";
+  const resolvedWiki = await resolveWikiForPost({
+    wikiQuery,
+    createdBy: input.poster.trim() || "anonymous"
+  });
+
+  if (!resolvedWiki.ok) {
+    return { ok: false, error: resolvedWiki.error };
+  }
 
   const post = createPost({
-    ...input,
+    poster: input.poster,
+    wikiId: resolvedWiki.wiki.id,
+    wikiDisplayName: resolvedWiki.wiki.displayName,
+    header: input.header,
+    content: input.content,
     requiredBidCents,
     complexityTier: input.complexityTier ?? "medium",
     complexityScore: input.complexityScore ?? 3,
@@ -152,6 +229,7 @@ export async function addPost(input: {
     data: {
       id: post.id,
       poster: post.poster,
+      wikiId: post.wikiId,
       header: post.header,
       content: post.content,
       createdAt: new Date(post.createdAt),
@@ -169,7 +247,15 @@ export async function addPost(input: {
       poolTotalCents: 0,
       winnerPayoutCents: 0,
       platformFeeCents: 0
-    } as any
+    } as any,
+    include: {
+      wiki: {
+        select: {
+          id: true,
+          displayName: true
+        }
+      }
+    }
   });
   return { ok: true, post: toPost(created as any) };
 }
@@ -192,7 +278,15 @@ export async function settlePost(input: {
       settlementTxHash: input.settlementTxHash,
       winnerPayoutCents: input.winnerPayoutCents,
       platformFeeCents: input.platformFeeCents
-    } as any
+    } as any,
+    include: {
+      wiki: {
+        select: {
+          id: true,
+          displayName: true
+        }
+      }
+    }
   });
   return settled ? toPost(settled as any) : null;
 }

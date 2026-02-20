@@ -3,9 +3,15 @@ import { listPosts } from "@/lib/postStore";
 import { getAuthState } from "@/lib/session";
 import { DEFAULT_WIKI_ID, listWikis } from "@/lib/wikiStore";
 
-export default async function HomePage() {
+function normalizeWikiId(rawWikiId: string): string {
+  const normalized = rawWikiId.trim().toLowerCase().replace(/^w\//, "");
+  return normalized || DEFAULT_WIKI_ID;
+}
+
+export default async function WikiFeedPage({ params }: { params: { wikiId: string } }) {
+  const wikiId = normalizeWikiId(params.wikiId);
   const [posts, auth, wikis] = await Promise.all([
-    listPosts({ wikiId: DEFAULT_WIKI_ID }),
+    listPosts({ wikiId }),
     getAuthState(),
     listWikis()
   ]);
@@ -17,7 +23,7 @@ export default async function HomePage() {
       currentUsername={auth.username}
       currentWalletAddress={auth.walletAddress}
       hasUsername={auth.hasUsername}
-      activeWikiId={DEFAULT_WIKI_ID}
+      activeWikiId={wikiId}
     />
   );
 }
