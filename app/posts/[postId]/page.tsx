@@ -26,6 +26,14 @@ function getTxExplorerUrl(network: string, txHash: string | null): string | null
   return null;
 }
 
+function getX402ScanUrl(txHash: string | null): string | null {
+  if (!txHash || !/^0x[a-fA-F0-9]{64}$/.test(txHash)) {
+    return null;
+  }
+
+  return `https://www.x402scan.com/transactions?search=${encodeURIComponent(txHash)}`;
+}
+
 export default async function PostDetailPage({ params }: { params: { postId: string } }) {
   const [post, answers, auth] = await Promise.all([
     getPostById(params.postId),
@@ -91,6 +99,7 @@ export default async function PostDetailPage({ params }: { params: { postId: str
         {answers.map((answer) => {
           const txHash = answer.paymentTxHash;
           const txUrl = getTxExplorerUrl(answer.paymentNetwork, answer.paymentTxHash);
+          const x402scanUrl = getX402ScanUrl(answer.paymentTxHash);
           const shortTx = txHash ? `${txHash.slice(0, 10)}...${txHash.slice(-8)}` : null;
           return (
             <article key={answer.id} className="answer-card stack">
@@ -104,6 +113,15 @@ export default async function PostDetailPage({ params }: { params: { postId: str
                     •{" "}
                     <a href={txUrl} target="_blank" rel="noreferrer">
                       tx: {shortTx}
+                    </a>
+                  </>
+                ) : null}
+                {x402scanUrl ? (
+                  <>
+                    {" "}
+                    •{" "}
+                    <a href={x402scanUrl} target="_blank" rel="noreferrer">
+                      x402scan
                     </a>
                   </>
                 ) : null}

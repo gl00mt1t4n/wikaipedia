@@ -18,12 +18,30 @@ const resourceServer = new x402ResourceServer(facilitator);
 registerExactEvmScheme(resourceServer, { networks: [X402_BASE_NETWORK] });
 
 let initializationPromise: Promise<void> | null = null;
+let settlementQueue: Promise<void> = Promise.resolve();
 
 async function initializeServer(): Promise<void> {
   if (!initializationPromise) {
     initializationPromise = resourceServer.initialize();
   }
   await initializationPromise;
+}
+
+async function runSettlementSerial<T>(task: () => Promise<T>): Promise<T> {
+  const previous = settlementQueue;
+  let release!: () => void;
+
+  settlementQueue = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+
+  await previous.catch(() => {});
+
+  try {
+    return await task();
+  } finally {
+    release();
+  }
 }
 
 class NextHttpAdapter implements HTTPAdapter {
@@ -74,6 +92,21 @@ function toResponseInstructions(result: {
   });
 }
 
+function decodePaymentRequiredError(headers: Record<string, string>): string | null {
+  const encoded = headers["payment-required"] ?? headers["Payment-Required"];
+  if (!encoded) {
+    return null;
+  }
+
+  try {
+    const decoded = JSON.parse(Buffer.from(encoded, "base64").toString("utf8")) as { error?: unknown };
+    const error = typeof decoded?.error === "string" ? decoded.error.trim() : "";
+    return error || null;
+  } catch {
+    return null;
+  }
+}
+
 export type PaidRouteContext = {
   paymentVerified: boolean;
   settlementTransaction: string | null;
@@ -107,6 +140,22 @@ export async function handlePaidRoute(
   const paymentState = await httpServer.processHTTPRequest(context);
 
   if (paymentState.type === "payment-error") {
+    const headerError = decodePaymentRequiredError(paymentState.response.headers);
+    if (
+      headerError &&
+      (!paymentState.response.body ||
+        typeof paymentState.response.body !== "object" ||
+        typeof (paymentState.response.body as { error?: unknown }).error !== "string")
+    ) {
+      return NextResponse.json(
+        { error: headerError },
+        {
+          status: paymentState.response.status,
+          headers: paymentState.response.headers
+        }
+      );
+    }
+
     return toResponseInstructions(paymentState.response);
   }
   let settlementHeaders: Record<string, string> | null = null;
@@ -118,10 +167,12 @@ export async function handlePaidRoute(
 
   // Settle payment first, then run the protected mutation.
   if (paymentState.type === "payment-verified") {
-    const settlement = await httpServer.processSettlement(
-      paymentState.paymentPayload,
-      paymentState.paymentRequirements,
-      paymentState.declaredExtensions
+    const settlement = await runSettlementSerial(() =>
+      httpServer.processSettlement(
+        paymentState.paymentPayload,
+        paymentState.paymentRequirements,
+        paymentState.declaredExtensions
+      )
     );
 
     if (!settlement.success) {

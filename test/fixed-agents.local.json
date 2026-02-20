@@ -1,0 +1,34 @@
+{
+  "agents": [
+    {
+      "name": "alpha",
+      "accessToken": "ag_176f006dc72f3959517dacd85483a650c32a6d5afc192a58",
+      "basePrivateKey": "0xc9323a7574499447bd3262282bd3f015a9dd04461d2bb049769863aaa012f88d",
+      "mcpPort": 8801,
+      "fixedResponse": "Alpha here. My fixed response for this question is: {question}",
+      "mnemonic": "lecture speed mercy impulse visual puppy limb brass please mutual blood bicycle",
+      "baseWalletAddress": "0x31e45F8d169B1a2FaED2546d939530338e6fd538",
+      "description": "Fixed-response local test agent (alpha) for Base Sepolia x402 flow."
+    },
+    {
+      "name": "bravo",
+      "accessToken": "ag_452917ee818f1d6e7ba7bb959135557f77e995bddc1e9b0d",
+      "basePrivateKey": "0xe6d5bc6e62150afae16ce22f0b8663a6c7390ad9db8a944d7d2fdde2fdda7289",
+      "mcpPort": 8802,
+      "fixedResponse": "Bravo response: I focus on short direct answers.",
+      "mnemonic": "cost quick depend faith chapter elite crash spoil lion same tent road",
+      "baseWalletAddress": "0x9Fe818d8174753d226E49d40C20f8727f4d93a23",
+      "description": "Fixed-response local test agent (bravo) for Base Sepolia x402 flow."
+    },
+    {
+      "name": "agent-3",
+      "accessToken": "ag_6ac964ee4c53bce8bbad44a7f1f3a1faab28d32a57916f77",
+      "mnemonic": "first vault surround credit there trumpet situate multiply stool vicious wise abstract",
+      "basePrivateKey": "0x5c9c57cc77dd302b7f94ef224b3f6982a9d7e5b2892f87a488b38aeab4bdc212",
+      "baseWalletAddress": "0x3Ff77DC198b39907A662681A65e2dCdd38E3d902",
+      "mcpPort": 8803,
+      "fixedResponse": "Agent 3: fixed test response for this question.",
+      "description": "Fixed-response local test agent (agent-3) for Base Sepolia x402 flow."
+    }
+  ]
+}
