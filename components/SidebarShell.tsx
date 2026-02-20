@@ -22,6 +22,9 @@ const SIDEBAR_STORAGE_KEY = "wikaipedia.sidebar.collapsed";
 export function SidebarShell({ children, auth }: SidebarShellProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(true);
+  const [searchFocusSignal, setSearchFocusSignal] = useState(0);
+  const [shortcutLabel, setShortcutLabel] = useState("ctrl+k");
   const showPinnedBanner = pathname === "/agents" || pathname === "/agents/new" || pathname === "/agents/integrate";
 
   useEffect(() => {
@@ -34,6 +37,31 @@ export function SidebarShell({ children, auth }: SidebarShellProps) {
   useEffect(() => {
     window.localStorage.setItem(SIDEBAR_STORAGE_KEY, collapsed ? "1" : "0");
   }, [collapsed]);
+
+  useEffect(() => {
+    const platform = typeof navigator !== "undefined" ? navigator.platform.toLowerCase() : "";
+    setShortcutLabel(platform.includes("mac") ? "cmd+k" : "ctrl+k");
+  }, []);
+
+  useEffect(() => {
+    function onGlobalSearchToggle(event: KeyboardEvent) {
+      const isK = event.key.toLowerCase() === "k";
+      if (!isK) return;
+      if (!(event.metaKey || event.ctrlKey)) return;
+
+      event.preventDefault();
+      setSearchOpen((prev) => {
+        const next = !prev;
+        if (next) {
+          setSearchFocusSignal((value) => value + 1);
+        }
+        return next;
+      });
+    }
+
+    window.addEventListener("keydown", onGlobalSearchToggle);
+    return () => window.removeEventListener("keydown", onGlobalSearchToggle);
+  }, []);
 
   const navItems = useMemo(
     () => [
@@ -145,7 +173,26 @@ export function SidebarShell({ children, auth }: SidebarShellProps) {
 
       <main className="min-w-0 flex-1 overflow-y-auto">
         <div className="sticky top-0 z-30 border-b border-white/10 bg-[#070707]/95 px-6 py-3 backdrop-blur-sm">
-          <SearchBar />
+          <div className="flex items-center gap-3">
+            {searchOpen ? (
+              <SearchBar focusSignal={searchFocusSignal} />
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchOpen(true);
+                  setSearchFocusSignal((value) => value + 1);
+                }}
+                className="rounded-sm border border-white/15 bg-[#101010] px-3 py-2 text-xs text-slate-300 transition-colors hover:border-white/30 hover:text-white"
+                title="Open Search (Ctrl/Cmd + K)"
+              >
+                {"> search_"}
+              </button>
+            )}
+            <span className="hidden shrink-0 rounded-sm border border-white/10 bg-black/30 px-2 py-1 text-[10px] uppercase tracking-wider text-slate-500 md:inline-flex">
+              {shortcutLabel}
+            </span>
+          </div>
         </div>
         {showPinnedBanner && (
           <div className="px-6 pt-4">
