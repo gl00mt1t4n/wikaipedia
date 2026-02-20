@@ -108,6 +108,91 @@ async function callAgent(question) {
   return typeof answer === "string" ? answer : "No answer returned by agent";
 }
 
+function parseDecisionText(rawText) {
+  const text = String(rawText ?? "").trim();
+  if (!text) {
+    return null;
+  }
+  try {
+    return JSON.parse(text);
+  } catch {
+    const start = text.indexOf("{");
+    const end = text.lastIndexOf("}");
+    if (start === -1 || end === -1 || end <= start) {
+      return null;
+    }
+    try {
+      return JSON.parse(text.slice(start, end + 1));
+    } catch {
+      return null;
+    }
+  }
+}
+
+async function callAgentDecision(post, existingAnswers) {
+  const response = await fetch(AGENT_MCP_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      jsonrpc: "2.0",
+      id: `decision-call-${Date.now()}`,
+      method: "tools/call",
+      params: {
+        name: "evaluate_post_decision",
+        arguments: {
+          post,
+          existingAnswers
+        }
+      }
+    })
+  });
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => "");
+    throw new Error(`Agent decision call failed (${response.status}): ${text.slice(0, 300)}`);
+  }
+
+  const data = await response.json().catch(() => ({}));
+  const text = data?.result?.content?.[0]?.text;
+  const parsed = parseDecisionText(text);
+  if (!parsed || typeof parsed !== "object") {
+    throw new Error("Agent decision call returned invalid decision payload.");
+  }
+  return parsed;
+}
+
+async function callAgentWikiDecision(joinedWikiIds, candidates) {
+  const response = await fetch(AGENT_MCP_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      jsonrpc: "2.0",
+      id: `wiki-decision-call-${Date.now()}`,
+      method: "tools/call",
+      params: {
+        name: "evaluate_wiki_membership",
+        arguments: {
+          joinedWikiIds,
+          candidates
+        }
+      }
+    })
+  });
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => "");
+    throw new Error(`Agent wiki decision call failed (${response.status}): ${text.slice(0, 300)}`);
+  }
+
+  const data = await response.json().catch(() => ({}));
+  const text = data?.result?.content?.[0]?.text;
+  const parsed = parseDecisionText(text);
+  if (!parsed || typeof parsed !== "object") {
+    throw new Error("Agent wiki decision call returned invalid decision payload.");
+  }
+  return parsed;
+}
+
 async function submitAnswer(postId, answerText) {
   const response = await fetchWithPayment(`${APP_BASE_URL}/api/posts/${postId}/answers`, {
     method: "POST",
@@ -250,12 +335,29 @@ async function discoverAndJoinWikis() {
     return;
   }
 
-  const joinDecision = evaluateWikiJoin(candidates);
-  if (!joinDecision.wikiId) {
+  let modelDecision = null;
+  try {
+    modelDecision = await callAgentWikiDecision(joinedBefore, candidates);
     console.log(
-      `[discovery] no wiki joined reason=${joinDecision.reason}${AGENT_RESPONSE_LOG_VERBOSE ? ` joined=${joinedBefore.join(",") || "none"}` : ""}`
+      `[discovery:model] join=${String(modelDecision?.joinWikiId ?? "none")} leave=${String(modelDecision?.leaveWikiId ?? "none")} joinReason="${String(modelDecision?.joinReason ?? "n/a")}" leaveReason="${String(modelDecision?.leaveReason ?? "n/a")}"`
     );
-  } else {
+  } catch (error) {
+    console.warn(
+      `[discovery:model] failed error="${error instanceof Error ? error.message : String(error)}" fallback=heuristic`
+    );
+  }
+
+  const joinDecision = modelDecision
+    ? {
+        wikiId: (() => {
+          const wikiId = String(modelDecision.joinWikiId ?? "").trim().toLowerCase();
+          return wikiId || null;
+        })(),
+        reason: `model:${String(modelDecision.joinReason ?? "no-reason")}`
+      }
+    : evaluateWikiJoin(candidates);
+
+  if (joinDecision.wikiId) {
     const joinResponse = await fetch(`${APP_BASE_URL}/api/agents/me/wikis`, {
       method: "POST",
       headers: {
@@ -270,10 +372,22 @@ async function discoverAndJoinWikis() {
       throw new Error(`Join wiki failed (${joinResponse.status}): ${text.slice(0, 200)}`);
     }
     console.log(`[discovery] joined wiki w/${joinDecision.wikiId} reason=${joinDecision.reason}`);
+  } else {
+    console.log(
+      `[discovery] no wiki joined reason=${joinDecision.reason}${AGENT_RESPONSE_LOG_VERBOSE ? ` joined=${joinedBefore.join(",") || "none"}` : ""}`
+    );
   }
 
   const joinedAfter = await fetchJoinedWikiIds();
-  const leaveDecision = evaluateWikiLeave(joinedAfter);
+  const leaveDecision = modelDecision
+    ? {
+        wikiId: (() => {
+          const wikiId = String(modelDecision.leaveWikiId ?? "").trim().toLowerCase();
+          return wikiId || null;
+        })(),
+        reason: `model:${String(modelDecision.leaveReason ?? "no-reason")}`
+      }
+    : evaluateWikiLeave(joinedAfter);
   if (!leaveDecision.wikiId) {
     console.log(
       `[discovery] no wiki left reason=${leaveDecision.reason}${AGENT_RESPONSE_LOG_VERBOSE ? ` joined=${joinedAfter.join(",") || "none"}` : ""}`
@@ -343,21 +457,47 @@ function sleep(ms) {
 }
 
 async function handleQuestionEvent(payload) {
-  const responseDecision = evaluateResponse(payload);
-  if (!responseDecision.ok) {
-    console.log(
-      `[event] skipped eventType=${payload.eventType} postId=${payload.postId} reason=${responseDecision.reason}`
-    );
-    return;
-  }
-
-  console.log(`[event] accepted postId=${payload.postId} reason=${responseDecision.reason}`);
   console.log(`[event] received eventType=${payload.eventType} postId=${payload.postId} header="${payload.header}"`);
   const post = await fetchPostById(payload.postId);
   console.log(`[event] fetched postId=${payload.postId}`);
+  const existingAnswers = await fetchAnswersByPostId(payload.postId);
+
+  let modelDecision = null;
+  try {
+    modelDecision = await callAgentDecision(post, existingAnswers);
+    console.log(
+      `[decision:model] postId=${payload.postId} respond=${Boolean(modelDecision?.respond)} postReaction=${String(modelDecision?.postReaction ?? "abstain")} reason="${String(modelDecision?.respondReason ?? "n/a")}"`
+    );
+  } catch (error) {
+    console.warn(
+      `[decision:model] failed postId=${payload.postId} error="${error instanceof Error ? error.message : String(error)}" fallback=heuristic`
+    );
+  }
+
+  const responseDecision = modelDecision
+    ? {
+        ok: Boolean(modelDecision.respond),
+        reason: `model:${String(modelDecision.respondReason ?? "no-reason")}`
+      }
+    : evaluateResponse(payload);
+
+  if (!responseDecision.ok) {
+    console.log(`[event] abstained postId=${payload.postId} reason=${responseDecision.reason}`);
+  } else {
+    console.log(`[event] accepted postId=${payload.postId} reason=${responseDecision.reason}`);
+  }
 
   if (!reactionState.reactedPostIds.has(payload.postId)) {
-    const postReactionDecision = evaluatePostReaction(post);
+    const postReactionDecision = modelDecision
+      ? {
+          reaction: (() => {
+            const reaction = String(modelDecision.postReaction ?? "abstain").toLowerCase();
+            if (reaction === "like" || reaction === "dislike") return reaction;
+            return null;
+          })(),
+          reason: `model:${String(modelDecision.postReactionReason ?? "no-reason")}`
+        }
+      : evaluatePostReaction(post);
     if (postReactionDecision.reaction) {
       const reactionResult = await submitPostReaction(payload.postId, postReactionDecision.reaction);
       if (reactionResult.ok) {
@@ -370,20 +510,34 @@ async function handleQuestionEvent(payload) {
         );
       }
     } else if (AGENT_RESPONSE_LOG_VERBOSE) {
-      console.log(`[reaction] post skipped postId=${payload.postId} reason=${postReactionDecision.reason}`);
+      console.log(`[reaction] post abstained postId=${payload.postId} reason=${postReactionDecision.reason}`);
     }
 
-    const existingAnswers = await fetchAnswersByPostId(payload.postId);
     for (const answer of existingAnswers) {
-      const answerDecision = evaluateAnswerReaction({
-        answerId: answer.id,
-        answerAgentId: answer.agentId,
-        answerContent: answer.content,
-        agentId: null
-      });
+      const modelAnswerDecision = modelDecision
+        ? (Array.isArray(modelDecision.answerReactions) ? modelDecision.answerReactions : []).find(
+            (entry) => String(entry?.answerId ?? "") === answer.id
+          )
+        : null;
+
+      const answerDecision = modelAnswerDecision
+        ? {
+            reaction: (() => {
+              const reaction = String(modelAnswerDecision?.reaction ?? "abstain").toLowerCase();
+              if (reaction === "like" || reaction === "dislike") return reaction;
+              return null;
+            })(),
+            reason: `model:${String(modelAnswerDecision?.reason ?? "no-reason")}`
+          }
+        : evaluateAnswerReaction({
+            answerId: answer.id,
+            answerAgentId: answer.agentId,
+            answerContent: answer.content,
+            agentId: null
+          });
       if (!answerDecision.reaction) {
         if (AGENT_RESPONSE_LOG_VERBOSE) {
-          console.log(`[reaction] answer skipped answerId=${answer.id} reason=${answerDecision.reason}`);
+          console.log(`[reaction] answer abstained answerId=${answer.id} reason=${answerDecision.reason}`);
         }
         continue;
       }
@@ -404,6 +558,10 @@ async function handleQuestionEvent(payload) {
     await saveReactionCheckpoint();
   } else if (AGENT_RESPONSE_LOG_VERBOSE) {
     console.log(`[reaction] skipped all reactions for postId=${payload.postId} reason=already-reacted-for-event`);
+  }
+
+  if (!responseDecision.ok) {
+    return;
   }
 
   const questionText = buildQuestionPrompt(post);
