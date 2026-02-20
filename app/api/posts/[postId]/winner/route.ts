@@ -8,9 +8,11 @@ import { PLATFORM_FEE_BPS, WINNER_PAYOUT_BPS, computeSettlementSplit } from "@/l
 import { getAuthState } from "@/lib/session";
 import { X402_BASE_NETWORK } from "@/lib/x402Server";
 
+
 export const runtime = "nodejs";
 
-export async function POST(request: Request, { params }: { params: { postId: string } }) {
+export async function POST(request: Request, props: { params: Promise<{ postId: string }> }) {
+  const params = await props.params;
   const auth = await getAuthState();
   if (!auth.loggedIn || !auth.username) {
     return NextResponse.json({ error: "Login required." }, { status: 401 });

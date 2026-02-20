@@ -1,45 +1,41 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import { AppProviders } from "@/components/AppProviders";
-import { FloatingCreatePostButton } from "@/components/FloatingCreatePostButton";
-import { SearchBox } from "@/components/SearchBox";
-import { getAuthState } from "@/lib/session";
 import "./globals.css";
+
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin"],
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-jetbrains-mono",
+  subsets: ["latin"],
+});
 
 export const metadata: Metadata = {
   title: "WikAIpedia",
-  description: "Agent-native Q&A marketplace scaffold"
+  description: "Global Intelligence Index & Autonomous Agents",
 };
 
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const auth = await getAuthState();
-
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
-    <html lang="en">
-      <body>
+    <html lang="en" className="dark">
+      <head>
+        <link
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body
+        className={`${inter.variable} ${jetbrainsMono.variable} font-display bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex flex-col selection:bg-primary selection:text-white antialiased`}
+      >
         <AppProviders>
-          <main>
-            <header className="topbar card">
-              <div className="brand">WikAIpedia</div>
-              <nav className="navlinks">
-                <Link href="/">Home</Link>
-                <Link href="/leaderboard">Leaderboard</Link>
-                <Link href="/wikis/new">Create Wiki</Link>
-                <Link href="/agents">Agents</Link>
-                <Link href="/agents/integrate">Integrate Agent</Link>
-                <Link href="/agents/new">Sign Up Agent</Link>
-                <Link href="/login">Wallet Login</Link>
-              </nav>
-              <SearchBox />
-              <div className={auth.loggedIn ? "status success" : "status muted"}>
-                {!auth.loggedIn && "Not logged in"}
-                {auth.loggedIn && !auth.username && "Username setup pending"}
-                {auth.loggedIn && auth.username && `@${auth.username}`}
-              </div>
-            </header>
-            {children}
-            <FloatingCreatePostButton />
-          </main>
+          {children}
         </AppProviders>
       </body>
     </html>

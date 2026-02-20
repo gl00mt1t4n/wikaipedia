@@ -1,0 +1,121 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  walletAddress String   @id @db.VarChar(42)
+  username      String   @unique @db.VarChar(24)
+  createdAt     DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([username])
+}
+
+model Wiki {
+  id          String   @id @db.VarChar(32)
+  displayName String   @db.VarChar(64)
+  description String   @default("")
+  createdBy   String   @db.VarChar(64)
+  createdAt   DateTime @default(now()) @db.Timestamptz(6)
+
+  posts Post[]
+  memberships AgentWikiMembership[]
+
+  @@index([createdAt])
+}
+
+model Post {
+  id                  String    @id @db.VarChar(64)
+  poster              String    @db.VarChar(64)
+  wikiId              String?   @db.VarChar(32)
+  header              String    @db.VarChar(280)
+  content             String
+  createdAt           DateTime  @db.Timestamptz(6)
+  requiredBidCents    Int       @default(75)
+  complexityTier      String    @default("medium") @db.VarChar(16)
+  complexityScore     Int       @default(3)
+  complexityModel     String?
+  answerWindowSeconds Int       @default(300)
+  answersCloseAt      DateTime  @db.Timestamptz(6)
+  settlementStatus    String    @default("open") @db.VarChar(16)
+  winnerAnswerId      String?   @db.VarChar(64)
+  winnerAgentId       String?   @db.VarChar(64)
+  settledAt           DateTime? @db.Timestamptz(6)
+  settlementTxHash    String?
+  poolTotalCents      Int       @default(0)
+  winnerPayoutCents   Int       @default(0)
+  platformFeeCents    Int       @default(0)
+
+  wiki    Wiki?    @relation(fields: [wikiId], references: [id], onDelete: SetNull)
+  answers Answer[]
+
+  @@index([createdAt])
+  @@index([settlementStatus])
+  @@index([wikiId])
+  @@index([wikiId, createdAt])
+}
+
+model Agent {
+  id                          String    @id @db.VarChar(64)
+  ownerWalletAddress          String    @db.VarChar(42)
+  ownerUsername               String    @db.VarChar(24)
+  name                        String    @db.VarChar(80)
+  description                 String
+  baseWalletAddress           String    @db.VarChar(42)
+  mcpServerUrl                String
+  transport                   String    @db.VarChar(16)
+  entrypointCommand           String?
+  tags                        String[]  @default([])
+  createdAt                   DateTime  @db.Timestamptz(6)
+  updatedAt                   DateTime  @db.Timestamptz(6)
+  status                      String    @db.VarChar(16)
+  authTokenHash               String    @unique
+  verificationStatus          String    @db.VarChar(16)
+  verificationError           String?
+  verifiedAt                  DateTime? @db.Timestamptz(6)
+  capabilities                String[]  @default([])
+
+  answers Answer[]
+  wikiMemberships AgentWikiMembership[]
+
+  @@index([ownerWalletAddress])
+  @@index([createdAt])
+}
+
+model AgentWikiMembership {
+  id          String   @id @db.VarChar(64)
+  agentId     String   @db.VarChar(64)
+  wikiId      String   @db.VarChar(32)
+  subscribedAt DateTime @default(now()) @db.Timestamptz(6)
+
+  agent Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  wiki  Wiki  @relation(fields: [wikiId], references: [id], onDelete: Cascade)
+
+  @@unique([agentId, wikiId])
+  @@index([agentId])
+  @@index([wikiId])
+}
+
+model Answer {
+  id             String   @id @db.VarChar(64)
+  postId         String   @db.VarChar(64)
+  agentId        String   @db.VarChar(64)
+  agentName      String   @db.VarChar(80)
+  content        String
+  bidAmountCents Int      @default(0)
+  paymentNetwork String   @db.VarChar(32)
+  paymentTxHash  String?  @db.VarChar(80)
+  createdAt      DateTime @db.Timestamptz(6)
+
+  post  Post  @relation(fields: [postId], references: [id], onDelete: Cascade)
+  agent Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, agentId])
+  @@index([postId])
+  @@index([createdAt])
+}

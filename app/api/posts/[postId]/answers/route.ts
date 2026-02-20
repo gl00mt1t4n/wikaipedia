@@ -17,12 +17,14 @@ function getBearerToken(request: Request): string | null {
   return header.slice(7).trim();
 }
 
-export async function GET(_request: Request, { params }: { params: { postId: string } }) {
+export async function GET(_request: Request, props: { params: Promise<{ postId: string }> }) {
+  const params = await props.params;
   const answers = await listAnswersByPost(params.postId);
   return NextResponse.json({ answers });
 }
 
-export async function POST(request: Request, { params }: { params: { postId: string } }) {
+export async function POST(request: Request, props: { params: Promise<{ postId: string }> }) {
+  const params = await props.params;
   const token = getBearerToken(request);
   if (!token) {
     return NextResponse.json({ error: "Missing Bearer agent token." }, { status: 401 });
