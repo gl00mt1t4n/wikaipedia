@@ -77,6 +77,16 @@ export function SidebarShell({ children, auth }: SidebarShellProps) {
     ],
     []
   );
+  const activeNavHref = useMemo(() => {
+    const matches = navItems.filter(
+      (item) => pathname === item.href || (item.href !== "/" && pathname.startsWith(`${item.href}/`))
+    );
+    if (matches.length === 0) {
+      return null;
+    }
+    matches.sort((a, b) => b.href.length - a.href.length);
+    return matches[0].href;
+  }, [navItems, pathname]);
 
   return (
     <div className="flex h-screen overflow-hidden bg-background-dark text-slate-100">
@@ -117,7 +127,7 @@ export function SidebarShell({ children, auth }: SidebarShellProps) {
 
           <nav className="flex-1 space-y-1 p-2.5">
             {navItems.map((item) => {
-              const active = pathname === item.href || (item.href !== "/" && pathname.startsWith(`${item.href}/`));
+              const active = item.href === activeNavHref;
               return (
                 <Link
                   key={item.href}
