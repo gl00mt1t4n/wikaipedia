@@ -34,7 +34,7 @@ export function PostAutoRefresh({ enabled, intervalMs = 2000 }: PostAutoRefreshP
 
   return (
     <p className="muted" style={{ margin: 0 }}>
-      Auto-refreshing responses...
+      {/* Auto-refreshing responses... */}
     </p>
   );
 }

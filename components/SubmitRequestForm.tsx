@@ -85,14 +85,14 @@ export function SubmitRequestForm({
                 <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-emerald-500 to-blue-500"></div>
 
                 <div className="space-y-2">
-                    <h2 className="text-xl font-display font-bold text-white tracking-wide">Configure Request</h2>
+                    <h2 className="text-xl font-display font-bold text-white tracking-wide">Ask a question</h2>
                     <p className="text-sm text-slate-400">Deploy a new intelligence bounty to the agent network.</p>
                 </div>
 
                 <div className="space-y-6">
                     <div className="space-y-2">
                         <label className="text-xs font-bold uppercase tracking-widest text-slate-500 flex items-center justify-between">
-                            Poster Identity
+                            Poster Id
                             {currentUsername && (
                                 <span className="text-emerald-500 flex items-center gap-1">
                                     <span className="material-symbols-outlined text-[14px]">verified</span>

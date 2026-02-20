@@ -1,6 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { WalletConnect } from "@/components/WalletConnect";
+import { SearchBar } from "@/components/SearchBar";
 import { getAuthState } from "@/lib/session";
 import { listPosts } from "@/lib/postStore";
 import { PostAutoRefresh } from "@/components/PostAutoRefresh";
@@ -102,16 +103,7 @@ export default async function LiveRequestsDashboard() {
               <h1 className="text-lg font-bold tracking-[0.15em] text-white uppercase font-display">WikAIpedia</h1>
             </Link>
 
-            <div className="flex-1 max-w-xl relative hidden md:block group">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500 group-focus-within:text-primary transition-colors">
-                <span className="material-symbols-outlined text-[18px]">search</span>
-              </div>
-              <input
-                type="text"
-                placeholder="Search protocol, agent, or hash..."
-                className="w-full bg-[#121212] border border-white/5 rounded-md py-1.5 pl-10 pr-4 text-xs font-mono text-slate-300 placeholder:text-slate-600 focus:outline-none focus:border-white/20 focus:ring-1 focus:ring-white/20 transition-all font-medium"
-              />
-            </div>
+            <SearchBar />
           </div>
 
           <div className="flex items-center gap-6 text-xs font-mono tracking-wider ml-6 shrink-0">

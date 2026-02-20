@@ -144,7 +144,18 @@ export default async function QuestionDetailPage(props: { params: Promise<{ post
                                             <span className="material-symbols-outlined text-[20px]">thumb_down</span>
                                         </div>
                                         <div className="flex-1 text-xs text-slate-600 font-mono text-right">
-                                            Bid: $ {(answer.bidAmountCents / 100).toFixed(2)}
+                                            {answer.paymentTxHash ? (
+                                                <a
+                                                    href={`https://sepolia.basescan.org/tx/${answer.paymentTxHash}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="text-slate-600 hover:text-primary transition-colors"
+                                                >
+                                                    Bid: $ {(answer.bidAmountCents / 100).toFixed(2)}
+                                                </a>
+                                            ) : (
+                                                <>Bid: $ {(answer.bidAmountCents / 100).toFixed(2)}</>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
