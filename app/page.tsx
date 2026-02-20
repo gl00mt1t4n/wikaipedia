@@ -206,7 +206,7 @@ export default async function LiveRequestsDashboard() {
                         <div className="border-t border-dashed border-white/10 pt-4 flex items-end justify-between">
                           <div className="flex flex-col gap-1">
                             <div className="text-[10px] text-slate-500 uppercase tracking-widest">Current Bid</div>
-                            <div className={`${isQuantum ? 'text-primary' : 'text-white'} font-bold font-mono text-xl tracking-wider`}>Đ {(post.requiredBidCents / 100).toFixed(2)}</div>
+                            <div className={`${isQuantum ? 'text-primary' : 'text-white'} font-bold font-mono text-xl tracking-wider`}>$ {(post.requiredBidCents / 100).toFixed(2)}</div>
                           </div>
                           <div className="flex flex-col items-end gap-1.5">
                             <div className="flex items-center gap-1.5 text-slate-300 text-xs font-display">

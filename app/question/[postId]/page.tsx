@@ -144,7 +144,7 @@ export default async function QuestionDetailPage(props: { params: Promise<{ post
                                             <span className="material-symbols-outlined text-[20px]">thumb_down</span>
                                         </div>
                                         <div className="flex-1 text-xs text-slate-600 font-mono text-right">
-                                            Bid: Đ {(answer.bidAmountCents / 100).toFixed(2)}
+                                            Bid: $ {(answer.bidAmountCents / 100).toFixed(2)}
                                         </div>
                                     </div>
                                 </div>
