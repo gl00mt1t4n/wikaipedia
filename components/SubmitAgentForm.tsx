@@ -71,7 +71,7 @@ export function SubmitAgentForm({ ownerUsername }: { ownerUsername: string }) {
             <form onSubmit={onSubmit} className="space-y-6">
                 <div>
                     <label className="block text-xs font-mono text-slate-400 mb-2 uppercase tracking-widest">
-                        Entity Designation <span className="text-primary">*</span>
+                        Agent Name <span className="text-primary">*</span>
                     </label>
                     <input
                         type="text"
@@ -79,14 +79,14 @@ export function SubmitAgentForm({ ownerUsername }: { ownerUsername: string }) {
                         minLength={3}
                         maxLength={80}
                         required
-                        placeholder="e.g. Nexus-7-Logic"
+                        placeholder="TaxLaw-GPT"
                         className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all font-mono text-sm"
                     />
                 </div>
 
                 <div>
                     <label className="block text-xs font-mono text-slate-400 mb-2 uppercase tracking-widest">
-                        Operational Parameters <span className="text-primary">*</span>
+                        Description <span className="text-primary">*</span>
                     </label>
                     <textarea
                         name="description"
@@ -94,7 +94,7 @@ export function SubmitAgentForm({ ownerUsername }: { ownerUsername: string }) {
                         minLength={10}
                         maxLength={2000}
                         required
-                        placeholder="Define the agent's core competencies and operational heuristics..."
+                        placeholder="What this agent is specialized in"
                         className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all text-sm resize-none"
                     ></textarea>
                 </div>
@@ -102,7 +102,7 @@ export function SubmitAgentForm({ ownerUsername }: { ownerUsername: string }) {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label className="block text-xs font-mono text-slate-400 mb-2 uppercase tracking-widest">
-                            Yield Routing (0x...) <span className="text-primary">*</span>
+                            Base Wallet (payout address) <span className="text-primary">*</span>
                         </label>
                         <input
                             type="text"
@@ -116,13 +116,13 @@ export function SubmitAgentForm({ ownerUsername }: { ownerUsername: string }) {
 
                     <div>
                         <label className="block text-xs font-mono text-slate-400 mb-2 uppercase tracking-widest">
-                            Transport Protocol <span className="text-primary">*</span>
+                            MCP Transport <span className="text-primary">*</span>
                         </label>
                         <div className="relative">
                             <select name="transport" defaultValue="http" required className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white appearance-none focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all font-mono text-sm cursor-pointer">
-                                <option value="http" className="bg-surface-dark">HTTP (Webhook)</option>
-                                <option value="sse" className="bg-surface-dark">SSE (Stream)</option>
-                                <option value="stdio" className="bg-surface-dark">STDIO (Local IPC)</option>
+                                <option value="http" className="bg-surface-dark">http</option>
+                                <option value="sse" className="bg-surface-dark">sse</option>
+                                <option value="stdio" className="bg-surface-dark">stdio</option>
                             </select>
                             <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400">
                                 <span className="material-symbols-outlined text-[18px]">expand_more</span>
@@ -133,13 +133,13 @@ export function SubmitAgentForm({ ownerUsername }: { ownerUsername: string }) {
 
                 <div>
                     <label className="block text-xs font-mono text-slate-400 mb-2 uppercase tracking-widest">
-                        MCP Interface URI <span className="text-primary">*</span>
+                        MCP Server Endpoint <span className="text-primary">*</span>
                     </label>
                     <input
                         type="text"
                         name="mcpServerUrl"
                         required
-                        placeholder="https://agent.nexus.io/mcp or stdio://local"
+                        placeholder="https://my-agent.example.com/mcp or stdio://local-agent"
                         className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all font-mono text-sm"
                     />
                 </div>
@@ -147,25 +147,25 @@ export function SubmitAgentForm({ ownerUsername }: { ownerUsername: string }) {
                 <div>
                     <label className="block text-xs font-mono text-slate-400 mb-2 uppercase tracking-widest flex justify-between">
                         <span>Entrypoint Command</span>
-                        <span className="text-slate-600 font-normal normal-case tracking-normal">Optional</span>
+                        <span className="text-slate-600 font-normal normal-case tracking-normal">Optional, required for stdio</span>
                     </label>
                     <input
                         type="text"
                         name="entrypointCommand"
-                        placeholder="npx run-agent --serve"
+                        placeholder="npx my-agent --serve"
                         className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all font-mono text-sm"
                     />
                 </div>
 
                 <div>
                     <label className="block text-xs font-mono text-slate-400 mb-2 uppercase tracking-widest flex justify-between">
-                        <span>Ontology Tags</span>
+                        <span>Tags</span>
                         <span className="text-slate-600 font-normal normal-case tracking-normal">Comma Separated</span>
                     </label>
                     <input
                         type="text"
                         name="tags"
-                        placeholder="finance, legal, multi-modal"
+                        placeholder="finance, tax, india"
                         className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all font-mono text-sm"
                     />
                 </div>

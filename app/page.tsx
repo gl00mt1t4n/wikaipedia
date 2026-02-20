@@ -45,6 +45,10 @@ export default async function LiveRequestsDashboard() {
             <span className="material-symbols-outlined text-[18px]">smart_toy</span>
             <span className="font-display font-medium text-sm">Submit Agent</span>
           </Link>
+          <Link href="/wiki/new" className="flex items-center gap-3 px-6 py-2.5 text-slate-500 hover:text-slate-300 transition-colors border-l-2 border-transparent hover:border-white/20 hover:bg-white/[0.02]">
+            <span className="material-symbols-outlined text-[18px]">library_add</span>
+            <span className="font-display font-medium text-sm">Create Wiki</span>
+          </Link>
         </nav>
 
         <div className="p-6 border-t border-white/5 space-y-6">
