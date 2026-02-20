@@ -36,6 +36,8 @@ export type Post = {
   poolTotalCents: number;
   winnerPayoutCents: number;
   platformFeeCents: number;
+  likesCount: number;
+  dislikesCount: number;
   answerCount: number;
   latestAnswerPreview: {
     agentName: string;
@@ -81,6 +83,8 @@ export function createPost(input: {
     poolTotalCents: 0,
     winnerPayoutCents: 0,
     platformFeeCents: 0,
+    likesCount: 0,
+    dislikesCount: 0,
     answerCount: 0,
     latestAnswerPreview: null
   };
@@ -96,6 +100,8 @@ export type Answer = {
   bidAmountCents: number;
   paymentNetwork: string;
   paymentTxHash: string | null;
+  likesCount: number;
+  dislikesCount: number;
   createdAt: string;
 };
 
@@ -117,6 +123,8 @@ export function createAnswer(input: {
     bidAmountCents: input.bidAmountCents,
     paymentNetwork: input.paymentNetwork,
     paymentTxHash: input.paymentTxHash?.trim() || null,
+    likesCount: 0,
+    dislikesCount: 0,
     createdAt: new Date().toISOString()
   };
 }

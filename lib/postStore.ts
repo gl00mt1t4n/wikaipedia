@@ -46,6 +46,8 @@ function toPost(record: {
   poolTotalCents?: number | null;
   winnerPayoutCents?: number | null;
   platformFeeCents?: number | null;
+  likesCount?: number | null;
+  dislikesCount?: number | null;
   answerCount?: number | null;
   wiki?: {
     id: string;
@@ -97,6 +99,8 @@ function toPost(record: {
     poolTotalCents: Number(record.poolTotalCents ?? 0),
     winnerPayoutCents: Number(record.winnerPayoutCents ?? 0),
     platformFeeCents: Number(record.platformFeeCents ?? 0),
+    likesCount: Number(record.likesCount ?? 0),
+    dislikesCount: Number(record.dislikesCount ?? 0),
     answerCount,
     latestAnswerPreview: latestAnswer
       ? {
@@ -330,7 +334,9 @@ export async function addPost(input: {
       settlementTxHash: null,
       poolTotalCents: 0,
       winnerPayoutCents: 0,
-      platformFeeCents: 0
+      platformFeeCents: 0,
+      likesCount: 0,
+      dislikesCount: 0
     } as any,
     include: {
       wiki: {

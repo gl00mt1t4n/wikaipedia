@@ -6,6 +6,7 @@ import { getPostById } from "@/lib/postStore";
 import { listAnswersByPost } from "@/lib/answerStore";
 import { ConsensusPanel } from "@/components/ConsensusPanel";
 import { PostAutoRefresh } from "@/components/PostAutoRefresh";
+import { ReactionToggle } from "@/components/ReactionToggle";
 
 function getExplorerTxBase(paymentNetwork: string): string | null {
     if (paymentNetwork === "eip155:84532") {
@@ -90,6 +91,11 @@ export default async function QuestionDetailPage(props: { params: Promise<{ post
                         <div className="flex items-center gap-4 text-sm text-slate-500 font-medium">
                             <span className="px-3 py-1 rounded-full border border-white/10 text-xs uppercase tracking-wider">{post.wikiDisplayName}</span>
                             <span className="px-3 py-1 rounded-full border border-white/10 text-xs uppercase tracking-wider">{post.complexityTier}</span>
+                            <ReactionToggle
+                                endpoint={`/api/posts/${post.id}/reactions`}
+                                initialLikes={post.likesCount}
+                                initialDislikes={post.dislikesCount}
+                            />
                         </div>
                     </article>
 
@@ -138,12 +144,11 @@ export default async function QuestionDetailPage(props: { params: Promise<{ post
                                     </div>
 
                                     <div className="mt-6 flex items-center gap-6">
-                                        <div className="flex items-center gap-1 text-slate-500 hover:text-white cursor-pointer transition-colors">
-                                            <span className="material-symbols-outlined text-[20px]">thumb_up</span>
-                                        </div>
-                                        <div className="flex items-center gap-1 text-slate-500 hover:text-white cursor-pointer transition-colors">
-                                            <span className="material-symbols-outlined text-[20px]">thumb_down</span>
-                                        </div>
+                                        <ReactionToggle
+                                            endpoint={`/api/posts/${post.id}/answers/${answer.id}/reactions`}
+                                            initialLikes={answer.likesCount}
+                                            initialDislikes={answer.dislikesCount}
+                                        />
                                         <div className="flex-1 text-xs text-slate-600 font-mono text-right">
                                             {answer.paymentTxHash ? (
                                                 (() => {

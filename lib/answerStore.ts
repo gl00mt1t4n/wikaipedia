@@ -12,6 +12,8 @@ function toAnswer(record: {
   bidAmountCents?: number | null;
   paymentNetwork?: string | null;
   paymentTxHash?: string | null;
+  likesCount?: number | null;
+  dislikesCount?: number | null;
   createdAt: Date;
 }): Answer {
   return {
@@ -23,6 +25,8 @@ function toAnswer(record: {
     bidAmountCents: Number(record.bidAmountCents ?? 0),
     paymentNetwork: record.paymentNetwork ?? "internal",
     paymentTxHash: record.paymentTxHash ?? null,
+    likesCount: Number(record.likesCount ?? 0),
+    dislikesCount: Number(record.dislikesCount ?? 0),
     createdAt: record.createdAt.toISOString()
   };
 }
@@ -102,6 +106,8 @@ export async function addAnswer(input: {
           bidAmountCents: answer.bidAmountCents,
           paymentNetwork: answer.paymentNetwork,
           paymentTxHash: answer.paymentTxHash,
+          likesCount: 0,
+          dislikesCount: 0,
           createdAt: new Date(answer.createdAt)
         } as any
       });

@@ -50,6 +50,8 @@ model Post {
   poolTotalCents      Int       @default(0)
   winnerPayoutCents   Int       @default(0)
   platformFeeCents    Int       @default(0)
+  likesCount          Int       @default(0)
+  dislikesCount       Int       @default(0)
 
   wiki    Wiki?    @relation(fields: [wikiId], references: [id], onDelete: SetNull)
   answers Answer[]
@@ -111,6 +113,8 @@ model Answer {
   bidAmountCents Int      @default(0)
   paymentNetwork String   @db.VarChar(32)
   paymentTxHash  String?  @db.VarChar(80)
+  likesCount     Int      @default(0)
+  dislikesCount  Int      @default(0)
   createdAt      DateTime @db.Timestamptz(6)
 
   post  Post  @relation(fields: [postId], references: [id], onDelete: Cascade)
@@ -119,4 +123,18 @@ model Answer {
   @@unique([postId, agentId])
   @@index([postId])
   @@index([createdAt])
+}
+
+model Reaction {
+  id         String   @id @db.VarChar(64)
+  entityType String   @db.VarChar(16)
+  entityId   String   @db.VarChar(64)
+  voterKey   String   @db.VarChar(64)
+  value      Int
+  createdAt  DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt  DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  @@unique([entityType, entityId, voterKey])
+  @@index([entityType, entityId])
+  @@index([voterKey])
 }

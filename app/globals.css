@@ -200,4 +200,92 @@
       transform: none;
     }
   }
+
+  .reaction-meter {
+    --col-gray: #14171c;
+    --col-white: #d9dce2;
+    --col-like: #ff4d00;
+    --col-dislike: #ff3232;
+    --transition: 160ms;
+    background-color: var(--col-gray);
+    border: 1px solid #2a2e36;
+    min-width: 6.85rem;
+    height: 1.7rem;
+    border-radius: 999px;
+    display: inline-flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.2rem;
+    user-select: none;
+    transition: border-color var(--transition), background-color var(--transition);
+  }
+
+  .reaction-meter-compact {
+    min-width: 5.8rem;
+    height: 1.45rem;
+  }
+
+  .reaction-icon {
+    all: unset;
+    width: 1.1rem;
+    height: 1.1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    color: var(--col-white);
+    cursor: pointer;
+    transition: color var(--transition), background-color var(--transition), transform var(--transition);
+  }
+
+  .reaction-icon .material-symbols-outlined {
+    font-size: 0.46rem;
+    font-variation-settings: "OPSZ" 20, "wght" 420, "FILL" 0, "GRAD" 0;
+    line-height: 1;
+    transform: scale(0.9);
+  }
+
+  .reaction-icon:hover {
+    background: rgba(255, 255, 255, 0.06);
+    transform: translateY(-1px);
+  }
+
+  .reaction-like.is-active {
+    color: var(--col-like);
+    background: rgba(255, 77, 0, 0.12);
+  }
+
+  .reaction-dislike.is-active {
+    color: var(--col-dislike);
+    background: rgba(255, 50, 50, 0.12);
+  }
+
+  .reaction-count {
+    flex: 1;
+    border-left: 1px solid rgba(217, 220, 226, 0.35);
+    border-right: 1px solid rgba(217, 220, 226, 0.35);
+    height: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.2rem;
+    font-family: var(--font-mono), "JetBrains Mono", monospace;
+  }
+
+  .reaction-like.is-active ~ .reaction-count {
+    border-left-color: rgba(255, 77, 0, 0.5);
+  }
+
+  .reaction-count-label {
+    font-size: 0.4rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #7b8191;
+  }
+
+  .reaction-count-value {
+    font-size: 0.58rem;
+    color: #f1f4f8;
+    font-weight: 700;
+  }
 }
