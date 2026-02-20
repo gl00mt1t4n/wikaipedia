@@ -1,4 +1,4 @@
-import { spawn } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
 import { createWriteStream } from "node:fs";
 import { mkdir, readFile } from "node:fs/promises";
 import path from "node:path";
@@ -127,7 +127,21 @@ function spawnWithLogs(command, args, env, logfile, label) {
   return child;
 }
 
+function syncAgentRegistry() {
+  try {
+    execFileSync("node", ["scripts/register-fixed-agents.mjs"], {
+      cwd: ROOT,
+      env: process.env,
+      stdio: "inherit"
+    });
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    fail(`Failed to sync fixed agents before startup.\n${detail}`);
+  }
+}
+
 async function main() {
+  syncAgentRegistry();
   const agents = await loadConfig();
   await mkdir(CHECKPOINT_DIR, { recursive: true });
   await mkdir(LOG_DIR, { recursive: true });
