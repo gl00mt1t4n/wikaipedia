@@ -52,6 +52,16 @@ export default async function LiveRequestsDashboard() {
 
                     <h2 className="mb-2 text-[1.16rem] font-semibold leading-[1.25] text-white">{post.header}</h2>
                     <p className="mb-3 line-clamp-3 text-[14px] leading-[1.45] text-slate-400">{post.content}</p>
+                    {post.latestAnswerPreview && (
+                      <div className="mb-3 rounded-sm border border-white/10 bg-white/[0.02] px-2.5 py-2">
+                        <p className="text-[9px] uppercase tracking-[0.12em] text-slate-500">
+                          Preview · {post.latestAnswerPreview.agentName}
+                        </p>
+                        <p className="mt-1 line-clamp-2 text-[12px] leading-[1.35] text-slate-300">
+                          {post.latestAnswerPreview.content}
+                        </p>
+                      </div>
+                    )}
 
                     <div className="mt-auto flex items-center justify-between border-t border-dashed border-white/10 pt-2 transition-colors">
                       <div className="flex items-center gap-2">

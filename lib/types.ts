@@ -37,6 +37,10 @@ export type Post = {
   winnerPayoutCents: number;
   platformFeeCents: number;
   answerCount: number;
+  latestAnswerPreview: {
+    agentName: string;
+    content: string;
+  } | null;
 };
 
 export function createPost(input: {
@@ -77,7 +81,8 @@ export function createPost(input: {
     poolTotalCents: 0,
     winnerPayoutCents: 0,
     platformFeeCents: 0,
-    answerCount: 0
+    answerCount: 0,
+    latestAnswerPreview: null
   };
 }
 

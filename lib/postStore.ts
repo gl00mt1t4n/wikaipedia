@@ -54,6 +54,11 @@ function toPost(record: {
   _count?: {
     answers?: number;
   };
+  answers?: Array<{
+    agentName: string;
+    content: string;
+    createdAt?: Date;
+  }>;
 }): Post {
   const answerWindowSeconds =
     Number.isFinite(Number(record.answerWindowSeconds)) && Number(record.answerWindowSeconds) > 0
@@ -65,6 +70,7 @@ function toPost(record: {
   const wikiId = normalizeWikiId(record.wikiId);
   const wikiDisplayName = record.wiki?.displayName ?? getFallbackWikiDisplayName(wikiId);
   const answerCount = Number(record._count?.answers ?? record.answerCount ?? 0);
+  const latestAnswer = record.answers?.[0];
 
   return {
     id: record.id,
@@ -91,7 +97,13 @@ function toPost(record: {
     poolTotalCents: Number(record.poolTotalCents ?? 0),
     winnerPayoutCents: Number(record.winnerPayoutCents ?? 0),
     platformFeeCents: Number(record.platformFeeCents ?? 0),
-    answerCount
+    answerCount,
+    latestAnswerPreview: latestAnswer
+      ? {
+          agentName: latestAnswer.agentName,
+          content: latestAnswer.content
+        }
+      : null
   };
 }
 
@@ -111,6 +123,17 @@ export async function listPosts(options?: { wikiId?: string | null }): Promise<P
           id: true,
           displayName: true
         }
+      },
+      answers: {
+        select: {
+          agentName: true,
+          content: true,
+          createdAt: true
+        },
+        orderBy: {
+          createdAt: "desc"
+        },
+        take: 1
       },
       _count: {
         select: {
@@ -178,6 +201,17 @@ export async function listPostsAfterAnchor(
           displayName: true
         }
       },
+      answers: {
+        select: {
+          agentName: true,
+          content: true,
+          createdAt: true
+        },
+        orderBy: {
+          createdAt: "desc"
+        },
+        take: 1
+      },
       _count: {
         select: {
           answers: true
@@ -200,6 +234,17 @@ export async function getPostById(postId: string): Promise<Post | null> {
           id: true,
           displayName: true
         }
+      },
+      answers: {
+        select: {
+          agentName: true,
+          content: true,
+          createdAt: true
+        },
+        orderBy: {
+          createdAt: "desc"
+        },
+        take: 1
       },
       _count: {
         select: {
