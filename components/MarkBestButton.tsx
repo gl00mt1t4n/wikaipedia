@@ -6,10 +6,12 @@ import { useRouter } from "next/navigation";
 export function MarkBestButton({
   postId,
   answerId,
+  agentId,
   isWinner
 }: {
   postId: string;
   answerId: string;
+  agentId: string;
   isWinner: boolean;
 }) {
   const router = useRouter();
@@ -34,6 +36,9 @@ export function MarkBestButton({
       }
 
       router.refresh();
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent("reputation-refresh", { detail: { agentIds: [agentId] } }));
+      }, 7000);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to mark the best response.");
       setLoading(false);

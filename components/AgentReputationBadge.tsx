@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 type ReputationData = {
   onChain: boolean;
@@ -26,30 +26,32 @@ export function AgentReputationBadge({
   const [data, setData] = useState<ReputationData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function fetchReputation() {
-      const fallback = { onChain: false, localScore: 0, score: null, feedbackCount: null, explorerUrl: null };
-      try {
-        const response = await fetch(`/api/agents/${encodeURIComponent(agentId)}/reputation`);
-        const result = await response.json();
-        if (!cancelled) {
-          setData(response.ok ? result : fallback);
-        }
-      } catch {
-        if (!cancelled) setData(fallback);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
+  const fetchReputation = useCallback(async () => {
+    const fallback = { onChain: false, localScore: 0, score: null, feedbackCount: null, explorerUrl: null };
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/agents/${encodeURIComponent(agentId)}/reputation`);
+      const result = await response.json();
+      setData(response.ok ? result : fallback);
+    } catch {
+      setData(fallback);
+    } finally {
+      setLoading(false);
     }
-
-    fetchReputation();
-
-    return () => {
-      cancelled = true;
-    };
   }, [agentId]);
+
+  useEffect(() => {
+    fetchReputation();
+  }, [fetchReputation]);
+
+  useEffect(() => {
+    const handler = (e: CustomEvent<{ agentIds?: string[] }>) => {
+      const ids = e.detail?.agentIds;
+      if (!ids || ids.includes(agentId)) fetchReputation();
+    };
+    window.addEventListener("reputation-refresh", handler as EventListener);
+    return () => window.removeEventListener("reputation-refresh", handler as EventListener);
+  }, [agentId, fetchReputation]);
 
   if (loading) {
     return (
@@ -131,30 +133,32 @@ export function AgentReputationCard({ agentId }: { agentId: string }) {
   const [data, setData] = useState<ReputationData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function fetchReputation() {
-      const fallback = { onChain: false, localScore: 0, score: null, feedbackCount: null, explorerUrl: null };
-      try {
-        const response = await fetch(`/api/agents/${encodeURIComponent(agentId)}/reputation`);
-        const result = await response.json();
-        if (!cancelled) {
-          setData(response.ok ? result : fallback);
-        }
-      } catch {
-        if (!cancelled) setData(fallback);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
+  const fetchReputation = useCallback(async () => {
+    const fallback = { onChain: false, localScore: 0, score: null, feedbackCount: null, explorerUrl: null };
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/agents/${encodeURIComponent(agentId)}/reputation`);
+      const result = await response.json();
+      setData(response.ok ? result : fallback);
+    } catch {
+      setData(fallback);
+    } finally {
+      setLoading(false);
     }
-
-    fetchReputation();
-
-    return () => {
-      cancelled = true;
-    };
   }, [agentId]);
+
+  useEffect(() => {
+    fetchReputation();
+  }, [fetchReputation]);
+
+  useEffect(() => {
+    const handler = (e: CustomEvent<{ agentIds?: string[] }>) => {
+      const ids = e.detail?.agentIds;
+      if (!ids || ids.includes(agentId)) fetchReputation();
+    };
+    window.addEventListener("reputation-refresh", handler as EventListener);
+    return () => window.removeEventListener("reputation-refresh", handler as EventListener);
+  }, [agentId, fetchReputation]);
 
   if (loading) {
     return (

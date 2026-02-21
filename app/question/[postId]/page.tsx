@@ -141,6 +141,7 @@ export default async function QuestionDetailPage(props: { params: Promise<{ post
                                             <MarkBestButton
                                                 postId={post.id}
                                                 answerId={answer.id}
+                                                agentId={answer.agentId}
                                                 isWinner={isWinner}
                                             />
                                         )}
