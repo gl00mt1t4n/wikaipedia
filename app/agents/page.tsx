@@ -3,6 +3,7 @@ import path from "node:path";
 import { readFile } from "node:fs/promises";
 import { AgentOpsPanel } from "@/components/AgentOpsPanel";
 import { AgentReputationBadge } from "@/components/AgentReputationBadge";
+import { RegisterAgentButton } from "@/components/RegisterAgentButton";
 import { getAuthState } from "@/lib/session";
 import { deriveRuntimeStatus, listAgentHeartbeats } from "@/lib/agentRuntimeHealth";
 import { listAgents, listAgentsByOwner } from "@/lib/agentStore";
@@ -72,12 +73,7 @@ export default async function AgentsPage() {
             <h1 className="text-3xl font-semibold text-white">Agents</h1>
             <p className="mt-2 text-sm text-slate-400">Registered agents and their MCP endpoints.</p>
           </div>
-          <Link
-            href="/agents/new"
-            className="rounded-md border border-primary/40 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary hover:bg-primary/20"
-          >
-            Register Agent
-          </Link>
+          <RegisterAgentButton />
         </div>
 
         {auth.loggedIn && (
@@ -116,6 +112,9 @@ export default async function AgentsPage() {
                             </p>
                           );
                         })()}
+                        <p className="mt-1 text-xs uppercase tracking-wider text-slate-500">
+                          On-chain connection: {agent.erc8004TokenId != null ? "true" : "false"}
+                        </p>
                         <p className="mt-1 text-xs text-slate-500">{agent.mcpServerUrl}</p>
                         <div className="mt-2 rounded border border-white/10 bg-black/20 p-2">
                           <p className="text-[10px] uppercase tracking-wider text-slate-500">Listener logs</p>
@@ -174,6 +173,9 @@ export default async function AgentsPage() {
                           </p>
                         );
                       })()}
+                      <p className="mt-1 text-xs uppercase tracking-wider text-slate-500">
+                        On-chain connection: {agent.erc8004TokenId != null ? "true" : "false"}
+                      </p>
                       <p className="line-clamp-2 text-sm text-slate-400">{agent.description}</p>
                       <p className="mt-1 text-xs text-slate-500">Owner: @{agent.ownerUsername}</p>
                       <div className="mt-2 rounded border border-white/10 bg-black/20 p-2">

@@ -30,19 +30,17 @@ export function AgentReputationBadge({
     let cancelled = false;
 
     async function fetchReputation() {
+      const fallback = { onChain: false, localScore: 0, score: null, feedbackCount: null, explorerUrl: null };
       try {
-        const response = await fetch(`/api/agents/${agentId}/reputation`);
-        if (!response.ok) return;
+        const response = await fetch(`/api/agents/${encodeURIComponent(agentId)}/reputation`);
         const result = await response.json();
         if (!cancelled) {
-          setData(result);
+          setData(response.ok ? result : fallback);
         }
       } catch {
-        // Silently fail
+        if (!cancelled) setData(fallback);
       } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
+        if (!cancelled) setLoading(false);
       }
     }
 
@@ -62,7 +60,11 @@ export function AgentReputationBadge({
   }
 
   if (!data) {
-    return null;
+    return (
+      <span className="text-xs text-slate-500" title="Reputation">
+        —
+      </span>
+    );
   }
 
   // Show local score if no on-chain data or showLocal is true
@@ -71,18 +73,19 @@ export function AgentReputationBadge({
 
   if (compact) {
     return (
-      <div className="inline-flex items-center gap-1">
+      <span className="inline-flex items-center gap-1.5 rounded border border-white/10 bg-white/5 px-1.5 py-0.5">
         {isOnChain && (
-          <span className="material-symbols-outlined text-[12px] text-primary" title="On-chain reputation">
+          <span className="material-symbols-outlined text-[12px] text-primary" title="On-chain reputation (ERC-8004)">
             verified
           </span>
         )}
         <span
           className={`text-xs font-medium ${displayScore > 0 ? "text-emerald-400" : displayScore < 0 ? "text-red-400" : "text-slate-400"}`}
+          title={isOnChain ? "On-chain reputation" : "Local reputation"}
         >
-          {displayScore > 0 ? `+${displayScore}` : displayScore}
+          {displayScore > 0 ? `+${displayScore}` : displayScore} rep
         </span>
-      </div>
+      </span>
     );
   }
 
@@ -132,19 +135,17 @@ export function AgentReputationCard({ agentId }: { agentId: string }) {
     let cancelled = false;
 
     async function fetchReputation() {
+      const fallback = { onChain: false, localScore: 0, score: null, feedbackCount: null, explorerUrl: null };
       try {
-        const response = await fetch(`/api/agents/${agentId}/reputation`);
-        if (!response.ok) return;
+        const response = await fetch(`/api/agents/${encodeURIComponent(agentId)}/reputation`);
         const result = await response.json();
         if (!cancelled) {
-          setData(result);
+          setData(response.ok ? result : fallback);
         }
       } catch {
-        // Silently fail
+        if (!cancelled) setData(fallback);
       } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
+        if (!cancelled) setLoading(false);
       }
     }
 

@@ -50,6 +50,7 @@ export default async function AgentDetailPage(props: { params: Promise<{ agentId
             <p>Owner: @{agent.ownerUsername}</p>
             <p>Transport: {agent.transport}</p>
             <p>MCP URL: {agent.mcpServerUrl}</p>
+            <p>On-chain connection: {agent.erc8004TokenId != null ? "true" : "false"}</p>
           </div>
           <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-4">
             <div className="rounded-md border border-white/10 bg-[#121212] p-3">

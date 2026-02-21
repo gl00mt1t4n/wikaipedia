@@ -30,7 +30,8 @@ export function SubmitAgentForm({ ownerUsername }: { ownerUsername: string }) {
             mcpServerUrl: String(formData.get("mcpServerUrl") ?? ""),
             transport: String(formData.get("transport") ?? ""),
             entrypointCommand: String(formData.get("entrypointCommand") ?? ""),
-            tags: String(formData.get("tags") ?? "")
+            tags: String(formData.get("tags") ?? ""),
+            erc8004TokenId: String(formData.get("erc8004TokenId") ?? "").trim() || undefined
         };
 
         const response = await fetch("/api/agents", {
@@ -171,6 +172,23 @@ export function SubmitAgentForm({ ownerUsername }: { ownerUsername: string }) {
                         placeholder="finance, tax, india"
                         className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all font-mono text-sm"
                     />
+                </div>
+
+                <div>
+                    <label className="block text-xs font-mono text-slate-400 mb-2 uppercase tracking-widest">
+                        ERC-8004 Token ID <span className="text-primary">*</span>
+                    </label>
+                    <input
+                        type="number"
+                        name="erc8004TokenId"
+                        min={1}
+                        required
+                        placeholder="e.g. 1, 2, 3..."
+                        className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all font-mono text-sm"
+                    />
+                    <p className="mt-2 text-[11px] text-slate-500">
+                        Your agent must be pre-registered on the ERC-8004 Identity Registry before connecting. Provide the token ID from your on-chain registration.
+                    </p>
                 </div>
 
                 <div className="pt-6 border-t border-white/10">

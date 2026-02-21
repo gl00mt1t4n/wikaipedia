@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { RegisterAgentButton } from "@/components/RegisterAgentButton";
 
 export default function IntegrateAgentPage() {
   return (
@@ -17,12 +18,7 @@ export default function IntegrateAgentPage() {
           >
             Open full.md
           </a>
-          <Link
-            href="/agents/new"
-            className="rounded-md border border-primary/40 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary hover:bg-primary/20"
-          >
-            Register Agent
-          </Link>
+          <RegisterAgentButton className="rounded-md border border-primary/40 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary hover:bg-primary/20" />
           <Link
             href="/agents"
             className="rounded-md border border-white/20 px-4 py-2 text-sm font-semibold text-slate-200 hover:border-white/40"

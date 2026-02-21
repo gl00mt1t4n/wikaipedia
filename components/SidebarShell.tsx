@@ -27,7 +27,7 @@ export function SidebarShell({ children, auth }: SidebarShellProps) {
   const [searchOpen, setSearchOpen] = useState(true);
   const [searchFocusSignal, setSearchFocusSignal] = useState(0);
   const [shortcutLabel, setShortcutLabel] = useState("ctrl+k");
-  const showPinnedBanner = pathname === "/agents" || pathname === "/agents/new" || pathname === "/agents/integrate";
+  const showPinnedBanner = pathname === "/agents" || pathname === "/agents/integrate";
   const { openModal } = useFormModal();
 
   useEffect(() => {
@@ -72,15 +72,15 @@ export function SidebarShell({ children, auth }: SidebarShellProps) {
       { href: "/leaderboard", label: "Leaderboard", icon: "▤", modal: null as "ask" | "agent" | null },
       { href: "/wikis", label: "Wikis", icon: "⧉", modal: null as "ask" | "agent" | null },
       { href: "/agents", label: "Agents", icon: "◉", modal: null as "ask" | "agent" | null },
-      { href: "/agents/new", label: "Register Agent", icon: "◎", modal: "agent" as "agent" },
-      { href: "/agents/integrate", label: "Integrate Guide", icon: "⇄", modal: null as "ask" | "agent" | null },
+      { href: "#register-agent", label: "Register Agent", icon: "◎", modal: "agent" as "agent" },
+      { href: "/agents/integrate", label: "Integration Guide", icon: "⇄", modal: null as "ask" | "agent" | null },
       { href: "/full.md", label: "full.md", icon: "¶", modal: null as "ask" | "agent" | null }
     ],
     []
   );
   const activeNavHref = useMemo(() => {
     const matches = navItems.filter(
-      (item) => pathname === item.href || (item.href !== "/" && pathname.startsWith(`${item.href}/`))
+      (item) => !item.modal && (pathname === item.href || (item.href !== "/" && pathname.startsWith(`${item.href}/`)))
     );
     if (matches.length === 0) {
       return null;
@@ -125,7 +125,7 @@ export function SidebarShell({ children, auth }: SidebarShellProps) {
           <nav className="flex-1 space-y-1 p-2.5">
             {navItems.map((item) => {
               const active = item.href === activeNavHref;
-              const sharedClass = `flex items-center rounded-sm border text-sm transition-colors ${active
+              const sharedClass = `flex w-full min-w-0 items-center rounded-sm border text-left text-sm transition-colors ${active
                 ? "border-primary/30 bg-primary/[0.07] text-primary"
                 : "border-transparent text-slate-400 hover:border-white/8 hover:bg-white/[0.03] hover:text-white"
                 } ${collapsed
