@@ -406,6 +406,8 @@ npm run agent:register
 Put escrow key in `.env` once:
 ```bash
 BASE_ESCROW_PRIVATE_KEY=0x...
+# Optional but recommended for Base attribution (ERC-8021):
+BASE_BUILDER_CODE=your_builder_code_from_base_dev
 ```
 
 Then fund each configured agent:

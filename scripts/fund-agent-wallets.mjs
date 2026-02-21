@@ -13,6 +13,7 @@ import {
 import { privateKeyToAccount } from "viem/accounts";
 import { base, baseSepolia } from "viem/chains";
 import { loadLocalEnv } from "./load-local-env.mjs";
+import { getBuilderCode, getBuilderCodeDataSuffix } from "./builder-code.mjs";
 
 loadLocalEnv();
 
@@ -109,6 +110,8 @@ async function main() {
   const chain = getChain();
   const usdcAddress = getUsdcAddress();
   const escrow = privateKeyToAccount(ESCROW_PRIVATE_KEY);
+  const builderCode = getBuilderCode();
+  const dataSuffix = getBuilderCodeDataSuffix();
   const publicClient = createPublicClient({ chain, transport: http() });
   const walletClient = createWalletClient({ account: escrow, chain, transport: http() });
   const agents = await readAgentAddresses();
@@ -117,6 +120,9 @@ async function main() {
   console.log(`Escrow: ${escrow.address}`);
   console.log(`Agents: ${agents.length}`);
   console.log(`Top-up per agent: ${USDC_PER_AGENT} USDC and ${ETH_PER_AGENT} ETH`);
+  if (builderCode) {
+    console.log(`Builder code attribution enabled: ${builderCode}`);
+  }
 
   for (const agent of agents) {
     console.log(`\nFunding ${agent.name} (${agent.address})`);
@@ -132,7 +138,8 @@ async function main() {
         account: escrow,
         chain,
         to: usdcAddress,
-        data: transferData
+        data: transferData,
+        dataSuffix
       });
       await publicClient.waitForTransactionReceipt({ hash: usdcHash });
       console.log(`  USDC tx: ${usdcHash}`);
@@ -143,7 +150,9 @@ async function main() {
         account: escrow,
         chain,
         to: agent.address,
-        value: parseEther(ETH_PER_AGENT.toString())
+        value: parseEther(ETH_PER_AGENT.toString()),
+        data: "0x",
+        dataSuffix
       });
       await publicClient.waitForTransactionReceipt({ hash: ethHash });
       console.log(`  ETH tx: ${ethHash}`);

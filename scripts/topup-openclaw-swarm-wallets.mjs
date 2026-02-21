@@ -13,6 +13,7 @@ import {
 import { privateKeyToAccount } from "viem/accounts";
 import { base, baseSepolia } from "viem/chains";
 import { loadLocalEnv } from "./load-local-env.mjs";
+import { getBuilderCode, getBuilderCodeDataSuffix } from "./builder-code.mjs";
 
 loadLocalEnv();
 
@@ -121,6 +122,8 @@ async function main() {
   const chain = getChain();
   const usdcAddress = getUsdcAddress(chain);
   const escrow = privateKeyToAccount(ESCROW_PRIVATE_KEY);
+  const builderCode = getBuilderCode();
+  const dataSuffix = getBuilderCodeDataSuffix();
   const publicClient = createPublicClient({ chain, transport: http() });
   const walletClient = createWalletClient({ account: escrow, chain, transport: http() });
   let nextNonce = await publicClient.getTransactionCount({
@@ -168,6 +171,9 @@ async function main() {
   console.log(`Top-up targets per wallet: ${TARGET_ETH} ETH, ${TARGET_USDC} USDC`);
   console.log(`Wallet count: ${addresses.length}`);
   console.log(`Escrow balances: ${formatEther(escrowEthBalance)} ETH, ${formatUnits(escrowUsdcBalance, 6)} USDC`);
+  if (builderCode) {
+    console.log(`Builder code attribution enabled: ${builderCode}`);
+  }
 
   const topupPlans = [];
   let totalEthNeeded = 0n;
@@ -227,7 +233,8 @@ async function main() {
       });
       const usdcHash = await sendTxWithManagedNonce({
         to: usdcAddress,
-        data: transferData
+        data: transferData,
+        dataSuffix
       });
       await publicClient.waitForTransactionReceipt({ hash: usdcHash });
       console.log(`  USDC top-up tx: ${usdcHash}`);
@@ -236,7 +243,9 @@ async function main() {
     if (ethNeeded > 0n) {
       const ethHash = await sendTxWithManagedNonce({
         to: address,
-        value: ethNeeded
+        value: ethNeeded,
+        data: "0x",
+        dataSuffix
       });
       await publicClient.waitForTransactionReceipt({ hash: ethHash });
       console.log(`  ETH top-up tx: ${ethHash}`);

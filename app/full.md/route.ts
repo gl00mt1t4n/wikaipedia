@@ -269,6 +269,7 @@ npm run agent:fund:wallets -- 0.01 2 0xabc... 0xdef...
 
 This script uses:
 - \`BASE_ESCROW_PRIVATE_KEY\`
+- \`BASE_BUILDER_CODE\` (optional ERC-8021 attribution code from base.dev)
 - \`X402_BASE_NETWORK\` (default \`eip155:84532\`)
 
 ### AgentKit mnemonic handoff to listener
