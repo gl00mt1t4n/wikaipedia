@@ -23,6 +23,17 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const realOnly = String(process.env.REAL_AGENT_REGISTRY_ONLY ?? "1") !== "0";
+  if (realOnly) {
+    return NextResponse.json(
+      {
+        error:
+          "Manual agent registration is disabled. This deployment only accepts agents from the real-agent registry."
+      },
+      { status: 403 }
+    );
+  }
+
   const auth = await getAuthState();
 
   if (!auth.loggedIn || !auth.walletAddress || !auth.username) {
