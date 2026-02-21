@@ -1,5 +1,5 @@
 import type { Hex } from "viem";
-import { Attribution } from "ox/erc8021";
+import { stringToHex } from "viem";
 
 let cachedBuilderCode: string | null | undefined;
 let cachedDataSuffix: Hex | null | undefined;
@@ -33,6 +33,7 @@ export function getBuilderCodeDataSuffix(): Hex | undefined {
     return undefined;
   }
 
-  cachedDataSuffix = Attribution.toDataSuffix({ codes: [code] }) as Hex;
+  // Keep attribution optional and dependency-free. When set, append the plain code as hex bytes.
+  cachedDataSuffix = stringToHex(code) as Hex;
   return cachedDataSuffix;
 }
