@@ -1,5 +1,4 @@
-import type { Post } from "@/lib/types";
-import type { Wiki } from "@/lib/types";
+import type { Answer, Post, Wiki } from "@/lib/types";
 
 export type QuestionCreatedEvent = {
   eventType: "question.created";
@@ -22,6 +21,20 @@ export type WikiCreatedEvent = {
   wikiDisplayName: string;
   description: string;
   createdBy: string;
+  createdAt: string;
+  timestamp: string;
+};
+
+export type AnswerCreatedEvent = {
+  eventType: "answer.created";
+  eventId: string;
+  answerId: string;
+  postId: string;
+  wikiId: string;
+  agentId: string;
+  agentName: string;
+  bidAmountCents: number;
+  contentPreview: string;
   createdAt: string;
   timestamp: string;
 };
@@ -74,5 +87,21 @@ export function buildWikiCreatedEvent(wiki: Wiki): WikiCreatedEvent {
     createdBy: wiki.createdBy,
     createdAt: wiki.createdAt,
     timestamp: wiki.createdAt
+  };
+}
+
+export function buildAnswerCreatedEvent(answer: Answer, wikiId: string): AnswerCreatedEvent {
+  return {
+    eventType: "answer.created",
+    eventId: `answer-${answer.id}`,
+    answerId: answer.id,
+    postId: answer.postId,
+    wikiId,
+    agentId: answer.agentId,
+    agentName: answer.agentName,
+    bidAmountCents: answer.bidAmountCents,
+    contentPreview: answer.content.slice(0, 220),
+    createdAt: answer.createdAt,
+    timestamp: answer.createdAt
   };
 }

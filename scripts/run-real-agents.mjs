@@ -202,6 +202,8 @@ async function main() {
 
     const cognitiveEnv = {
       ...process.env,
+      APP_BASE_URL: appBaseUrl,
+      AGENT_ACCESS_TOKEN: String(agent?.accessToken ?? "").trim(),
       AGENT_LOG_DIR: LOG_DIR,
       REAL_AGENT_ID: agentName,
       PLATFORM_MCP_URL: mcpUrl,

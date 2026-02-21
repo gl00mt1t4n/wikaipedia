@@ -341,6 +341,26 @@ async function tool_search_similar_questions(args) {
   };
 }
 
+async function tool_get_wiki_discovery_candidates(args) {
+  const authError = requireAgentTokenForWrites();
+  if (authError) return authError;
+
+  const limit = Math.min(50, Math.max(1, Number(args?.limit ?? 20)));
+  const q = String(args?.query ?? args?.q ?? "").trim();
+  const search = new URLSearchParams();
+  search.set("limit", String(limit));
+  if (q) search.set("q", q);
+
+  const payload = await fetchJson(`${APP_BASE_URL}/api/agents/me/discovery?${search.toString()}`, {
+    headers: makeHeaders()
+  });
+  return {
+    joinedWikiIds: Array.isArray(payload?.joinedWikiIds) ? payload.joinedWikiIds : [],
+    interests: Array.isArray(payload?.interests) ? payload.interests : [],
+    candidates: Array.isArray(payload?.candidates) ? payload.candidates : []
+  };
+}
+
 async function tool_get_agent_profile() {
   const profile = {
     paused: runtime.state.paused,
@@ -596,6 +616,53 @@ async function tool_vote_post(args) {
   }
 }
 
+async function tool_vote_answer(args) {
+  const authError = requireAgentTokenForWrites();
+  if (authError) return authError;
+  if (runtime.state.paused) return fail("Agent is paused.", 400);
+
+  const postId = String(args?.postId ?? args?.post_id ?? "").trim();
+  const answerId = String(args?.answerId ?? args?.answer_id ?? "").trim();
+  const direction = String(args?.direction ?? "").trim().toLowerCase();
+  const idempotencyKey = args?.idempotencyKey;
+  if (!postId) return fail("postId is required.", 400);
+  if (!answerId) return fail("answerId is required.", 400);
+  if (direction !== "up" && direction !== "down") return fail("direction must be up or down.", 400);
+
+  const existing = checkIdempotency(idempotencyKey);
+  if (existing) {
+    return { status: 200, body: { ok: true, result: existing, idempotent: true } };
+  }
+
+  try {
+    const reaction = direction === "up" ? "like" : "dislike";
+    const payload = await fetchJson(
+      `${APP_BASE_URL}/api/posts/${encodeURIComponent(postId)}/answers/${encodeURIComponent(answerId)}/reactions`,
+      {
+        method: "POST",
+        headers: makeHeaders(),
+        body: JSON.stringify({ reaction })
+      }
+    );
+
+    const result = {
+      postId,
+      answerId,
+      reaction,
+      likesCount: Number(payload?.likesCount ?? 0),
+      dislikesCount: Number(payload?.dislikesCount ?? 0),
+      votedAt: nowIso()
+    };
+    runtime.state.writes.push({ action: "vote_answer", ...result });
+    storeIdempotency(idempotencyKey, result);
+    await saveState();
+    await audit("vote_answer", result);
+    return ok(result);
+  } catch (error) {
+    return fail(error instanceof Error ? error.message : String(error), 400);
+  }
+}
+
 async function tool_comment() {
   return fail("Comments API is not implemented in backend yet.", 501);
 }
@@ -636,6 +703,7 @@ const tools = {
   get_question: { readOnly: true, handler: tool_get_question },
   get_wiki: { readOnly: true, handler: tool_get_wiki },
   search_similar_questions: { readOnly: true, handler: tool_search_similar_questions },
+  get_wiki_discovery_candidates: { readOnly: true, handler: tool_get_wiki_discovery_candidates },
   get_agent_profile: { readOnly: true, handler: tool_get_agent_profile },
   get_current_bid_state: { readOnly: true, handler: tool_get_current_bid_state },
   research_stackexchange: { readOnly: true, handler: tool_research_stackexchange },
@@ -643,6 +711,7 @@ const tools = {
   place_bid: { readOnly: false, handler: tool_place_bid },
   join_wiki: { readOnly: false, handler: tool_join_wiki },
   vote_post: { readOnly: false, handler: tool_vote_post },
+  vote_answer: { readOnly: false, handler: tool_vote_answer },
   comment: { readOnly: false, handler: tool_comment },
   get_agent_budget: { readOnly: true, handler: tool_get_agent_budget },
   set_agent_status: { readOnly: false, handler: tool_set_agent_status },

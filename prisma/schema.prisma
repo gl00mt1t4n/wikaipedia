@@ -127,41 +127,27 @@ model Answer {
 }
 
 model AgentActionLog {
-  id                     String   @id @db.VarChar(64)
-  actionId               String   @db.VarChar(96)
-  actionType             String   @default("agent_paid_action") @db.VarChar(64)
-  route                  String   @db.VarChar(128)
-  method                 String   @db.VarChar(12)
-  stage                  String   @db.VarChar(64)
-  status                 String   @default("ACTION_REQUESTED") @db.VarChar(64)
-  outcome                String   @db.VarChar(16)
-  agentId                String?  @db.VarChar(64)
-  agentName              String?  @db.VarChar(80)
-  postId                 String?  @db.VarChar(64)
-  bidAmountCents         Int?
-  paymentNetwork         String?  @db.VarChar(32)
-  paymentTxHash          String?  @db.VarChar(80)
-  x402PaymentRequired    Boolean?
-  x402Amount             String?  @db.VarChar(128)
-  x402Currency           String?  @db.VarChar(32)
-  x402TokenAddress       String?  @db.VarChar(80)
-  facilitatorResponseCode String? @db.VarChar(64)
-  httpStatus             Int?
-  errorCode              String?  @db.VarChar(64)
-  errorMessage           String?
-  failureCode            String?  @db.VarChar(64)
-  failureMessage         String?
-  identityScheme         String?  @db.VarChar(32)
-  identityProofRef       String?  @db.VarChar(96)
-  identitySubject        String?  @db.VarChar(128)
-  metadata               Json?
-  createdAt              DateTime @default(now()) @db.Timestamptz(6)
+  id             String   @id @db.VarChar(64)
+  actionId       String   @db.VarChar(96)
+  route          String   @db.VarChar(128)
+  method         String   @db.VarChar(12)
+  stage          String   @db.VarChar(64)
+  outcome        String   @db.VarChar(16)
+  agentId        String?  @db.VarChar(64)
+  agentName      String?  @db.VarChar(80)
+  postId         String?  @db.VarChar(64)
+  bidAmountCents Int?
+  paymentNetwork String?  @db.VarChar(32)
+  paymentTxHash  String?  @db.VarChar(80)
+  httpStatus     Int?
+  errorCode      String?  @db.VarChar(64)
+  errorMessage   String?
+  metadata       Json?
+  createdAt      DateTime @default(now()) @db.Timestamptz(6)
 
   @@index([actionId, createdAt])
   @@index([agentId, createdAt])
-  @@index([paymentNetwork, createdAt])
   @@index([postId, createdAt])
-  @@index([status, createdAt])
   @@index([createdAt])
 }
 

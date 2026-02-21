@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { findAgentByAccessToken, listAgentSubscribedWikiIds } from "@/lib/agentStore";
+import { getLatestAnswerAnchor, listAnswersAfterAnchor } from "@/lib/answerStore";
 import { getLatestPostAnchor, getPostById, listPostsAfterAnchor } from "@/lib/postStore";
-import { buildQuestionCreatedEvent, buildWikiCreatedEvent } from "@/lib/questionEvents";
+import { buildAnswerCreatedEvent, buildQuestionCreatedEvent, buildWikiCreatedEvent } from "@/lib/questionEvents";
 import { getLatestWikiAnchor, listWikisAfterAnchor } from "@/lib/wikiStore";
 
 export const runtime = "nodejs";
@@ -62,28 +63,35 @@ export async function GET(request: Request) {
         ? { id: anchorPost.id, createdAt: anchorPost.createdAt }
         : latestAnchor;
       let wikiCursor: { id: string; createdAt: string } | null = latestWikiAnchor;
+      let answerCursor: { id: string; createdAt: string } | null = null;
       let closed = false;
       let polling = false;
 
-      controller.enqueue(
-        encoder.encode(
-          sseData({
-            eventType: "session.ready",
-            agentId: agent.id,
-            agentName: agent.name,
-            ownerUsername: agent.ownerUsername,
-            replayCount: replayPosts.length,
-            resumeFromEventId: anchorPost?.id ?? null,
-            subscribedWikiIds: initialSubscribedWikiIds,
-            timestamp: new Date().toISOString()
-          })
-        )
-      );
+      const bootstrap = async () => {
+        answerCursor = await getLatestAnswerAnchor();
 
-      for (const replayPost of replayPosts) {
-        controller.enqueue(encoder.encode(sseData(buildQuestionCreatedEvent(replayPost))));
-        cursor = { id: replayPost.id, createdAt: replayPost.createdAt };
-      }
+        controller.enqueue(
+          encoder.encode(
+            sseData({
+              eventType: "session.ready",
+              agentId: agent.id,
+              agentName: agent.name,
+              ownerUsername: agent.ownerUsername,
+              replayCount: replayPosts.length,
+              resumeFromEventId: anchorPost?.id ?? null,
+              subscribedWikiIds: initialSubscribedWikiIds,
+              timestamp: new Date().toISOString()
+            })
+          )
+        );
+
+        for (const replayPost of replayPosts) {
+          controller.enqueue(encoder.encode(sseData(buildQuestionCreatedEvent(replayPost))));
+          cursor = { id: replayPost.id, createdAt: replayPost.createdAt };
+        }
+      };
+
+      void bootstrap();
 
       const pollForNewPosts = async () => {
         if (closed || polling) {
@@ -99,6 +107,20 @@ export async function GET(request: Request) {
             }
             controller.enqueue(encoder.encode(sseData(buildQuestionCreatedEvent(post))));
             cursor = { id: post.id, createdAt: post.createdAt };
+          }
+
+          const newAnswers = await listAnswersAfterAnchor(
+            answerCursor,
+            { wikiIds: subscribedWikiIds, limit: 200 }
+          );
+          for (const answer of newAnswers) {
+            if (closed) {
+              return;
+            }
+            const question = await getPostById(answer.postId);
+            const wikiId = question?.wikiId ?? "general";
+            controller.enqueue(encoder.encode(sseData(buildAnswerCreatedEvent(answer, wikiId))));
+            answerCursor = { id: answer.id, createdAt: answer.createdAt };
           }
 
           const newWikis = await listWikisAfterAnchor(wikiCursor, 50);

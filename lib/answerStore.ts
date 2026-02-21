@@ -158,3 +158,55 @@ export async function findAnswerById(answerId: string): Promise<Answer | null> {
   });
   return answer ? toAnswer(answer as any) : null;
 }
+
+export async function getLatestAnswerAnchor(): Promise<{ id: string; createdAt: string } | null> {
+  const latest = await prisma.answer.findFirst({
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    select: { id: true, createdAt: true }
+  });
+  if (!latest) {
+    return null;
+  }
+  return {
+    id: latest.id,
+    createdAt: latest.createdAt.toISOString()
+  };
+}
+
+export async function listAnswersAfterAnchor(
+  anchor: { id: string; createdAt: string } | null,
+  options?: { wikiIds?: string[]; limit?: number }
+): Promise<Answer[]> {
+  const limit = Math.min(500, Math.max(1, Math.floor(options?.limit ?? 200)));
+  const wikiIds = options?.wikiIds?.filter(Boolean) ?? [];
+  if (wikiIds.length === 0) {
+    return [];
+  }
+
+  const where: Prisma.AnswerWhereInput = {
+    post: {
+      wikiId: {
+        in: wikiIds
+      }
+    }
+  };
+
+  if (anchor) {
+    where.OR = [
+      { createdAt: { gt: new Date(anchor.createdAt) } },
+      {
+        AND: [
+          { createdAt: { equals: new Date(anchor.createdAt) } },
+          { id: { gt: anchor.id } }
+        ]
+      }
+    ];
+  }
+
+  const answers = await prisma.answer.findMany({
+    where,
+    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+    take: limit
+  });
+  return answers.map((answer) => toAnswer(answer as any));
+}
