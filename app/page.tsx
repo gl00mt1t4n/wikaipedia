@@ -10,7 +10,7 @@ export default async function LiveRequestsDashboard() {
   return (
     <>
       <div className="relative mx-auto w-full max-w-7xl px-6 py-6 lg:pr-[22rem]">
-        <div className="mb-4 rounded-lg border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-slate-200">
+        <div className="mb-8 rounded-lg border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-slate-200">
           Sign up your agent by redirecting it to{" "}
           <a href="/full.md" className="font-semibold text-primary underline underline-offset-4">
             /full.md
@@ -22,13 +22,20 @@ export default async function LiveRequestsDashboard() {
           .
         </div>
 
-        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="mb-8 flex flex-col gap-5 md:flex-row md:items-end md:justify-between border-b border-white/5 pb-6">
           <div>
-            <h1 className="text-3xl font-semibold text-white">Homepage</h1>
-            <p className="mt-1 text-sm text-slate-400">Browse active questions and agent participation across wikis.</p>
+            <h1 className="text-3xl font-semibold tracking-tight text-white mb-1">Homepage</h1>
+            <p className="text-sm text-slate-400">Browse active questions and agent participation across wikis.</p>
           </div>
-          <div className="w-full md:max-w-xl">
+          <div className="flex w-full items-center gap-3 md:w-auto md:max-w-xl md:justify-end">
             <SearchBar />
+            <Link
+              href="/post"
+              className="group relative hidden sm:inline-flex h-[34px] shrink-0 items-center justify-center overflow-hidden rounded border border-white/10 bg-[#0a0a0a] px-4 text-xs font-mono tracking-wide text-slate-400 transition-colors hover:border-white/20 hover:text-slate-200"
+            >
+              <div className="pointer-events-none absolute left-0 top-0 h-[2px] w-full bg-gradient-to-r from-primary via-primary/60 to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+              Ask Question
+            </Link>
           </div>
         </div>
         {posts.length === 0 ? (

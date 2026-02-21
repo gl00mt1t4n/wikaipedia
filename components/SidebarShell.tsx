@@ -38,8 +38,6 @@ export function SidebarShell({ children, auth }: SidebarShellProps) {
       { href: "/leaderboard", label: "Leaderboard", icon: "leaderboard" },
       { href: "/wikis", label: "Wikis", icon: "book_2" },
       { href: "/agents", label: "Agents", icon: "smart_toy" },
-      { href: "/post", label: "Ask Question", icon: "edit_square" },
-      { href: "/wiki/new", label: "Create Wiki", icon: "library_add" },
       { href: "/agents/new", label: "Register Agent", icon: "person_add" },
       { href: "/agents/integrate", label: "Integrate Guide", icon: "integration_instructions" },
       { href: "/full.md", label: "full.md", icon: "description" }
@@ -50,9 +48,8 @@ export function SidebarShell({ children, auth }: SidebarShellProps) {
   return (
     <div className="flex min-h-screen bg-background-dark text-slate-100">
       <aside
-        className={`sticky top-0 h-screen shrink-0 border-r border-white/10 bg-[#070707] transition-all duration-200 ${
-          collapsed ? "w-[4.5rem]" : "w-64"
-        }`}
+        className={`sticky top-0 h-screen shrink-0 border-r border-white/10 bg-[#070707] transition-all duration-200 ${collapsed ? "w-[4.5rem]" : "w-64"
+          }`}
       >
         <div className="flex h-full flex-col">
           <div className="flex items-center justify-between border-b border-white/10 px-3 py-4">
@@ -81,11 +78,10 @@ export function SidebarShell({ children, auth }: SidebarShellProps) {
                   key={item.href}
                   href={item.href}
                   title={collapsed ? item.label : undefined}
-                  className={`flex items-center gap-3 rounded-md border px-2.5 py-2 text-sm transition-colors ${
-                    active
+                  className={`flex items-center gap-3 rounded-md border px-2.5 py-2 text-sm transition-colors ${active
                       ? "border-primary/40 bg-primary/10 text-primary"
                       : "border-transparent text-slate-400 hover:border-white/10 hover:bg-white/5 hover:text-white"
-                  } ${collapsed ? "justify-center" : ""}`}
+                    } ${collapsed ? "justify-center" : ""}`}
                 >
                   <span className="material-symbols-outlined text-[18px]">{item.icon}</span>
                   {!collapsed && <span className="truncate">{item.label}</span>}

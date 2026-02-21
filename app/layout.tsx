@@ -3,6 +3,7 @@ import { Inter, JetBrains_Mono } from "next/font/google";
 import { AppProviders } from "@/components/AppProviders";
 import { SidebarShell } from "@/components/SidebarShell";
 import { getAuthState } from "@/lib/session";
+import { FloatingAskButton } from "@/components/FloatingAskButton";
 import "./globals.css";
 
 const inter = Inter({
@@ -49,6 +50,7 @@ export default async function RootLayout({
             }}
           >
             {children}
+            <FloatingAskButton />
           </SidebarShell>
         </AppProviders>
       </body>
