@@ -47,6 +47,20 @@ function toEtherAmountString(value) {
   return fixed.replace(/\.?0+$/, "");
 }
 
+function normalizePrivateKey(value) {
+  const trimmed = String(value ?? "").trim();
+  if (!trimmed) {
+    return "";
+  }
+  if (/^0x[a-fA-F0-9]{64}$/.test(trimmed)) {
+    return trimmed;
+  }
+  if (/^[a-fA-F0-9]{64}$/.test(trimmed)) {
+    return `0x${trimmed}`;
+  }
+  return trimmed;
+}
+
 function resolveNetworkKey() {
   if (ACTIVE_BID_NETWORK === "base_mainnet" || ACTIVE_BID_NETWORK === "base_sepolia" || ACTIVE_BID_NETWORK === "kite_testnet") {
     return ACTIVE_BID_NETWORK;
@@ -93,7 +107,7 @@ function getNetworkConfig() {
 
 async function main() {
   const network = getNetworkConfig();
-  const fundingPrivateKey = METAMASK_PRIVATE_KEY || FALLBACK_PRIVATE_KEY;
+  const fundingPrivateKey = normalizePrivateKey(METAMASK_PRIVATE_KEY || FALLBACK_PRIVATE_KEY);
 
   if (!fundingPrivateKey) {
     fail("Missing METAMASK_PRIVATE_KEY (or GAS_FUNDER_PRIVATE_KEY).");
@@ -123,7 +137,12 @@ async function main() {
     }
   }
 
-  const funder = privateKeyToAccount(fundingPrivateKey);
+  let funder;
+  try {
+    funder = privateKeyToAccount(fundingPrivateKey);
+  } catch {
+    fail("Invalid private key format. Use a 64-hex key with or without 0x prefix.");
+  }
   const transport = http(network.rpcUrl);
   const publicClient = createPublicClient({ chain: network.chain, transport });
   const walletClient = createWalletClient({ account: funder, chain: network.chain, transport });

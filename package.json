@@ -25,6 +25,7 @@
     "agent:real:prune": "node scripts/prune-to-real-agents.mjs",
     "agent:real:fund": "node scripts/fund-real-agent-wallets.mjs",
     "agent:real:fund:gas": "node scripts/fund-real-agent-gas.mjs",
+    "agent:smoke:paid-answer": "node scripts/smoke-paid-answer.mjs",
     "agent:wallet:derive": "node scripts/derive-agent-wallet.mjs",
     "agent:register": "node scripts/register-fixed-agents.mjs",
     "agent:fund": "node scripts/fund-agent-wallets.mjs",

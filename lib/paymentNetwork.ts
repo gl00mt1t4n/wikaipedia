@@ -21,24 +21,33 @@ const DEFAULT_KITE_TESTNET_PYUSD_TOKEN = "0x8E04D099b1a8Dd20E6caD4b2Ab2B405B9824
 const DEFAULT_KITE_TESTNET_USDT_TOKEN = "0x0fF5393387ad2f9f691FD6Fd28e07E3969e27e63";
 
 type KiteStablePreset = "pyusd" | "usdt";
+const ALLOW_UNSUPPORTED_KITE_EXACT_TOKEN =
+  String(process.env.KITE_ALLOW_UNSUPPORTED_EXACT_TOKEN ?? "").trim() === "1";
+let hasWarnedKitePresetFallback = false;
 
 const KITE_STABLE_PRESET_CONFIG: Record<
   KiteStablePreset,
   {
     symbol: string;
+    name: string;
     address: `0x${string}`;
     decimals: number;
+    eip712Version: string;
   }
 > = {
   pyusd: {
     symbol: "PYUSD",
+    name: "PYUSD",
     address: DEFAULT_KITE_TESTNET_PYUSD_TOKEN,
-    decimals: 18
+    decimals: 18,
+    eip712Version: "1"
   },
   usdt: {
     symbol: "USDT",
+    name: "Test USD",
     address: DEFAULT_KITE_TESTNET_USDT_TOKEN,
-    decimals: 18
+    decimals: 18,
+    eip712Version: "1"
   }
 };
 
@@ -74,8 +83,10 @@ export type PaymentNetworkConfig = {
   facilitatorUrl: string;
   payoutToken: {
     symbol: string;
+    name: string;
     address: `0x${string}`;
     decimals: number;
+    eip712Version: string;
   };
   supportsBuilderCode: boolean;
 };
@@ -112,27 +123,50 @@ function parseKiteStablePreset(value: string | undefined): KiteStablePreset {
   return "pyusd";
 }
 
+function resolveKiteStablePresetForExact(): KiteStablePreset {
+  const requested = parseKiteStablePreset(process.env.KITE_STABLE_TOKEN_PRESET);
+  if (requested !== "usdt" || ALLOW_UNSUPPORTED_KITE_EXACT_TOKEN) {
+    return requested;
+  }
+
+  if (!hasWarnedKitePresetFallback) {
+    hasWarnedKitePresetFallback = true;
+    console.warn(
+      "[payment-network] KITE_STABLE_TOKEN_PRESET=usdt is not compatible with @x402/evm exact (EIP-3009). Falling back to PYUSD. Set KITE_ALLOW_UNSUPPORTED_EXACT_TOKEN=1 to bypass."
+    );
+  }
+  return "pyusd";
+}
+
 function getKitePayoutToken(): PaymentNetworkConfig["payoutToken"] {
   const configuredStable = String(process.env.KITE_STABLE_TOKEN_ADDRESS ?? "").trim();
   if (configuredStable) {
-    const preset = KITE_STABLE_PRESET_CONFIG[parseKiteStablePreset(process.env.KITE_STABLE_TOKEN_PRESET)];
+    const preset = KITE_STABLE_PRESET_CONFIG[resolveKiteStablePresetForExact()];
+    const configuredName = String(process.env.KITE_STABLE_TOKEN_EIP712_NAME ?? process.env.KITE_STABLE_TOKEN_NAME ?? "").trim();
+    const configuredVersion = String(process.env.KITE_STABLE_TOKEN_EIP712_VERSION ?? "").trim();
     return {
       symbol: String(process.env.KITE_STABLE_TOKEN_SYMBOL ?? "").trim() || preset.symbol,
+      name: configuredName || preset.name,
       address: configuredStable as `0x${string}`,
-      decimals: parsePositiveInt(process.env.KITE_STABLE_TOKEN_DECIMALS, preset.decimals)
+      decimals: parsePositiveInt(process.env.KITE_STABLE_TOKEN_DECIMALS, preset.decimals),
+      eip712Version: configuredVersion || preset.eip712Version
     };
   }
 
   const kiteUsdcAddress = String(process.env.KITE_USDC_ADDRESS ?? "").trim();
   if (kiteUsdcAddress) {
+    const usdcName = String(process.env.KITE_USDC_EIP712_NAME ?? process.env.KITE_USDC_NAME ?? "USD Coin").trim() || "USD Coin";
+    const usdcVersion = String(process.env.KITE_USDC_EIP712_VERSION ?? "2").trim() || "2";
     return {
       symbol: String(process.env.KITE_USDC_SYMBOL ?? "USDC").trim() || "USDC",
+      name: usdcName,
       address: kiteUsdcAddress as `0x${string}`,
-      decimals: parsePositiveInt(process.env.KITE_USDC_DECIMALS, 6)
+      decimals: parsePositiveInt(process.env.KITE_USDC_DECIMALS, 6),
+      eip712Version: usdcVersion
     };
   }
 
-  return KITE_STABLE_PRESET_CONFIG[parseKiteStablePreset(process.env.KITE_STABLE_TOKEN_PRESET)];
+  return KITE_STABLE_PRESET_CONFIG[resolveKiteStablePresetForExact()];
 }
 
 function getBaseMainnetConfig(): PaymentNetworkConfig {
@@ -148,8 +182,10 @@ function getBaseMainnetConfig(): PaymentNetworkConfig {
     facilitatorUrl: (process.env.X402_FACILITATOR_URL ?? "https://x402.org/facilitator").trim(),
     payoutToken: {
       symbol: "USDC",
+      name: "USD Coin",
       address: (process.env.BASE_USDC_ADDRESS ?? defaultUsdc) as `0x${string}`,
-      decimals: parsePositiveInt(process.env.BASE_USDC_DECIMALS, 6)
+      decimals: parsePositiveInt(process.env.BASE_USDC_DECIMALS, 6),
+      eip712Version: "2"
     },
     supportsBuilderCode: true
   };
@@ -168,8 +204,10 @@ function getBaseSepoliaConfig(): PaymentNetworkConfig {
     facilitatorUrl: (process.env.X402_FACILITATOR_URL ?? "https://x402.org/facilitator").trim(),
     payoutToken: {
       symbol: "USDC",
+      name: "USD Coin",
       address: (process.env.BASE_USDC_ADDRESS ?? defaultUsdc) as `0x${string}`,
-      decimals: parsePositiveInt(process.env.BASE_USDC_DECIMALS, 6)
+      decimals: parsePositiveInt(process.env.BASE_USDC_DECIMALS, 6),
+      eip712Version: "2"
     },
     supportsBuilderCode: true
   };
@@ -247,7 +285,9 @@ export function toX402PriceFromCents(cents: number, config: PaymentNetworkConfig
     asset: config.payoutToken.address.toLowerCase(),
     amount: amount.toString(),
     extra: {
-      currency: config.payoutToken.symbol
+      currency: config.payoutToken.symbol,
+      name: config.payoutToken.name,
+      version: config.payoutToken.eip712Version
     }
   };
 }

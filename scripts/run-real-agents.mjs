@@ -24,6 +24,35 @@ function slugify(input) {
   return input.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
 
+function parsePositiveInt(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) {
+    return null;
+  }
+  const floored = Math.floor(parsed);
+  return floored > 0 ? floored : null;
+}
+
+function parseAgentLimitArg(argv) {
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = String(argv[index] ?? "").trim();
+    if (arg === "--help" || arg === "-h") {
+      console.log("Usage: node scripts/run-real-agents.mjs [--limit <count>]");
+      console.log("Example: npm run agent:real:run -- --limit 2");
+      process.exit(0);
+    }
+    if (arg === "--limit" || arg === "--agents" || arg === "-n") {
+      const next = argv[index + 1];
+      const parsed = parsePositiveInt(next);
+      if (!parsed) {
+        fail(`Invalid value for ${arg}: ${next ?? "(missing)"}. Use a positive integer.`);
+      }
+      return parsed;
+    }
+  }
+  return null;
+}
+
 async function isAppReachable(baseUrl) {
   try {
     const response = await fetch(`${baseUrl}/api/posts`);
@@ -91,8 +120,16 @@ async function waitForHealth(url, timeoutMs = 25000) {
 }
 
 async function main() {
+  const runLimit = parseAgentLimitArg(process.argv.slice(2));
   const configPath = getRealAgentsConfigPath();
-  const { agents } = await loadRealAgentsConfig(configPath);
+  const { agents: allAgents } = await loadRealAgentsConfig(configPath, {
+    strictCount: null,
+    minCount: 1
+  });
+  if (runLimit && runLimit > allAgents.length) {
+    fail(`Requested --limit ${runLimit}, but registry only has ${allAgents.length} agents.`);
+  }
+  const agents = runLimit ? allAgents.slice(0, runLimit) : allAgents;
   const appBaseUrl = await resolveAppBaseUrl();
 
   await mkdir(LOG_DIR, { recursive: true });
@@ -101,7 +138,11 @@ async function main() {
 
   console.log(`Using app endpoint: ${appBaseUrl}`);
   console.log(`Using real-agent registry: ${configPath}`);
-  console.log(`Starting ${agents.length} real agents`);
+  if (runLimit) {
+    console.log(`Starting ${agents.length} real agents (--limit ${runLimit})`);
+  } else {
+    console.log(`Starting ${agents.length} real agents`);
+  }
 
   const children = [];
   let shuttingDown = false;
@@ -141,6 +182,9 @@ async function main() {
     const mcpEnv = {
       ...process.env,
       APP_BASE_URL: appBaseUrl,
+      // ACTIVE_BID_NETWORK is the single source of truth for agent payment network.
+      // Force legacy var empty so child loadLocalEnv() cannot repopulate from .env.
+      X402_BASE_NETWORK: "",
       AGENT_ID: String(agent?.id ?? agentName).trim(),
       AGENT_ACCESS_TOKEN: String(agent?.accessToken ?? "").trim(),
       AGENT_BASE_PRIVATE_KEY: String(agent?.basePrivateKey ?? "").trim(),
@@ -180,7 +224,7 @@ async function main() {
     );
   }
 
-  console.log("All 5 real agents started. Press Ctrl+C to stop.");
+  console.log(`All ${agents.length} real agents started. Press Ctrl+C to stop.`);
 }
 
 main().catch((error) => {

@@ -53,6 +53,8 @@ const ACTIVE_BID_NETWORK = String(process.env.ACTIVE_BID_NETWORK ?? "").trim().t
 const LEGACY_X402_NETWORK = String(process.env.X402_BASE_NETWORK ?? "").trim();
 const ETH_PER_WALLET = process.argv[2] ? Number(process.argv[2]) : 0.03;
 const STABLE_PER_WALLET = process.argv[3] ? Number(process.argv[3]) : 2;
+const ALLOW_UNSUPPORTED_KITE_EXACT_TOKEN =
+  String(process.env.KITE_ALLOW_UNSUPPORTED_EXACT_TOKEN ?? "").trim() === "1";
 const DEFAULT_KITE_TESTNET_PYUSD_TOKEN = "0x8E04D099b1a8Dd20E6caD4b2Ab2B405B98242ec9";
 const DEFAULT_KITE_TESTNET_USDT_TOKEN = "0x0fF5393387ad2f9f691FD6Fd28e07E3969e27e63";
 
@@ -76,9 +78,20 @@ function parseKiteStablePreset(value) {
   return normalized === "usdt" ? "usdt" : "pyusd";
 }
 
+function resolveKiteStablePresetForExact() {
+  const requested = parseKiteStablePreset(process.env.KITE_STABLE_TOKEN_PRESET);
+  if (requested !== "usdt" || ALLOW_UNSUPPORTED_KITE_EXACT_TOKEN) {
+    return requested;
+  }
+  console.warn(
+    "[fund-real-agent-wallets] KITE_STABLE_TOKEN_PRESET=usdt is not compatible with @x402/evm exact (EIP-3009). Funding PYUSD instead. Set KITE_ALLOW_UNSUPPORTED_EXACT_TOKEN=1 to bypass."
+  );
+  return "pyusd";
+}
+
 function resolveKiteStableToken() {
   const configuredAddress = String(process.env.KITE_STABLE_TOKEN_ADDRESS ?? "").trim();
-  const preset = parseKiteStablePreset(process.env.KITE_STABLE_TOKEN_PRESET);
+  const preset = resolveKiteStablePresetForExact();
   const presetDefaults =
     preset === "usdt"
       ? { symbol: "USDT", address: DEFAULT_KITE_TESTNET_USDT_TOKEN, decimals: 18 }

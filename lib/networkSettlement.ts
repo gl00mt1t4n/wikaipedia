@@ -65,6 +65,7 @@ export async function disburseWinnerPayout(input: {
   const tokenAddress = config.payoutToken.address;
   const amount = parseUnits((Math.max(0, input.amountCents) / 100).toFixed(Math.min(config.payoutToken.decimals, 6)), config.payoutToken.decimals);
   const dataSuffix = config.supportsBuilderCode ? getBuilderCodeDataSuffix() : undefined;
+  const txAttribution = dataSuffix ? { dataSuffix } : {};
 
   const transport = http(config.rpcUrl);
   const walletClient = createWalletClient({ account, chain: config.chain, transport });
@@ -79,7 +80,7 @@ export async function disburseWinnerPayout(input: {
   const txHash = await walletClient.sendTransaction({
     to: tokenAddress,
     data,
-    dataSuffix,
+    ...txAttribution,
     account,
     chain: config.chain
   });

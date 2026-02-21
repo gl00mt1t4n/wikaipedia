@@ -54,6 +54,8 @@ const LEGACY_X402_NETWORK = String(process.env.X402_BASE_NETWORK ?? "").trim();
 const ETH_PER_WALLET = process.argv[2] ? Number(process.argv[2]) : 0.005;
 const STABLE_PER_WALLET = process.argv[3] ? Number(process.argv[3]) : 2;
 const RAW_ADDRESSES = process.argv.slice(4).map((value) => String(value).trim()).filter(Boolean);
+const ALLOW_UNSUPPORTED_KITE_EXACT_TOKEN =
+  String(process.env.KITE_ALLOW_UNSUPPORTED_EXACT_TOKEN ?? "").trim() === "1";
 const DEFAULT_KITE_TESTNET_PYUSD_TOKEN = "0x8E04D099b1a8Dd20E6caD4b2Ab2B405B98242ec9";
 const DEFAULT_KITE_TESTNET_USDT_TOKEN = "0x0fF5393387ad2f9f691FD6Fd28e07E3969e27e63";
 
@@ -77,9 +79,20 @@ function parseKiteStablePreset(value) {
   return normalized === "usdt" ? "usdt" : "pyusd";
 }
 
+function resolveKiteStablePresetForExact() {
+  const requested = parseKiteStablePreset(process.env.KITE_STABLE_TOKEN_PRESET);
+  if (requested !== "usdt" || ALLOW_UNSUPPORTED_KITE_EXACT_TOKEN) {
+    return requested;
+  }
+  console.warn(
+    "[fund-agent-wallet-addresses] KITE_STABLE_TOKEN_PRESET=usdt is not compatible with @x402/evm exact (EIP-3009). Funding PYUSD instead. Set KITE_ALLOW_UNSUPPORTED_EXACT_TOKEN=1 to bypass."
+  );
+  return "pyusd";
+}
+
 function resolveKiteStableToken() {
   const configuredAddress = String(process.env.KITE_STABLE_TOKEN_ADDRESS ?? "").trim();
-  const preset = parseKiteStablePreset(process.env.KITE_STABLE_TOKEN_PRESET);
+  const preset = resolveKiteStablePresetForExact();
   const presetDefaults =
     preset === "usdt"
       ? { symbol: "USDT", address: DEFAULT_KITE_TESTNET_USDT_TOKEN, decimals: 18 }
@@ -199,6 +212,7 @@ async function main() {
   const escrow = privateKeyToAccount(network.escrowPrivateKey);
   const builderCode = network.supportsBuilderCode ? getBuilderCode() : null;
   const dataSuffix = network.supportsBuilderCode ? getBuilderCodeDataSuffix() : undefined;
+  const txAttribution = dataSuffix ? { dataSuffix } : {};
   const transport = http(network.rpcUrl);
   const publicClient = createPublicClient({ chain: network.chain, transport });
   const walletClient = createWalletClient({ account: escrow, chain: network.chain, transport });
@@ -252,7 +266,7 @@ async function main() {
       const stableHash = await sendTxWithManagedNonce({
         to: network.tokenAddress,
         data: transferData,
-        dataSuffix
+        ...txAttribution
       });
       await publicClient.waitForTransactionReceipt({ hash: stableHash });
       console.log(`  ${network.tokenSymbol} tx: ${stableHash}`);
@@ -263,7 +277,7 @@ async function main() {
         to: address,
         value: parseEther(ETH_PER_WALLET.toString()),
         data: "0x",
-        dataSuffix
+        ...txAttribution
       });
       await publicClient.waitForTransactionReceipt({ hash: nativeHash });
       console.log(`  ${network.chain.nativeCurrency.symbol} tx: ${nativeHash}`);

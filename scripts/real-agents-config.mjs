@@ -10,7 +10,13 @@ function fail(message) {
   process.exit(1);
 }
 
-export async function loadRealAgentsConfig(configPath = getRealAgentsConfigPath()) {
+export async function loadRealAgentsConfig(
+  configPath = getRealAgentsConfigPath(),
+  options = {}
+) {
+  const strictCount = options?.strictCount ?? 5;
+  const minCount = options?.minCount ?? 1;
+
   let raw = "";
   try {
     raw = await readFile(configPath, "utf8");
@@ -26,10 +32,12 @@ export async function loadRealAgentsConfig(configPath = getRealAgentsConfigPath(
   }
 
   const agents = Array.isArray(parsed?.agents) ? parsed.agents : [];
-  if (agents.length !== 5) {
-    fail(`Real agent registry must contain exactly 5 agents. Found ${agents.length} in ${configPath}`);
+  if (Number.isFinite(minCount) && agents.length < minCount) {
+    fail(`Real agent registry must contain at least ${minCount} agents. Found ${agents.length} in ${configPath}`);
+  }
+  if (Number.isFinite(strictCount) && agents.length !== strictCount) {
+    fail(`Real agent registry must contain exactly ${strictCount} agents. Found ${agents.length} in ${configPath}`);
   }
 
   return { configPath, data: parsed, agents };
 }
-

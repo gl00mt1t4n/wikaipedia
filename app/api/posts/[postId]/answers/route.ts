@@ -301,7 +301,11 @@ export async function POST(request: Request, props: { params: Promise<{ postId: 
           bidAmountUsd: formatUsdFromCents(bidAmountCents),
           bidAmountCents,
           network: activeNetworkConfig.x402Network,
-          payTo
+          payTo,
+          payee_addr: payTo,
+          token_type: activeNetworkConfig.payoutToken.symbol,
+          amount: describeX402Price(bidAmountCents, activeNetworkConfig).x402Amount,
+          merchant_name: String(process.env.KITE_PASSPORT_MERCHANT_NAME ?? "OpenClaw Agent").trim()
         }
       })
     },

@@ -2,10 +2,9 @@ import http from "node:http";
 import { randomBytes } from "node:crypto";
 import { mkdir, readFile, writeFile, appendFile } from "node:fs/promises";
 import path from "node:path";
-import { wrapFetchWithPaymentFromConfig } from "@x402/fetch";
-import { ExactEvmScheme } from "@x402/evm/exact/client";
 import { mnemonicToAccount, privateKeyToAccount } from "viem/accounts";
 import { loadLocalEnv } from "./load-local-env.mjs";
+import { createFetchWithX402Payment } from "./x402-payment-client.mjs";
 
 loadLocalEnv();
 
@@ -20,7 +19,7 @@ const AGENT_MAX_DAILY_SPEND_CENTS = Number(process.env.AGENT_MAX_DAILY_SPEND_CEN
 const AGENT_MAX_BID_CENTS = Number(process.env.AGENT_MAX_BID_CENTS ?? 200);
 const TOOL_RATE_LIMIT_PER_MINUTE = Number(process.env.AGENT_TOOL_RATE_LIMIT_PER_MINUTE ?? 60);
 const ACTIVE_BID_NETWORK = String(process.env.ACTIVE_BID_NETWORK ?? "").trim().toLowerCase();
-const X402_BASE_NETWORK = String(process.env.X402_BASE_NETWORK ?? "").trim();
+const LEGACY_X402_BASE_NETWORK = String(process.env.X402_BASE_NETWORK ?? "").trim();
 const AGENT_BASE_PRIVATE_KEY = String(process.env.AGENT_BASE_PRIVATE_KEY ?? "").trim();
 const AGENT_KITE_PRIVATE_KEY = String(process.env.AGENT_KITE_PRIVATE_KEY ?? "").trim();
 const AGENT_PAYMENT_PRIVATE_KEY = String(process.env.AGENT_PAYMENT_PRIVATE_KEY ?? "").trim();
@@ -28,17 +27,34 @@ const AGENTKIT_MNEMONIC = String(process.env.AGENTKIT_MNEMONIC ?? process.env.MN
 const AGENT_WALLET_DERIVATION_PATH = String(process.env.AGENT_WALLET_DERIVATION_PATH ?? "m/44'/60'/0'/0/0").trim();
 const AGENT_ID = String(process.env.AGENT_ID ?? process.env.AGENT_RUNTIME_AGENT_ID ?? "").trim();
 
-function resolveX402Network() {
-  if (X402_BASE_NETWORK) {
-    return X402_BASE_NETWORK;
-  }
-  if (ACTIVE_BID_NETWORK === "base_mainnet") {
+function mapActiveBidNetworkToCaip(input) {
+  const value = String(input ?? "").trim().toLowerCase();
+  if (value === "base_mainnet") {
     return "eip155:8453";
   }
-  if (ACTIVE_BID_NETWORK === "kite_testnet") {
+  if (value === "kite_testnet") {
     return "eip155:2368";
   }
-  return "eip155:84532";
+  if (value === "base_sepolia") {
+    return "eip155:84532";
+  }
+  return null;
+}
+
+function resolveX402Network() {
+  const activeNetworkCaip = mapActiveBidNetworkToCaip(ACTIVE_BID_NETWORK) ?? "eip155:84532";
+  if (LEGACY_X402_BASE_NETWORK) {
+    if (LEGACY_X402_BASE_NETWORK !== activeNetworkCaip) {
+      console.warn(
+        `[platform-mcp] ignoring legacy X402_BASE_NETWORK=${LEGACY_X402_BASE_NETWORK}; using ACTIVE_BID_NETWORK=${ACTIVE_BID_NETWORK || "base_sepolia"} => ${activeNetworkCaip}.`
+      );
+    } else {
+      console.warn(
+        `[platform-mcp] legacy X402_BASE_NETWORK is set but ignored. ACTIVE_BID_NETWORK controls x402 network selection.`
+      );
+    }
+  }
+  return activeNetworkCaip;
 }
 
 const X402_PAYMENT_NETWORK = resolveX402Network();
@@ -64,16 +80,12 @@ if (AGENT_PAYMENT_PRIVATE_KEY) {
 } else if (AGENTKIT_MNEMONIC) {
   paymentAccount = mnemonicToAccount(AGENTKIT_MNEMONIC, { path: AGENT_WALLET_DERIVATION_PATH });
 }
-const fetchWithPayment = paymentAccount
-  ? wrapFetchWithPaymentFromConfig(fetch, {
-      schemes: [
-        {
-          network: X402_PAYMENT_NETWORK,
-          client: new ExactEvmScheme(paymentAccount)
-        }
-      ]
-    })
-  : fetch;
+const fetchWithPayment = createFetchWithX402Payment({
+  fetchImpl: fetch,
+  network: X402_PAYMENT_NETWORK,
+  paymentAccount,
+  onLog: (line) => console.info(`[platform-mcp] ${line}`)
+});
 
 function nowIso() {
   return new Date().toISOString();
@@ -446,7 +458,7 @@ async function tool_post_answer(args) {
   if (budgetError) return budgetError;
   if (bidAmountCents > 0 && !paymentAccount) {
     return fail(
-      "Bid requires signer wallet. Set AGENT_PAYMENT_PRIVATE_KEY (or AGENT_KITE_PRIVATE_KEY/AGENT_BASE_PRIVATE_KEY or AGENTKIT_MNEMONIC/MNEMONIC_PHRASE) for x402 signing.",
+      "Bid requires signer wallet. Set AGENT_PAYMENT_PRIVATE_KEY (or AGENT_KITE_PRIVATE_KEY/AGENT_BASE_PRIVATE_KEY or AGENTKIT_MNEMONIC/MNEMONIC_PHRASE) for identity proof and x402 payment headers.",
       400
     );
   }
