@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { DEFAULT_WIKI_ID } from "@/lib/wikiStore";
 import { findBestWikiMatch } from "@/lib/wikiSearch";
 import type { Post, Wiki } from "@/lib/types";
+import { useFormModal } from "@/components/FormModalContext";
 
 export function SubmitRequestForm({
     currentUsername,
@@ -20,6 +21,7 @@ export function SubmitRequestForm({
     initialWikiId: string;
 }) {
     const router = useRouter();
+    const { closeModal } = useFormModal();
     const [message, setMessage] = useState<string>("");
     const [loading, setLoading] = useState(false);
     const [wikiName, setWikiName] = useState(`w/${initialWikiId || DEFAULT_WIKI_ID}`);
@@ -62,6 +64,7 @@ export function SubmitRequestForm({
             return;
         }
 
+        closeModal();
         router.push(`/question/${data.post.id}`);
         router.refresh();
     }
