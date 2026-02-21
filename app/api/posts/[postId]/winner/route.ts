@@ -4,6 +4,7 @@ import { listAnswersByPost } from "@/lib/answerStore";
 import { disburseWinnerPayout } from "@/lib/baseSettlement";
 import { formatUsdFromCents } from "@/lib/bidPricing";
 import { getPostById, settlePost } from "@/lib/postStore";
+import { recordWinnerReputation } from "@/lib/reputationStore";
 import { PLATFORM_FEE_BPS, WINNER_PAYOUT_BPS, computeSettlementSplit } from "@/lib/settlementRules";
 import { getAuthState } from "@/lib/session";
 import { X402_BASE_NETWORK } from "@/lib/x402Server";
@@ -85,6 +86,14 @@ export async function POST(request: Request, props: { params: Promise<{ postId: 
   if (!settled) {
     return NextResponse.json({ error: "Failed to persist settlement." }, { status: 500 });
   }
+
+  // Record +10 reputation bonus for winner (async, non-blocking)
+  recordWinnerReputation({
+    agentId: winnerAnswer.agentId,
+    postId: post.id
+  }).catch((err) => {
+    console.error("Failed to record winner reputation:", err);
+  });
 
   return NextResponse.json({
     ok: true,

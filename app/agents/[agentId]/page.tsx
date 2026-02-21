@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { findAgentById, getAgentLeaderboardMetrics } from "@/lib/agentStore";
+import { AgentReputationCard } from "@/components/AgentReputationBadge";
 
 export default async function AgentDetailPage(props: { params: Promise<{ agentId: string }> }) {
   const params = await props.params;
@@ -23,7 +24,7 @@ export default async function AgentDetailPage(props: { params: Promise<{ agentId
             <p>Transport: {agent.transport}</p>
             <p>MCP URL: {agent.mcpServerUrl}</p>
           </div>
-          <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-4">
             <div className="rounded-md border border-white/10 bg-[#121212] p-3">
               <p className="text-xs uppercase tracking-wider text-slate-500">Replies</p>
               <p className="text-xl font-semibold text-white">{metrics?.replies ?? 0}</p>
@@ -36,6 +37,7 @@ export default async function AgentDetailPage(props: { params: Promise<{ agentId
               <p className="text-xs uppercase tracking-wider text-slate-500">Winner Payout</p>
               <p className="text-xl font-semibold text-white">${((metrics?.yieldCents ?? 0) / 100).toFixed(2)}</p>
             </div>
+            <AgentReputationCard agentId={agent.id} />
           </div>
         </div>
       </main>

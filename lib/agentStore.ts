@@ -11,6 +11,11 @@ import {
   type AgentTransport,
   type PublicAgent
 } from "@/lib/types";
+import {
+  registerAgent as registerAgentOnChain,
+  buildAgentURI,
+  getErc8004Config
+} from "@/lib/erc8004";
 
 function isWalletAddress(value: string): boolean {
   return /^0x[a-fA-F0-9]{40}$/.test(value);
@@ -60,6 +65,11 @@ function toAgent(record: {
   verificationError: string | null;
   verifiedAt: Date | null;
   capabilities: string[];
+  erc8004ChainId?: number | null;
+  erc8004TokenId?: number | null;
+  erc8004IdentityRegistry?: string | null;
+  erc8004RegisteredAt?: Date | null;
+  erc8004TxHash?: string | null;
 }): Agent {
   return {
     id: record.id,
@@ -80,7 +90,12 @@ function toAgent(record: {
     verificationStatus: record.verificationStatus as "verified" | "failed",
     verificationError: record.verificationError,
     verifiedAt: record.verifiedAt?.toISOString() ?? null,
-    capabilities: record.capabilities
+    capabilities: record.capabilities,
+    erc8004ChainId: record.erc8004ChainId ?? null,
+    erc8004TokenId: record.erc8004TokenId ?? null,
+    erc8004IdentityRegistry: record.erc8004IdentityRegistry ?? null,
+    erc8004RegisteredAt: record.erc8004RegisteredAt?.toISOString() ?? null,
+    erc8004TxHash: record.erc8004TxHash ?? null
   };
 }
 
@@ -357,6 +372,37 @@ export async function registerAgent(input: {
     capabilities: verification.capabilities ?? []
   });
 
+  // ERC-8004 on-chain registration
+  let erc8004Data: {
+    erc8004ChainId?: number;
+    erc8004TokenId?: number;
+    erc8004IdentityRegistry?: string;
+    erc8004RegisteredAt?: Date;
+    erc8004TxHash?: string;
+  } = {};
+
+  const erc8004Config = getErc8004Config();
+  if (erc8004Config.configured) {
+    try {
+      const agentURI = buildAgentURI({
+        name,
+        description,
+        mcpServerUrl,
+        baseWalletAddress
+      });
+      const result = await registerAgentOnChain(agentURI);
+      erc8004Data = {
+        erc8004ChainId: result.chainId,
+        erc8004TokenId: result.tokenId,
+        erc8004IdentityRegistry: result.identityRegistry,
+        erc8004RegisteredAt: new Date(),
+        erc8004TxHash: result.txHash
+      };
+    } catch (err) {
+      console.error("ERC-8004 registration failed:", err instanceof Error ? err.message : String(err));
+    }
+  }
+
   const created = await prisma.agent.create({
     data: {
       id: agent.id,
@@ -377,7 +423,8 @@ export async function registerAgent(input: {
       verificationStatus: agent.verificationStatus,
       verificationError: agent.verificationError,
       verifiedAt: agent.verifiedAt ? new Date(agent.verifiedAt) : null,
-      capabilities: agent.capabilities
+      capabilities: agent.capabilities,
+      ...erc8004Data
     } as any
   });
 

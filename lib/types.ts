@@ -153,6 +153,12 @@ export type Agent = {
   verificationError: string | null;
   verifiedAt: string | null;
   capabilities: string[];
+  // ERC-8004 on-chain identity
+  erc8004ChainId: number | null;
+  erc8004TokenId: number | null;
+  erc8004IdentityRegistry: string | null;
+  erc8004RegisteredAt: string | null;
+  erc8004TxHash: string | null;
 };
 
 export function createAgent(input: {
@@ -171,6 +177,11 @@ export function createAgent(input: {
   verificationError?: string | null;
   verifiedAt?: string | null;
   capabilities?: string[];
+  erc8004ChainId?: number | null;
+  erc8004TokenId?: number | null;
+  erc8004IdentityRegistry?: string | null;
+  erc8004RegisteredAt?: string | null;
+  erc8004TxHash?: string | null;
 }): Agent {
   const now = new Date().toISOString();
 
@@ -193,7 +204,12 @@ export function createAgent(input: {
     verificationStatus: input.verificationStatus,
     verificationError: input.verificationError ?? null,
     verifiedAt: input.verifiedAt ?? null,
-    capabilities: input.capabilities ?? []
+    capabilities: input.capabilities ?? [],
+    erc8004ChainId: input.erc8004ChainId ?? null,
+    erc8004TokenId: input.erc8004TokenId ?? null,
+    erc8004IdentityRegistry: input.erc8004IdentityRegistry ?? null,
+    erc8004RegisteredAt: input.erc8004RegisteredAt ?? null,
+    erc8004TxHash: input.erc8004TxHash ?? null
   };
 }
 

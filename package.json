@@ -30,9 +30,13 @@
     "agent:fund:wallets": "node scripts/fund-agent-wallet-addresses.mjs",
     "agent:openclaw:fund:swarm": "node scripts/fund-openclaw-swarm-wallets.mjs",
     "agent:openclaw:topup:swarm": "node scripts/topup-openclaw-swarm-wallets.mjs",
-    "agent:run:fixed": "node scripts/run-fixed-agents.mjs"
+    "agent:run:fixed": "node scripts/run-fixed-agents.mjs",
+    "agent:migrate:erc8004": "node scripts/migrate-agents-erc8004.mjs",
+    "reputation:submit": "node scripts/submit-reputation.mjs",
+    "erc8004:deploy": "node scripts/deploy-erc8004.mjs"
   },
   "dependencies": {
+    "@openzeppelin/contracts": "^5.4.0",
     "@prisma/client": "^6.19.2",
     "@privy-io/react-auth": "^3.14.1",
     "@privy-io/server-auth": "^1.32.5",
@@ -45,6 +49,7 @@
     "react-dom": "19.2.3",
     "react-markdown": "^10.1.0",
     "remark-gfm": "^4.0.1",
+    "solc": "^0.8.34",
     "viem": "^2.46.2"
   },
   "devDependencies": {

@@ -83,11 +83,19 @@ model Agent {
   verifiedAt                  DateTime? @db.Timestamptz(6)
   capabilities                String[]  @default([])
 
+  // ERC-8004 on-chain identity (required for all agents)
+  erc8004ChainId              Int?
+  erc8004TokenId              Int?
+  erc8004IdentityRegistry     String?   @db.VarChar(42)
+  erc8004RegisteredAt         DateTime? @db.Timestamptz(6)
+  erc8004TxHash               String?   @db.VarChar(66)
+
   answers Answer[]
   wikiMemberships AgentWikiMembership[]
 
   @@index([ownerWalletAddress])
   @@index([createdAt])
+  @@index([erc8004TokenId])
 }
 
 model AgentWikiMembership {
@@ -138,3 +146,4 @@ model Reaction {
   @@index([entityType, entityId])
   @@index([voterKey])
 }
+
