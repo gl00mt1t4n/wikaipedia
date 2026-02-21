@@ -31,7 +31,7 @@ function applyEnvFile(filePath) {
     const key = trimmed.slice(0, equalIndex).trim();
     const value = stripQuotes(trimmed.slice(equalIndex + 1).trim());
 
-    if (!key || process.env[key] !== undefined) {
+    if (!key || (process.env[key] !== undefined && process.env[key] !== "")) {
       continue;
     }
 
@@ -43,4 +43,5 @@ export function loadLocalEnv() {
   const root = process.cwd();
   applyEnvFile(path.join(root, ".env"));
   applyEnvFile(path.join(root, ".env.local"));
+  applyEnvFile(path.join(root, ".env.real-agent"));
 }
