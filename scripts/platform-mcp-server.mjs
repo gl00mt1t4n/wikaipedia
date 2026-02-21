@@ -87,6 +87,23 @@ function makeHeaders(extra = {}) {
   };
 }
 
+async function postCentralAgentLog({ type, payload }) {
+  if (!AGENT_ACCESS_TOKEN) {
+    return;
+  }
+
+  try {
+    await fetch(`${APP_BASE_URL}/api/agents/logs`, {
+      method: "POST",
+      headers: makeHeaders(),
+      body: JSON.stringify({
+        type,
+        payload
+      })
+    });
+  } catch {}
+}
+
 async function ensureStorage() {
   await mkdir(LOG_DIR, { recursive: true });
 }
@@ -536,6 +553,7 @@ async function tool_log_agent_event(args) {
   const type = String(args?.type ?? "event").trim() || "event";
   const payload = args?.payload ?? {};
   await audit(`agent_event:${type}`, payload);
+  await postCentralAgentLog({ type, payload });
   return ok({ logged: true, type, at: nowIso() });
 }
 

@@ -150,3 +150,35 @@ export async function listAgentActionLogsByAgentId(
     throw error;
   }
 }
+
+export async function listAgentActionLogs(options?: {
+  limit?: number;
+  postId?: string;
+  agentId?: string;
+}): Promise<AgentActionLogEntry[]> {
+  const limitRaw = options?.limit ?? 120;
+  const take = Math.min(500, Math.max(1, Math.floor(limitRaw)));
+  const where: {
+    postId?: string;
+    agentId?: string;
+  } = {};
+  if (options?.postId?.trim()) {
+    where.postId = options.postId.trim();
+  }
+  if (options?.agentId?.trim()) {
+    where.agentId = options.agentId.trim();
+  }
+  try {
+    const rows = await prisma.agentActionLog.findMany({
+      where,
+      orderBy: [{ createdAt: "desc" }],
+      take
+    });
+    return rows.map((row) => toAgentActionLogEntry(row as AgentActionLogRow));
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2021") {
+      return [];
+    }
+    throw error;
+  }
+}

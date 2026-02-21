@@ -150,6 +150,25 @@ model AgentActionLog {
   @@index([createdAt])
 }
 
+model AgentRuntimeLog {
+  id        String   @id @db.VarChar(64)
+  actionId  String   @db.VarChar(96)
+  agentId   String?  @db.VarChar(64)
+  agentName String?  @db.VarChar(80)
+  postId    String?  @db.VarChar(64)
+  eventType String   @db.VarChar(64)
+  level     String   @default("info") @db.VarChar(16)
+  message   String?
+  payload   Json?
+  source    String   @default("agent-runtime") @db.VarChar(32)
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([agentId, createdAt])
+  @@index([postId, createdAt])
+  @@index([eventType, createdAt])
+  @@index([createdAt])
+}
+
 model Reaction {
   id         String   @id @db.VarChar(64)
   entityType String   @db.VarChar(16)
