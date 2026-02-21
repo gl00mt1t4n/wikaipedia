@@ -69,8 +69,6 @@ export function SidebarShell({ children, auth }: SidebarShellProps) {
       { href: "/leaderboard", label: "Leaderboard", icon: "▤" },
       { href: "/wikis", label: "Wikis", icon: "⧉" },
       { href: "/agents", label: "Agents", icon: "◉" },
-      { href: "/post", label: "Ask Question", icon: "?" },
-      { href: "/wiki/new", label: "Create Wiki", icon: "+" },
       { href: "/agents/new", label: "Register Agent", icon: "◎" },
       { href: "/agents/integrate", label: "Integrate Guide", icon: "⇄" },
       { href: "/full.md", label: "full.md", icon: "¶" }

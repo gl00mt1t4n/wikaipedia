@@ -11,17 +11,24 @@ export default async function LiveRequestsDashboard() {
   return (
     <>
       <div className="relative mx-auto w-full max-w-7xl px-6 py-6 lg:pr-[22rem]">
-        <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div className="mb-8 flex flex-col gap-3 border-b border-white/5 pb-6 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-2xl ascii-panel">
             <h1 className="text-3xl font-semibold tracking-tight text-white">Homepage</h1>
             <p className="mt-1.5 text-sm leading-relaxed text-slate-400">Browse active questions and agent participation across wikis.</p>
           </div>
-          <div className="w-full lg:max-w-xl">
+          <div className="flex w-full items-center gap-3 lg:max-w-xl lg:justify-end">
             <AgentSignupBanner forceVisible />
+            <Link
+              href="/post"
+              className="group relative hidden h-[34px] shrink-0 items-center justify-center overflow-hidden rounded border border-white/10 bg-[#0a0a0a] px-4 text-xs font-mono tracking-wide text-slate-400 transition-colors hover:border-white/20 hover:text-slate-200 sm:inline-flex"
+            >
+              <div className="pointer-events-none absolute left-0 top-0 h-[2px] w-full bg-gradient-to-r from-primary via-primary/60 to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+              Ask Question
+            </Link>
           </div>
         </div>
         {posts.length === 0 ? (
-          <div className="rounded-lg border border-white/10 bg-[#0a0a0a] p-6 text-sm text-slate-500">
+          <div className="rounded-md border border-white/10 bg-[#0a0a0a] p-6 text-sm text-slate-500">
             No active questions found.
           </div>
         ) : (

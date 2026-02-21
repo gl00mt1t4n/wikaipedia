@@ -8,15 +8,16 @@ export default async function PostQuestionPage() {
     const wikis = await listWikis();
 
     return (
-        <main className="relative px-6 py-12 lg:py-20">
-            <div className="pointer-events-none absolute inset-0 grid-pattern opacity-30"></div>
-            <SubmitRequestForm
-                currentUsername={auth.username}
-                currentWalletAddress={auth.walletAddress}
-                hasUsername={!!auth.username}
-                initialWikis={wikis}
-                initialWikiId=""
-            />
+        <main className="relative z-10 flex w-full flex-col items-center px-4 pb-24 pt-10 sm:px-6 lg:px-8">
+            <div className="w-full max-w-3xl animate-fade-in-up mt-8">
+                <SubmitRequestForm
+                    currentUsername={auth.username}
+                    currentWalletAddress={auth.walletAddress}
+                    hasUsername={!!auth.username}
+                    initialWikis={wikis}
+                    initialWikiId=""
+                />
+            </div>
         </main>
     );
 }

@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { DEFAULT_WIKI_ID } from "@/lib/wikiStore";
@@ -68,55 +67,46 @@ export function SubmitRequestForm({
     }
 
     return (
-        <div className="w-full max-w-2xl mx-auto">
+        <div className="w-full max-w-3xl mx-auto">
             {currentWalletAddress && !hasUsername && (
-                <div className="mb-6 p-4 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-500 text-sm flex items-start gap-3">
-                    <span className="material-symbols-outlined shrink-0">warning</span>
+                <div className="mb-6 rounded-lg border border-amber-500/20 bg-amber-500/10 p-4 text-sm font-mono text-amber-400">
                     <p>
                         Wallet connected but username not set. Make sure your profile is complete to earn reputation.
                     </p>
                 </div>
             )}
 
-            <form
-                onSubmit={onCreatePost}
-                className="bg-[#0a0a0a] border border-white/5 rounded-xl p-6 lg:p-8 shadow-2xl space-y-8 relative overflow-hidden"
-            >
-                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-emerald-500 to-blue-500"></div>
+            <div className="relative w-full overflow-hidden rounded-lg border border-white/10 bg-surface-dark p-8 shadow-2xl group">
+                <div className="absolute left-1/2 top-0 h-1 w-full -translate-x-1/2 bg-gradient-to-r from-transparent via-primary/50 to-transparent"></div>
 
-                <div className="space-y-2">
-                    <h2 className="text-xl font-display font-bold text-white tracking-wide">Ask a question</h2>
-                    <p className="text-sm text-slate-400">Deploy a new intelligence bounty to the agent network.</p>
+                <div className="mb-10 text-center">
+                    <h1 className="mb-2 text-3xl font-light tracking-tight text-white">Ask Question</h1>
+                    <p className="mx-auto max-w-md text-sm leading-relaxed text-slate-400">
+                        Deploy a new intelligence bounty to the agent network.
+                    </p>
                 </div>
 
-                <div className="space-y-6">
-                    <div className="space-y-2">
-                        <label className="text-xs font-bold uppercase tracking-widest text-slate-500 flex items-center justify-between">
-                            Poster Id
-                            {currentUsername && (
-                                <span className="text-emerald-500 flex items-center gap-1">
-                                    <span className="material-symbols-outlined text-[14px]">verified</span>
-                                    Verified
-                                </span>
-                            )}
+                <form onSubmit={onCreatePost} className="space-y-6">
+                    <div>
+                        <label className="mb-2 block text-xs font-mono uppercase tracking-widest text-slate-400 flex justify-between">
+                            <span>Poster Id</span>
+                            {currentUsername ? <span className="text-primary normal-case tracking-normal">Verified</span> : null}
                         </label>
                         {currentUsername ? (
-                            <div className="bg-[#121212] border border-white/10 rounded-md py-3 px-4 text-sm text-slate-300 font-mono">
+                            <div className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 font-mono text-sm text-white">
                                 @{currentUsername}
                             </div>
                         ) : (
                             <input
                                 name="poster"
                                 placeholder="username or anonymous"
-                                className="w-full bg-[#121212] border border-white/10 rounded-md py-3 px-4 text-sm text-slate-300 placeholder:text-slate-600 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all font-mono"
+                                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 font-mono text-sm text-white placeholder:text-slate-600 transition-all focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                             />
                         )}
                     </div>
 
-                    <div className="space-y-2">
-                        <label className="text-xs font-bold uppercase tracking-widest text-slate-500">
-                            Wiki
-                        </label>
+                    <div>
+                        <label className="mb-2 block text-xs font-mono uppercase tracking-widest text-slate-400">Wiki <span className="text-primary">*</span></label>
                         <input
                             name="wikiName"
                             list="wiki-name-options"
@@ -124,7 +114,7 @@ export function SubmitRequestForm({
                             value={wikiName}
                             onChange={(event) => setWikiName(event.target.value)}
                             required
-                            className="w-full bg-[#121212] border border-white/10 rounded-md py-3 px-4 text-sm text-slate-300 placeholder:text-slate-600 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all font-mono"
+                            className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 font-mono text-sm text-white placeholder:text-slate-600 transition-all focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                         />
                         <datalist id="wiki-name-options">
                             {initialWikis.map((wiki) => (
@@ -133,44 +123,38 @@ export function SubmitRequestForm({
                                 </option>
                             ))}
                         </datalist>
-                        <p className="text-[10px] text-slate-500 font-mono mt-1">
+                        <p className="mt-2 text-[11px] font-mono text-slate-500">
                             {recommendedWiki
                                 ? `Mapped to existing context: w/${recommendedWiki.id}`
                                 : "Wiki not found yet. Create it first from Create Wiki."}
                         </p>
                     </div>
 
-                    <div className="space-y-2">
-                        <label className="text-xs font-bold uppercase tracking-widest text-slate-500">
-                            Topic
-                        </label>
+                    <div>
+                        <label className="mb-2 block text-xs font-mono uppercase tracking-widest text-slate-400">Topic <span className="text-primary">*</span></label>
                         <input
                             name="header"
                             placeholder="e.g. Optimize hyper-parameter tuning..."
                             minLength={4}
                             required
-                            className="w-full bg-[#121212] border border-white/10 rounded-md py-3 px-4 text-sm text-slate-300 placeholder:text-slate-600 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all font-medium"
+                            className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-slate-600 transition-all focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                         />
                     </div>
 
-                    <div className="space-y-2">
-                        <label className="text-xs font-bold uppercase tracking-widest text-slate-500">
-                            Description
-                        </label>
+                    <div>
+                        <label className="mb-2 block text-xs font-mono uppercase tracking-widest text-slate-400">Description <span className="text-primary">*</span></label>
                         <textarea
                             name="content"
-                            rows={6}
+                            rows={4}
                             placeholder="Detailed parameters and acceptance criteria for the agents..."
                             minLength={10}
                             required
-                            className="w-full bg-[#121212] border border-white/10 rounded-md py-3 px-4 text-sm text-slate-300 placeholder:text-slate-600 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all font-medium resize-y"
+                            className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-slate-600 transition-all focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary resize-vertical"
                         />
                     </div>
 
-                    <div className="space-y-2">
-                        <label className="text-xs font-bold uppercase tracking-widest text-slate-500">
-                            Answer Window (s)
-                        </label>
+                    <div>
+                        <label className="mb-2 block text-xs font-mono uppercase tracking-widest text-slate-400">Answer Window (s) <span className="text-primary">*</span></label>
                         <input
                             name="timeoutSeconds"
                             type="number"
@@ -178,41 +162,40 @@ export function SubmitRequestForm({
                             max={3600}
                             defaultValue={300}
                             required
-                            className="w-full bg-[#121212] border border-white/10 rounded-md py-3 px-4 text-sm text-slate-300 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all font-mono md:w-1/3"
+                            className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 font-mono text-sm text-white transition-all focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary md:w-1/3"
                         />
                     </div>
-                </div>
 
-                {message && (
-                    <div className="p-3 bg-red-500/10 border border-red-500/30 text-red-400 text-sm rounded-md flex items-center gap-2">
-                        <span className="material-symbols-outlined text-[18px]">error</span>
-                        {message}
+                    <div className="border-t border-white/10 pt-6">
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-4 text-sm font-bold uppercase tracking-widest text-white shadow-[0_0_15px_rgba(255,77,0,0.2)] transition-all hover:bg-primary/90 hover:shadow-[0_0_30px_rgba(255,77,0,0.4)] disabled:bg-primary/50 disabled:shadow-none"
+                        >
+                            {loading ? (
+                                <>
+                                    <svg className="-ml-1 mr-2 h-4 w-4 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    POSTING QUESTION...
+                                </>
+                            ) : (
+                                <>
+                                    <span className="material-symbols-outlined text-[18px]">rocket_launch</span>
+                                    POST QUESTION
+                                </>
+                            )}
+                        </button>
                     </div>
-                )}
 
-                <div className="pt-4 border-t border-white/5 flex items-center justify-between">
-                    <div className="text-[10px] text-slate-500 font-mono tracking-widest uppercase">
-                        Protocol: x402-v2
-                    </div>
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className="bg-[#ff4d00] hover:bg-[#e64500] disabled:opacity-50 disabled:cursor-not-allowed text-white px-8 py-3 rounded-md font-display font-bold uppercase tracking-widest text-sm flex items-center gap-2 transition-colors shadow-[0_0_20px_rgba(255,77,0,0.3)]"
-                    >
-                        {loading ? (
-                            <>
-                                <span className="material-symbols-outlined animate-spin text-[18px]">autorenew</span>
-                                Posting...
-                            </>
-                        ) : (
-                            <>
-                                <span className="material-symbols-outlined text-[18px]">rocket_launch</span>
-                                Post Question
-                            </>
-                        )}
-                    </button>
-                </div>
-            </form>
+                    {message && (
+                        <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-4 text-sm font-mono text-red-400">
+                            {message}
+                        </div>
+                    )}
+                </form>
+            </div>
         </div>
     );
 }
