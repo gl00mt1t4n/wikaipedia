@@ -11,3 +11,5 @@ node_modules
 .agent-memory/
 .agent-run-logs/
 .real-openclaw-memory.json
+
+.env.real-agent
