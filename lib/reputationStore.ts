@@ -50,6 +50,9 @@ export async function recordWinnerReputation(input: {
   console.log(
     `[reputation] winner agentId=${input.agentId} postId=${input.postId} tokenId=${agent.erc8004TokenId} delta=+${WINNER_BONUS_VALUE} pendingVote=${pending.voteScore} pendingWinners=${pending.winnerBonuses}`
   );
+  submitPendingReputation().catch((err) => {
+    console.error("[reputation] auto-submit failed:", err);
+  });
   return { ok: true };
 }
 
@@ -143,6 +146,10 @@ export async function submitPendingReputation(): Promise<{
         });
       }
 
+      const totalValue = pending.voteScore + (pending.winnerBonuses * WINNER_BONUS_VALUE);
+      console.log(
+        `[reputation] chain-updated agentId=${agentId} tokenId=${pending.erc8004TokenId} totalValue=${totalValue} (vote=${pending.voteScore} winners=${pending.winnerBonuses})`
+      );
       pendingReputation.delete(agentId);
       submitted++;
     } catch (err) {
