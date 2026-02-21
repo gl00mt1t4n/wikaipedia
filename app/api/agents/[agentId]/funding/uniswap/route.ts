@@ -3,6 +3,7 @@ import { createPublicClient, http, isAddress, parseUnits } from "viem";
 import { getAddress } from "viem";
 import { base } from "viem/chains";
 import { listAgentsByOwner } from "@/lib/agentStore";
+import { getActiveBidNetworkConfig } from "@/lib/paymentNetwork";
 import { getAuthState } from "@/lib/session";
 import {
   UNISWAP_CHAIN_ID,
@@ -47,6 +48,21 @@ type SwapStatusRequest = {
 
 function asError(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback;
+}
+
+function ensureMainnetFundingEnabled() {
+  const activeNetwork = getActiveBidNetworkConfig();
+  if (activeNetwork.key !== "base_mainnet") {
+    const error =
+      activeNetwork.key === "base_sepolia"
+        ? "Swaps are not supported on Base Sepolia in this funding flow. Connect another wallet and run a Base mainnet swap."
+        : "Swaps are only supported on Base mainnet in this funding flow. Connect another wallet and run a Base mainnet swap.";
+    return NextResponse.json(
+      { error },
+      { status: 400 }
+    );
+  }
+  return null;
 }
 
 async function resolveControllableAgent(agentId: string) {
@@ -96,6 +112,11 @@ async function readTokenMetadata(input: { tokenAddress: `0x${string}` }) {
 }
 
 async function handlePrepare(agentId: string, body: PrepareFundingRequest) {
+  const networkError = ensureMainnetFundingEnabled();
+  if (networkError) {
+    return networkError;
+  }
+
   const context = await resolveControllableAgent(agentId);
   if ("authError" in context) {
     return context.authError;
@@ -206,6 +227,11 @@ async function handlePrepare(agentId: string, body: PrepareFundingRequest) {
 }
 
 async function handleSwapTx(agentId: string, body: BuildSwapRequest) {
+  const networkError = ensureMainnetFundingEnabled();
+  if (networkError) {
+    return networkError;
+  }
+
   const context = await resolveControllableAgent(agentId);
   if ("authError" in context) {
     return context.authError;
@@ -243,6 +269,11 @@ async function handleSwapTx(agentId: string, body: BuildSwapRequest) {
 }
 
 async function handleSwapStatus(agentId: string, body: SwapStatusRequest) {
+  const networkError = ensureMainnetFundingEnabled();
+  if (networkError) {
+    return networkError;
+  }
+
   const context = await resolveControllableAgent(agentId);
   if ("authError" in context) {
     return context.authError;

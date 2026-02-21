@@ -79,12 +79,17 @@ function normalizeAddress(value: string | null | undefined): string | null {
   return /^0x[a-fA-F0-9]{40}$/.test(raw) ? raw.toLowerCase() : null;
 }
 
-function defaultNetworkCaip(): string {
+function networkCaipForActiveNetwork(activeBidNetwork: "base_mainnet" | "base_sepolia" | "kite_testnet"): string {
+  if (activeBidNetwork === "base_sepolia") {
+    return "eip155:84532";
+  }
   return "eip155:8453";
 }
 
 function defaultUsdcAddress(caip: string): string {
-  void caip;
+  if (caip === "eip155:84532") {
+    return "0x036CbD53842c5426634e7929541eC2318f3dCF7e".toLowerCase();
+  }
   return "0x833589fCD6EDb6E08f4c7C32D4f71b54bdA02913".toLowerCase();
 }
 
@@ -93,7 +98,9 @@ function wethAddress(): string {
 }
 
 function chainIdFromCaip(caip: string): number {
-  void caip;
+  if (caip === "eip155:84532") {
+    return baseSepolia.id;
+  }
   return base.id;
 }
 
@@ -127,6 +134,13 @@ function knownFundingTokens(chainId: number): KnownFundingToken[] {
       ,{ symbol: "ZRO", address: "0x6985884c4392d348587b19cb9eaaf157f13271cd".toLowerCase(), decimals: 18 }
       ,{ symbol: "ZORA", address: "0x1111111111166b7fe7bd91427724b487980afc69".toLowerCase(), decimals: 18 }
       ,{ symbol: "USDbC", address: "0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca".toLowerCase(), decimals: 6 }
+    ];
+  }
+  if (chainId === baseSepolia.id) {
+    return [
+      eth,
+      { symbol: "USDC", address: "0x036CbD53842c5426634e7929541eC2318f3dCF7e".toLowerCase(), decimals: 6 },
+      { symbol: "WETH", address: wethAddress(), decimals: 18 }
     ];
   }
 
@@ -301,14 +315,20 @@ type AgentFundingButtonProps = {
   agentName: string;
   agentWalletAddress: string | null;
   ownerWalletAddress: string | null;
+  activeBidNetwork: "base_mainnet" | "base_sepolia" | "kite_testnet";
 };
 
 export function AgentFundingButton(props: AgentFundingButtonProps) {
   const { wallets, ready } = useWallets();
-  const networkCaip = defaultNetworkCaip();
+  const networkCaip = useMemo(() => networkCaipForActiveNetwork(props.activeBidNetwork), [props.activeBidNetwork]);
   const defaultChainId = chainIdFromCaip(networkCaip);
   const usdcAddress = defaultUsdcAddress(networkCaip);
   const tokens = useMemo(() => knownFundingTokens(defaultChainId), [defaultChainId]);
+  const isBaseMainnetFunding = props.activeBidNetwork === "base_mainnet";
+  const unsupportedFundingMessage =
+    props.activeBidNetwork === "base_sepolia"
+      ? "Swaps are not supported on Base Sepolia in this funding flow. Do you want to connect another wallet and do a Base mainnet swap?"
+      : "Swaps are only supported on Base mainnet in this funding flow. Connect another wallet and run a Base mainnet swap.";
 
   const [open, setOpen] = useState(false);
   const [selectedToken, setSelectedToken] = useState(usdcAddress);
@@ -337,7 +357,7 @@ export function AgentFundingButton(props: AgentFundingButtonProps) {
   const tokenIn = selectedToken === "custom" ? customTokenIn : selectedToken;
 
   useEffect(() => {
-    if (!open || !selectedWallet?.normalized) return;
+    if (!isBaseMainnetFunding || !open || !selectedWallet?.normalized) return;
     let cancelled = false;
 
     async function detectTokens() {
@@ -361,12 +381,11 @@ export function AgentFundingButton(props: AgentFundingButtonProps) {
         }
 
         setDetectedTokenOptions(merged);
-        if (selectedToken !== "custom") {
-          const existing = merged.find((token) => token.address === selectedToken);
-          if (!existing) {
-            setSelectedToken(merged[0]?.address ?? usdcAddress);
-          }
-        }
+        setSelectedToken((current) => {
+          if (current === "custom") return current;
+          const existing = merged.some((token) => token.address === current);
+          return existing ? current : merged[0]?.address ?? usdcAddress;
+        });
       } catch {
         if (!cancelled) {
           setDetectedTokenOptions([]);
@@ -380,10 +399,14 @@ export function AgentFundingButton(props: AgentFundingButtonProps) {
     return () => {
       cancelled = true;
     };
-  }, [open, selectedWallet?.normalized, defaultChainId, tokens, usdcAddress, selectedToken]);
+  }, [isBaseMainnetFunding, open, selectedWallet?.normalized, defaultChainId, tokens, usdcAddress]);
 
   async function submitFunding(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!isBaseMainnetFunding) {
+      setStatus(unsupportedFundingMessage);
+      return;
+    }
     if (!canFund || !selectedWallet?.normalized || !props.agentWalletAddress) {
       setStatus("Connect the owner wallet first.");
       return;
@@ -592,7 +615,9 @@ export function AgentFundingButton(props: AgentFundingButtonProps) {
               <div>
                 <h3 className="text-lg font-semibold text-white">Fund {props.agentName}</h3>
                 <p className="text-xs text-slate-500">
-                  Base mainnet only: swap supported tokens to USDC via Uniswap API, then deposit to the agent wallet.
+                  {isBaseMainnetFunding
+                    ? "Base mainnet only: swap supported tokens to USDC via Uniswap API, then deposit to the agent wallet."
+                    : "Non-mainnet mode detected: agent funding swap + deposit is disabled. Use the standalone swap flow instead."}
                 </p>
               </div>
               <button
@@ -605,40 +630,58 @@ export function AgentFundingButton(props: AgentFundingButtonProps) {
             </div>
 
             <form onSubmit={submitFunding} className="space-y-3">
-              <div>
-                <label className="mb-1 block text-[11px] uppercase tracking-wider text-slate-500">From Token</label>
-                <select
-                  value={selectedToken}
-                  onChange={(event) => setSelectedToken(event.target.value)}
-                  className="w-full rounded-md border border-white/10 bg-[#111] px-3 py-2 text-sm text-slate-200"
-                >
-                  {loadingTokens && <option value={usdcAddress}>Loading wallet tokens...</option>}
-                  {!loadingTokens &&
-                    detectedTokenOptions.map((token) => (
-                      <option key={token.address} value={token.address}>
-                        {token.symbol} ({formatUnits(token.balance, token.decimals)})
-                      </option>
-                    ))}
-                  <option value="custom">Custom token address...</option>
-                </select>
-                {selectedToken === "custom" && (
-                  <input
-                    value={customTokenIn}
-                    onChange={(event) => setCustomTokenIn(event.target.value)}
-                    placeholder="0x..."
-                    className="mt-2 w-full rounded-md border border-white/10 bg-[#111] px-3 py-2 font-mono text-sm text-slate-200"
-                  />
-                )}
-              </div>
-              <div>
-                <label className="mb-1 block text-[11px] uppercase tracking-wider text-slate-500">Amount In</label>
-                <input
-                  value={amountIn}
-                  onChange={(event) => setAmountIn(event.target.value)}
-                  placeholder="1.00"
-                  className="w-full rounded-md border border-white/10 bg-[#111] px-3 py-2 text-sm text-slate-200"
-                />
-              </div>
+              {!isBaseMainnetFunding && (
+                <div className="rounded border border-amber-500/20 bg-amber-500/10 p-3 text-xs text-amber-200">
+                  {unsupportedFundingMessage}
+                  <div className="mt-2">
+                    <a
+                      href="/uniswap-test"
+                      className="inline-flex rounded border border-amber-400/40 px-2 py-1 uppercase tracking-wider text-amber-200 hover:bg-amber-500/10"
+                    >
+                      Open swap test flow
+                    </a>
+                  </div>
+                </div>
+              )}
+
+              {isBaseMainnetFunding && (
+                <>
+                  <div>
+                    <label className="mb-1 block text-[11px] uppercase tracking-wider text-slate-500">From Token</label>
+                    <select
+                      value={selectedToken}
+                      onChange={(event) => setSelectedToken(event.target.value)}
+                      className="w-full rounded-md border border-white/10 bg-[#111] px-3 py-2 text-sm text-slate-200"
+                    >
+                      {loadingTokens && <option value={usdcAddress}>Loading wallet tokens...</option>}
+                      {!loadingTokens &&
+                        detectedTokenOptions.map((token) => (
+                          <option key={token.address} value={token.address}>
+                            {token.symbol} ({formatUnits(token.balance, token.decimals)})
+                          </option>
+                        ))}
+                      <option value="custom">Custom token address...</option>
+                    </select>
+                    {selectedToken === "custom" && (
+                      <input
+                        value={customTokenIn}
+                        onChange={(event) => setCustomTokenIn(event.target.value)}
+                        placeholder="0x..."
+                        className="mt-2 w-full rounded-md border border-white/10 bg-[#111] px-3 py-2 font-mono text-sm text-slate-200"
+                      />
+                    )}
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-[11px] uppercase tracking-wider text-slate-500">Amount In</label>
+                    <input
+                      value={amountIn}
+                      onChange={(event) => setAmountIn(event.target.value)}
+                      placeholder="1.00"
+                      className="w-full rounded-md border border-white/10 bg-[#111] px-3 py-2 text-sm text-slate-200"
+                    />
+                  </div>
+                </>
+              )}
               <div className="rounded border border-white/10 bg-black/20 p-2 text-xs text-slate-500">
                 Owner wallet: {selectedWallet?.normalized ?? "not connected"}
                 <br />
@@ -649,7 +692,7 @@ export function AgentFundingButton(props: AgentFundingButtonProps) {
 
               <button
                 type="submit"
-                disabled={running || !canFund}
+                disabled={running || !canFund || !isBaseMainnetFunding}
                 className="w-full rounded-md border border-primary/40 bg-primary/10 px-3 py-2 text-xs uppercase tracking-widest text-primary disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {running ? "Processing..." : "Swap + Deposit"}

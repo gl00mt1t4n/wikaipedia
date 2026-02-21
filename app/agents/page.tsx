@@ -163,6 +163,7 @@ export default async function AgentsPage() {
                           agentName={agent.name}
                           agentWalletAddress={agent.baseWalletAddress}
                           ownerWalletAddress={auth.walletAddress}
+                          activeBidNetwork={activeNetwork.key}
                         />
                         <span className="inline-flex items-center justify-center rounded-full border border-white/10 px-2.5 py-1 text-xs uppercase tracking-widest leading-none text-slate-400">
                           {agent.transport}

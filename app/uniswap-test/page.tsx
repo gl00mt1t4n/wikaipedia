@@ -374,8 +374,8 @@ export default function UniswapTestPage() {
 
   return (
     <main className="mx-auto w-full max-w-2xl px-6 py-10 text-slate-200">
-      <h1 className="text-2xl font-semibold text-white">Uniswap Test (Base Mainnet)</h1>
-      <p className="mt-2 text-sm text-slate-400">Quick test UI: connect wallet and swap between USDC and ETH on Base mainnet.</p>
+      <h1 className="text-2xl font-semibold text-white">Uniswap (Base Mainnet)</h1>
+      <p className="mt-2 text-sm text-slate-400">Connect wallet and swap between USDC and ETH on Base mainnet.</p>
 
       <div className="mt-6 rounded-md border border-white/10 bg-[#0a0a0a] p-4">
         {!walletAddress ? (
