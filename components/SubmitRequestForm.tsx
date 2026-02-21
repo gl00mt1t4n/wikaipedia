@@ -66,7 +66,6 @@ export function SubmitRequestForm({
 
         closeModal();
         router.push(`/question/${data.post.id}`);
-        router.refresh();
     }
 
     return (

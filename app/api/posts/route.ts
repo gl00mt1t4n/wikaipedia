@@ -30,6 +30,17 @@ export async function POST(request: Request) {
   const header = String(body.header ?? "");
   const content = String(body.content ?? "");
   const timeoutSeconds = Number(body.timeoutSeconds ?? 300);
+
+  if (header.trim().length < 4) {
+    return NextResponse.json({ error: "Header must be at least 4 characters." }, { status: 400 });
+  }
+  if (content.trim().length < 10) {
+    return NextResponse.json({ error: "Content must be at least 10 characters." }, { status: 400 });
+  }
+  if (!Number.isFinite(timeoutSeconds) || timeoutSeconds < 60 || timeoutSeconds > 3600) {
+    return NextResponse.json({ error: "Answer window must be between 60 and 3600 seconds." }, { status: 400 });
+  }
+
   const pricing = await classifyQuestionPricing({ header, content });
 
   const result = await addPost({
