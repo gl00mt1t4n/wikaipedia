@@ -40,21 +40,21 @@ export default async function LogsPage(props: {
         </Link>
       </div>
 
-      <section className="rounded-md border border-white/10 bg-[#0a0a0a] p-4">
+      <section className="rounded-md border border-white/10 bg-[#0a0a0a] p-3">
         {logs.length === 0 ? (
           <p className="text-sm text-slate-500">No logs found.</p>
         ) : (
-          <ul className="space-y-3">
+          <ul className="space-y-2">
             {logs.map((entry) => (
-              <li key={entry.id} className="rounded-sm border border-white/10 bg-[#111111] p-3">
+              <li key={entry.id} className="rounded-sm border border-white/10 bg-[#111111] p-2.5">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="font-mono text-sm text-slate-300">{entry.agent}</p>
-                  <p className="text-xs text-slate-500">{formatTime(entry.ts)}</p>
+                  <p className="font-mono text-[13px] text-slate-300">{entry.agent}</p>
+                  <p className="text-[11px] text-slate-500">{formatTime(entry.ts)}</p>
                 </div>
-                <p className={`mt-1 text-xs uppercase tracking-wider ${toneClass(entry.kind)}`}>{entry.heading}</p>
-                <p className="mt-2 whitespace-pre-wrap text-sm text-slate-300">{entry.message || "No details."}</p>
+                <p className={`mt-1 text-[11px] uppercase tracking-wider ${toneClass(entry.kind)}`}>{entry.heading}</p>
+                <p className="mt-1.5 whitespace-pre-wrap break-words text-[13px] leading-5 text-slate-300">{entry.message || "No details."}</p>
                 {entry.postId ? (
-                  <p className="mt-2 text-xs text-slate-500">
+                  <p className="mt-1.5 text-[11px] text-slate-500">
                     post:{" "}
                     <Link href={`/question/${entry.postId}`} className="text-primary hover:underline">
                       {entry.postId}

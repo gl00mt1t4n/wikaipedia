@@ -53,6 +53,7 @@ const runtime = {
   running: true,
   authBlockedUntil: 0,
   discovery: { lastAt: 0 },
+  inFlightQuestions: new Set(),
   eventSeen: new Map(),
   reactionWindow: { minuteKey: "", count: 0 },
   memory: {
@@ -171,14 +172,52 @@ function getTopicList(question) {
     ["sports", ["sport", "football", "soccer", "nba", "nfl", "cricket", "tennis"]],
     ["gaming", ["game", "gaming", "steam", "xbox", "playstation", "esports"]],
     ["books", ["book", "novel", "reading", "author", "literature"]],
-    ["science", ["science", "physics", "chemistry", "biology", "space", "research"]],
-    ["programming", ["code", "programming", "typescript", "javascript", "python", "rust", "api"]]
+    ["science", ["science", "physics", "chemistry", "biology", "space", "research", "paper", "dataset"]],
+    ["programming", ["code", "programming", "typescript", "javascript", "python", "rust", "api", "fullstack", "backend", "frontend", "node", "nextjs"]],
+    ["ai", ["ai", "agent", "agents", "llm", "model", "prompt", "inference", "rag", "openai"]]
   ];
   const topics = [];
   for (const [topic, tokens] of dictionary) {
     if (tokens.some((token) => text.includes(token))) topics.push(topic);
   }
   return topics.length ? topics : ["general"];
+}
+
+function getDomainAlignment(topics) {
+  const topicSet = new Set((Array.isArray(topics) ? topics : []).map((value) => String(value).toLowerCase()));
+  const domains = Array.isArray(PERSONA.domains) ? PERSONA.domains.map((value) => String(value).toLowerCase()) : [];
+  if (!domains.length || !topicSet.size) return 0;
+
+  const aliases = {
+    programming: ["programming", "systems", "product", "web3", "ai"],
+    systems: ["programming", "systems", "product", "ai"],
+    product: ["programming", "product", "systems", "ai"],
+    web3: ["crypto", "programming", "web3"],
+    sports: ["sports"],
+    fitness: ["sports"],
+    competition: ["sports", "gaming"],
+    gaming: ["gaming"],
+    esports: ["gaming", "sports"],
+    design: ["gaming", "programming", "product"],
+    books: ["books", "history"],
+    literature: ["books", "history"],
+    writing: ["books"],
+    history: ["books", "science"],
+    finance: ["crypto", "markets", "economics"],
+    economics: ["finance", "markets", "crypto"],
+    markets: ["finance", "crypto", "economics"],
+    crypto: ["crypto", "web3", "programming"]
+  };
+
+  let matches = 0;
+  for (const domain of domains) {
+    const mappedTopics = aliases[domain] ?? [domain];
+    if (mappedTopics.some((topic) => topicSet.has(topic))) {
+      matches += 1;
+    }
+  }
+
+  return clamp(matches / Math.max(1, domains.length), 0, 1);
 }
 
 function getQuestionLedger(questionId) {
@@ -801,7 +840,7 @@ async function critiquePlan(observation, plan) {
   };
 }
 
-function gatePlan(plan, critique, topicPrior, budget, requiredBidCents, marketAnswerCount) {
+function gatePlan(plan, critique, topicPrior, domainAlignment, budget, requiredBidCents, marketAnswerCount) {
   const blendedConfidence = clamp(
     plan.confidence + topicPrior * 0.18 + critique.confidenceAdjustment + PERSONA.confidenceBias,
     0,
@@ -826,6 +865,11 @@ function gatePlan(plan, critique, topicPrior, budget, requiredBidCents, marketAn
     adjustedEv >= minEv;
 
   shouldAnswer = shouldAnswer && Math.random() <= PERSONA.answerPropensity;
+
+  const highQualityFit = domainAlignment >= 0.5 && blendedConfidence >= minConfidence + 0.04 && adjustedEv >= minEv + 0.12;
+  if (!shouldAnswer && highQualityFit && critique.approve && requiredBid <= MAX_BID_CENTS) {
+    shouldAnswer = true;
+  }
 
   if (shouldAnswer && requiredBid > MAX_BID_CENTS) {
     shouldAnswer = false;
@@ -936,7 +980,12 @@ async function observe() {
 async function processQuestion(questionRef, world) {
   const questionId = String(questionRef?.id ?? "").trim();
   if (!questionId) return { acted: false, outcome: "skip", reason: "invalid-id" };
+  if (runtime.inFlightQuestions.has(questionId)) {
+    return { acted: false, outcome: "skip", reason: "in-flight" };
+  }
+  runtime.inFlightQuestions.add(questionId);
 
+  try {
   const ledger = getQuestionLedger(questionId);
   ledger.lastSeenAt = nowIso();
 
@@ -975,6 +1024,7 @@ async function processQuestion(questionRef, world) {
 
   const topics = getTopicList(question);
   const topicPrior = readTopicPrior(topics);
+  const domainAlignment = getDomainAlignment(topics);
   const [similar, bidState] = await Promise.all([
     callTool("search_similar_questions", { query: question.header }),
     callTool("get_current_bid_state", { question_id: questionId })
@@ -993,6 +1043,7 @@ async function processQuestion(questionRef, world) {
     plan,
     critique,
     topicPrior,
+    domainAlignment,
     world.budget,
     requiredBidCents,
     Number(bidState?.answerCount ?? question?.answerCount ?? 0)
@@ -1005,6 +1056,7 @@ async function processQuestion(questionRef, world) {
     ev: Number(gated.expectedValue.toFixed(2)),
     bidAmountCents: gated.bidAmountCents,
     requiredBidCents,
+    domainAlignment: Number(domainAlignment.toFixed(2)),
     vote: gated.vote,
     reason: limitString(gated.reason, 180)
   });
@@ -1050,6 +1102,7 @@ async function processQuestion(questionRef, world) {
       reason: gated.reason,
       confidence: gated.confidence,
       expectedValue: gated.expectedValue,
+      domainAlignment,
       topics
     });
     runtime.memory.reflections = runtime.memory.reflections.slice(-1000);
@@ -1145,6 +1198,7 @@ async function processQuestion(questionRef, world) {
     action: "answered",
     confidence: gated.confidence,
     expectedValue: gated.expectedValue,
+    domainAlignment,
     bidAmountCents: gated.bidAmountCents,
     tx: posted?.paymentTxHash ?? null,
     verification,
@@ -1177,6 +1231,9 @@ async function processQuestion(questionRef, world) {
     verification
   });
   return { acted: true, outcome: "answered", reason: gated.reason };
+  } finally {
+    runtime.inFlightQuestions.delete(questionId);
+  }
 }
 
 async function runLoop() {
