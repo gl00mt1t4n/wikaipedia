@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { createPublicClient, custom, encodeFunctionData, parseUnits } from "viem";
+import { createPublicClient, custom, decodeEventLog, encodeFunctionData, parseUnits } from "viem";
 import type { EIP1193Provider, Hex } from "viem";
 import type { TransactionReceipt } from "viem";
 import { base } from "viem/chains";
@@ -31,6 +31,19 @@ const WETH_WITHDRAW_ABI = [
     stateMutability: "nonpayable",
     inputs: [{ name: "wad", type: "uint256" }],
     outputs: []
+  }
+] as const;
+
+const ERC20_TRANSFER_EVENT_ABI = [
+  {
+    anonymous: false,
+    type: "event",
+    name: "Transfer",
+    inputs: [
+      { indexed: true, name: "from", type: "address" },
+      { indexed: true, name: "to", type: "address" },
+      { indexed: false, name: "value", type: "uint256" }
+    ]
   }
 ] as const;
 
@@ -178,7 +191,7 @@ export default function UniswapTestPage() {
     return client.waitForTransactionReceipt({ hash });
   }
 
-  async function readBalance(provider: Eip1193ProviderLike, token: string, owner: string): Promise<bigint> {
+  async function readBalance(provider: Eip1193ProviderLike, token: string, owner: string, blockNumber?: bigint): Promise<bigint> {
     const client = createPublicClient({
       chain: base,
       transport: custom(provider as EIP1193Provider)
@@ -187,8 +200,28 @@ export default function UniswapTestPage() {
       address: token as `0x${string}`,
       abi: ERC20_ABI,
       functionName: "balanceOf",
-      args: [owner as `0x${string}`]
+      args: [owner as `0x${string}`],
+      ...(blockNumber != null ? { blockNumber } : {})
     });
+  }
+
+  function getWethReceivedFromReceipt(receipt: TransactionReceipt, recipient: string): bigint {
+    const target = recipient.toLowerCase();
+    return receipt.logs.reduce((sum, log) => {
+      if (log.address.toLowerCase() !== WETH) return sum;
+      try {
+        const decoded = decodeEventLog({
+          abi: ERC20_TRANSFER_EVENT_ABI,
+          data: log.data,
+          topics: log.topics
+        });
+        if (decoded.eventName !== "Transfer") return sum;
+        if (decoded.args.to.toLowerCase() !== target) return sum;
+        return sum + decoded.args.value;
+      } catch {
+        return sum;
+      }
+    }, BigInt(0));
   }
 
   async function maybeApprove(input: { walletAddress: string; tokenIn: "USDC" | "WETH"; amountInBaseUnits: string; provider: Eip1193ProviderLike }) {
@@ -301,12 +334,21 @@ export default function UniswapTestPage() {
       }
 
       if (usdcToEth) {
-        setStatus("Unwrapping WETH to ETH...");
-        const wethAfter = await readBalance(provider, WETH, walletAddress);
-        const delta = wethAfter - wethBefore;
+        setStatus("Checking WETH received...");
+        const wethFromLogs = getWethReceivedFromReceipt(swapReceipt, walletAddress);
+        let deltaFromBalance = BigInt(0);
+        try {
+          const wethAtSwapBlock = await readBalance(provider, WETH, walletAddress, swapReceipt.blockNumber);
+          deltaFromBalance = wethAtSwapBlock > wethBefore ? wethAtSwapBlock - wethBefore : BigInt(0);
+        } catch {
+          const wethAfter = await readBalance(provider, WETH, walletAddress);
+          deltaFromBalance = wethAfter > wethBefore ? wethAfter - wethBefore : BigInt(0);
+        }
+        const delta = deltaFromBalance > wethFromLogs ? deltaFromBalance : wethFromLogs;
         if (delta <= BigInt(0)) {
           throw new Error("Swap completed but no WETH received to unwrap.");
         }
+        setStatus("Unwrapping WETH to ETH...");
         const withdrawData = encodeFunctionData({
           abi: WETH_WITHDRAW_ABI,
           functionName: "withdraw",
