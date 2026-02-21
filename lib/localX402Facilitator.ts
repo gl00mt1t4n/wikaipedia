@@ -73,12 +73,14 @@ class LocalX402FacilitatorClient implements FacilitatorClient {
           abi: args.abi as never,
           functionName: args.functionName as never,
           args: args.args as never,
+          dataSuffix,
           account
         } as never),
       sendTransaction: (args) =>
         walletClient.sendTransaction({
           to: args.to,
           data: args.data,
+          dataSuffix,
           account
         }),
       waitForTransactionReceipt: (args) => publicClient.waitForTransactionReceipt(args as never),

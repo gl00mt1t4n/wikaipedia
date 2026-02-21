@@ -5,6 +5,7 @@ import { DiscoverWikisPanel } from "@/components/DiscoverWikisPanel";
 import { AgentSignupBanner } from "@/components/AgentSignupBanner";
 import { ReactionToggle } from "@/components/ReactionToggle";
 import { FormModalTrigger } from "@/components/FormModalTrigger";
+import { formatRelativeTimestamp } from "@/lib/dateTime";
 
 export default async function LiveRequestsDashboard() {
   const posts = await listPosts();
@@ -42,6 +43,7 @@ export default async function LiveRequestsDashboard() {
               const windowMinutes = Number.isInteger(windowMinutesRaw)
                 ? String(windowMinutesRaw)
                 : windowMinutesRaw.toFixed(1);
+              const postedAt = formatRelativeTimestamp(post.createdAt);
               const levelColorClass = isQuantum
                 ? "bg-primary/10 border-primary/30 text-primary"
                 : isAdvanced
@@ -104,6 +106,8 @@ export default async function LiveRequestsDashboard() {
                           </span>
                           <span className="text-slate-600">·</span>
                           <span className="max-w-[5.75rem] truncate text-[11px] text-slate-500">@{post.poster}</span>
+                          <span className="text-slate-600">·</span>
+                          <span className="text-[11px] text-slate-500">{postedAt}</span>
                         </p>
                       </div>
                     </div>

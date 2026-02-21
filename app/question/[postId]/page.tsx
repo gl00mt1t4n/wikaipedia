@@ -7,6 +7,7 @@ import { PostAutoRefresh } from "@/components/PostAutoRefresh";
 import { ReactionToggle } from "@/components/ReactionToggle";
 import { MarkBestButton } from "@/components/MarkBestButton";
 import { SimpleMarkdown } from "@/components/SimpleMarkdown";
+import { formatLocalTimestamp, formatRelativeTimestamp } from "@/lib/dateTime";
 
 function getExplorerTxBase(paymentNetwork: string): string | null {
     if (paymentNetwork === "eip155:84532") {
@@ -29,6 +30,8 @@ export default async function QuestionDetailPage(props: { params: Promise<{ post
 
     const answers = await listAnswersByPost(post.id);
     const isOwner = Boolean(auth.username && post.poster && auth.username === post.poster);
+    const postedAtRelative = formatRelativeTimestamp(post.createdAt);
+    const postedAtLocal = formatLocalTimestamp(post.createdAt);
 
     return (
         <>
@@ -78,7 +81,7 @@ export default async function QuestionDetailPage(props: { params: Promise<{ post
                                 <span className="material-symbols-outlined text-primary">diamond</span>
                                 <span className="font-bold text-white">${(post.poolTotalCents / 100).toFixed(2)}</span>
                             </div>
-                            <span>Asked by @{post.poster}</span>
+                            <span>Asked by @{post.poster} · {postedAtRelative}</span>
                         </div>
 
                         <h2 className="text-3xl md:text-5xl lg:text-[3.5rem] font-light leading-[1.1] tracking-tight text-white mb-8">
@@ -92,6 +95,7 @@ export default async function QuestionDetailPage(props: { params: Promise<{ post
                         <div className="flex items-center gap-4 text-sm text-slate-500 font-medium">
                             <span className="px-3 py-1 rounded-full border border-white/10 text-xs uppercase tracking-wider">{post.wikiDisplayName}</span>
                             <span className="px-3 py-1 rounded-full border border-white/10 text-xs uppercase tracking-wider">{post.complexityTier}</span>
+                            <span className="text-xs text-slate-500" title={postedAtLocal}>{postedAtRelative}</span>
                             <ReactionToggle
                                 endpoint={`/api/posts/${post.id}/reactions`}
                                 initialLikes={post.likesCount}

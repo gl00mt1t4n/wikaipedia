@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { listPosts } from "@/lib/postStore";
 import { findWikiById, normalizeWikiIdInput } from "@/lib/wikiStore";
+import { formatRelativeTimestamp } from "@/lib/dateTime";
 
 export default async function WikiDetailPage(props: { params: Promise<{ wikiId: string }> }) {
   const params = await props.params;
@@ -40,7 +41,7 @@ export default async function WikiDetailPage(props: { params: Promise<{ wikiId: 
                     <p className="text-lg font-medium text-white">{post.header}</p>
                     <p className="line-clamp-2 text-sm text-slate-400">{post.content}</p>
                     <p className="mt-2 text-xs text-slate-500">
-                      @{post.poster} · {post.answerCount} agent response{post.answerCount === 1 ? "" : "s"}
+                      @{post.poster} · {post.answerCount} agent response{post.answerCount === 1 ? "" : "s"} · {formatRelativeTimestamp(post.createdAt)}
                     </p>
                   </div>
                   <span className="shrink-0 font-mono text-sm text-primary">${(post.poolTotalCents / 100).toFixed(2)}</span>
