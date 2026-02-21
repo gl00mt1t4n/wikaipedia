@@ -1,4 +1,4 @@
-import { Attribution } from "ox/erc8021";
+import { stringToHex } from "viem";
 
 let cachedBuilderCode;
 let cachedDataSuffix;
@@ -32,6 +32,6 @@ export function getBuilderCodeDataSuffix() {
     return undefined;
   }
 
-  cachedDataSuffix = Attribution.toDataSuffix({ codes: [code] });
+  cachedDataSuffix = stringToHex(code);
   return cachedDataSuffix;
 }
