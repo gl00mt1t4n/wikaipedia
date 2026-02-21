@@ -213,18 +213,21 @@ async function callAgentWikiDecision(joinedWikiIds, candidates) {
   return parsed;
 }
 
-async function submitAnswer(postId, answerText) {
+async function submitAnswer(postId, answerText, bidAmountCents) {
   const response = await fetchWithPayment(`${APP_BASE_URL}/api/posts/${postId}/answers`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${AGENT_ACCESS_TOKEN}`
     },
-    body: JSON.stringify({ content: answerText })
+    body: JSON.stringify({ content: answerText, bidAmountCents })
   });
 
   if (response.ok) {
-    return { ok: true };
+    const payload = await response.json().catch(() => ({}));
+    const settledBidAmountCents = Number(payload?.bidAmountCents);
+    const settledBid = Number.isFinite(settledBidAmountCents) ? settledBidAmountCents : bidAmountCents;
+    return { ok: true, bidAmountCents: settledBid, paymentTxHash: payload?.paymentTxHash ?? null };
   }
 
   const bodyText = await response.text().catch(() => "");
@@ -485,8 +488,13 @@ async function handleQuestionEvent(payload) {
   let modelDecision = null;
   try {
     modelDecision = await callAgentDecision(post, existingAnswers);
+    const modelBidRaw = Number(modelDecision?.bidAmountCents);
+    const modelBidDisplay =
+      Number.isFinite(modelBidRaw) && Number.isInteger(modelBidRaw) && modelBidRaw >= 0
+        ? String(modelBidRaw)
+        : "none";
     console.log(
-      `[decision:model] postId=${payload.postId} respond=${Boolean(modelDecision?.respond)} postReaction=${String(modelDecision?.postReaction ?? "abstain")} reason="${String(modelDecision?.respondReason ?? "n/a")}"`
+      `[decision:model] postId=${payload.postId} respond=${Boolean(modelDecision?.respond)} bidAmountCents=${modelBidDisplay} postReaction=${String(modelDecision?.postReaction ?? "abstain")} reason="${String(modelDecision?.respondReason ?? "n/a")}"`
     );
   } catch (error) {
     console.warn(
@@ -584,9 +592,20 @@ async function handleQuestionEvent(payload) {
     return;
   }
 
+  const defaultBidRaw = Number(process.env.AGENT_DEFAULT_BID_CENTS ?? post.requiredBidCents ?? 0);
+  const fallbackBidCents = Number.isFinite(defaultBidRaw) ? Math.max(0, Math.floor(defaultBidRaw)) : 0;
+  const modelBidRaw = Number(modelDecision?.bidAmountCents);
+  const hasValidModelBid = Number.isFinite(modelBidRaw) && Number.isInteger(modelBidRaw) && modelBidRaw >= 0;
+  const selectedBidCents = hasValidModelBid ? modelBidRaw : fallbackBidCents;
+  const bidSource = hasValidModelBid ? "model" : "fallback";
+  console.log(
+    `[bid] selected postId=${payload.postId} bidAmountCents=${selectedBidCents} source=${bidSource}${
+      hasValidModelBid ? "" : ` fallbackBidCents=${fallbackBidCents}`
+    }`
+  );
   const questionText = buildQuestionPrompt(post);
   const answer = await callAgent(questionText);
-  const submitResult = await submitAnswer(payload.postId, answer);
+  const submitResult = await submitAnswer(payload.postId, answer, selectedBidCents);
 
   if (!submitResult.ok) {
     console.warn(`[submit] failed postId=${payload.postId} error="${submitResult.error}"`);
@@ -599,7 +618,11 @@ async function handleQuestionEvent(payload) {
   }
 
   state.submittedAnswers += 1;
-  console.log(`[submit] success postId=${payload.postId}`);
+  console.log(
+    `[submit] success postId=${payload.postId} bidAmountCents=${submitResult.bidAmountCents} bidUsd=${(
+      Number(submitResult.bidAmountCents) / 100
+    ).toFixed(2)}${submitResult.paymentTxHash ? ` tx=${submitResult.paymentTxHash}` : ""}`
+  );
 }
 
 async function runStartupBackfill() {

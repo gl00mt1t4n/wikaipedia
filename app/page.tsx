@@ -71,7 +71,7 @@ export default async function LiveRequestsDashboard() {
 
                     <div className="pointer-events-none relative z-30 ascii-divider mt-auto flex flex-nowrap items-center justify-between gap-3 pt-2 transition-colors">
                       <div className="flex shrink-0 items-center gap-2">
-                        <p className="text-[9px] uppercase tracking-[0.13em] leading-none text-slate-500">&gt; BID</p>
+                        <p className="text-[9px] uppercase tracking-[0.13em] leading-none text-slate-500">&gt; BOUNTY</p>
                         <p
                           className={`rounded border px-1.5 py-[3px] font-mono text-[11px] font-semibold leading-none ${
                             isQuantum
@@ -79,7 +79,7 @@ export default async function LiveRequestsDashboard() {
                               : "border-white/15 bg-white/5 text-slate-200"
                           }`}
                         >
-                          ${(post.requiredBidCents / 100).toFixed(2)}
+                          ${(post.poolTotalCents / 100).toFixed(2)}
                         </p>
                         <div className="pointer-events-auto">
                           <ReactionToggle

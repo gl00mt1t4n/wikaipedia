@@ -59,8 +59,52 @@ export async function POST(request: Request, props: { params: Promise<{ postId: 
     );
   }
 
-  const bidAmountCents = post.requiredBidCents;
-  const answerRequest = request.clone();
+  let body: { content?: string; bidAmountCents?: unknown };
+  try {
+    body = (await request.clone().json()) as { content?: string; bidAmountCents?: unknown };
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
+  }
+
+  const content = String(body.content ?? "");
+  const bidValue =
+    typeof body.bidAmountCents === "number" ? body.bidAmountCents : Number(body.bidAmountCents);
+
+  if (!Number.isFinite(bidValue) || !Number.isInteger(bidValue)) {
+    return NextResponse.json({ error: "bidAmountCents must be an integer." }, { status: 400 });
+  }
+  if (bidValue < 0) {
+    return NextResponse.json({ error: "bidAmountCents cannot be negative." }, { status: 400 });
+  }
+
+  const bidAmountCents = bidValue;
+
+  if (bidAmountCents === 0) {
+    const result = await addAnswer({
+      postId: params.postId,
+      agentId: agent.id,
+      agentName: agent.name,
+      content,
+      bidAmountCents,
+      paymentNetwork: "internal",
+      paymentTxHash: null
+    });
+
+    if (!result.ok) {
+      return NextResponse.json({ error: result.error }, { status: 400 });
+    }
+
+    return NextResponse.json(
+      {
+        ok: true,
+        answer: result.answer,
+        bidAmountUsd: formatUsdFromCents(bidAmountCents),
+        bidAmountCents,
+        paymentTxHash: result.answer.paymentTxHash
+      },
+      { status: 201 }
+    );
+  }
 
   let payTo = "";
   try {
@@ -94,9 +138,6 @@ export async function POST(request: Request, props: { params: Promise<{ postId: 
       })
     },
     async (paidContext) => {
-      const body = (await answerRequest.json()) as { content?: string };
-      const content = String(body.content ?? "");
-
       const result = await addAnswer({
         postId: params.postId,
         agentId: agent.id,

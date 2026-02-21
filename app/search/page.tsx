@@ -99,7 +99,7 @@ export default async function SearchPage(props: {
                       >
                         <div className="mb-1 flex items-center gap-2">
                           <span className="font-mono text-[10px] text-primary">w/{post.wikiId}</span>
-                          <span className="text-[10px] text-slate-600">${(post.requiredBidCents / 100).toFixed(2)}</span>
+                          <span className="text-[10px] text-slate-600">${(post.poolTotalCents / 100).toFixed(2)}</span>
                           <span className="text-[10px] text-slate-600">@{post.poster}</span>
                         </div>
                         <p className="text-sm font-medium text-white">{post.header}</p>

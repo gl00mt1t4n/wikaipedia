@@ -1,7 +1,46 @@
 import Link from "next/link";
+import path from "node:path";
+import { readFile } from "node:fs/promises";
 import { AgentOpsPanel } from "@/components/AgentOpsPanel";
 import { getAuthState } from "@/lib/session";
 import { listAgents, listAgentsByOwner } from "@/lib/agentStore";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+const AGENT_RUN_LOG_DIR = path.resolve(".agent-run-logs");
+
+function slugify(input: string): string {
+  return input.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+}
+
+function isRelevantListenerLine(line: string): boolean {
+  return (
+    line.includes("[decision:model]") ||
+    line.includes("[event]") ||
+    line.includes("[reaction]") ||
+    line.includes("[submit]")
+  );
+}
+
+async function readRecentListenerLines(agentName: string, limit = 10): Promise<string[]> {
+  const key = slugify(agentName);
+  const filePath = path.join(AGENT_RUN_LOG_DIR, `${key}-listener.log`);
+
+  try {
+    const raw = await readFile(filePath, "utf8");
+    const relevant = raw
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .filter(isRelevantListenerLine);
+    return relevant.slice(-limit).map((line) =>
+      line.startsWith("[") && line.includes(":listener]") ? line : `[${key}:listener] ${line}`
+    );
+  } catch {
+    return [];
+  }
+}
 
 export default async function AgentsPage() {
   const auth = await getAuthState();
@@ -9,6 +48,11 @@ export default async function AgentsPage() {
     listAgents(),
     auth.walletAddress ? listAgentsByOwner(auth.walletAddress) : Promise.resolve([])
   ]);
+  const allAgents = [...myAgents, ...publicAgents];
+  const logsEntries = await Promise.all(
+    allAgents.map(async (agent) => [agent.id, await readRecentListenerLines(agent.name, 12)] as const)
+  );
+  const logsByAgentId = new Map(logsEntries);
 
   return (
     <div className="bg-background-dark text-slate-200">
@@ -39,6 +83,16 @@ export default async function AgentsPage() {
                       <div>
                         <p className="font-medium text-white">{agent.name}</p>
                         <p className="mt-1 text-xs text-slate-500">{agent.mcpServerUrl}</p>
+                        <div className="mt-2 rounded border border-white/10 bg-black/20 p-2">
+                          <p className="text-[10px] uppercase tracking-wider text-slate-500">Listener logs</p>
+                          {(logsByAgentId.get(agent.id) ?? []).length === 0 ? (
+                            <p className="mt-1 text-xs text-slate-600">No recent listener logs.</p>
+                          ) : (
+                            <pre className="mt-1 max-h-40 overflow-y-auto whitespace-pre-wrap break-words text-[11px] leading-relaxed text-slate-400">
+                              {(logsByAgentId.get(agent.id) ?? []).join("\n")}
+                            </pre>
+                          )}
+                        </div>
                       </div>
                       <span className="inline-flex items-center justify-center rounded-full border border-white/10 px-2.5 py-1 text-xs uppercase tracking-widest leading-none text-slate-400">
                         {agent.transport}
@@ -64,6 +118,16 @@ export default async function AgentsPage() {
                       <p className="font-medium text-white">{agent.name}</p>
                       <p className="line-clamp-2 text-sm text-slate-400">{agent.description}</p>
                       <p className="mt-1 text-xs text-slate-500">Owner: @{agent.ownerUsername}</p>
+                      <div className="mt-2 rounded border border-white/10 bg-black/20 p-2">
+                        <p className="text-[10px] uppercase tracking-wider text-slate-500">Listener logs</p>
+                        {(logsByAgentId.get(agent.id) ?? []).length === 0 ? (
+                          <p className="mt-1 text-xs text-slate-600">No recent listener logs.</p>
+                        ) : (
+                          <pre className="mt-1 max-h-40 overflow-y-auto whitespace-pre-wrap break-words text-[11px] leading-relaxed text-slate-400">
+                            {(logsByAgentId.get(agent.id) ?? []).join("\n")}
+                          </pre>
+                        )}
+                      </div>
                     </div>
                     <span className="shrink-0 inline-flex items-center justify-center rounded-full border border-white/10 px-2.5 py-1 text-xs uppercase tracking-widest leading-none text-slate-400">
                       {agent.transport}

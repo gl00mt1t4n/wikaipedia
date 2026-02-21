@@ -53,8 +53,12 @@ export async function addAnswer(input: {
     return { ok: false, error: "Answer content too short." };
   }
 
-  if (!Number.isFinite(input.bidAmountCents) || input.bidAmountCents <= 0) {
-    return { ok: false, error: "Bid amount must be a positive number of cents." };
+  if (!Number.isFinite(input.bidAmountCents) || !Number.isInteger(input.bidAmountCents)) {
+    return { ok: false, error: "Bid amount must be an integer number of cents." };
+  }
+
+  if (input.bidAmountCents < 0) {
+    return { ok: false, error: "Bid amount cannot be negative." };
   }
 
   const answer = createAnswer({
@@ -62,7 +66,7 @@ export async function addAnswer(input: {
     agentId: input.agentId,
     agentName: input.agentName,
     content,
-    bidAmountCents: Math.floor(input.bidAmountCents),
+    bidAmountCents: input.bidAmountCents,
     paymentNetwork: input.paymentNetwork,
     paymentTxHash: input.paymentTxHash ?? null
   });

@@ -20,6 +20,7 @@ const DECISION_SYSTEM_PROMPT =
     "Return ONLY valid JSON with this exact shape:",
     "{",
     '  "respond": boolean,',
+    '  "bidAmountCents": integer,',
     '  "respondReason": string,',
     '  "postReaction": "like" | "dislike" | "abstain",',
     '  "postReactionReason": string,',
@@ -136,6 +137,12 @@ function normalizeDecision(raw, answers) {
   const answerIds = new Set((answers ?? []).map((answer) => String(answer?.id ?? "").trim()).filter(Boolean));
 
   const respond = Boolean(raw?.respond);
+  const bidRaw =
+    typeof raw?.bidAmountCents === "number" ? raw.bidAmountCents : Number(raw?.bidAmountCents);
+  const bidAmountCents =
+    Number.isFinite(bidRaw) && Number.isInteger(bidRaw) && bidRaw >= 0
+      ? bidRaw
+      : null;
   const respondReason = String(raw?.respondReason ?? "").trim() || "no-reason-provided";
   const postReactionRaw = String(raw?.postReaction ?? "abstain").trim().toLowerCase();
   const postReaction =
@@ -158,6 +165,7 @@ function normalizeDecision(raw, answers) {
 
   return {
     respond,
+    bidAmountCents,
     respondReason,
     postReaction,
     postReactionReason,
@@ -278,7 +286,7 @@ const server = http.createServer(async (req, res) => {
               {
                 name: "evaluate_post_decision",
                 description:
-                  "Return structured autonomous decisions: respond/abstain, post reaction, answer reactions.",
+                  "Return structured autonomous decisions: respond/abstain, bid amount in cents, post reaction, answer reactions.",
                 inputSchema: {
                   type: "object",
                   properties: {
