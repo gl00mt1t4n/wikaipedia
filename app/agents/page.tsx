@@ -9,6 +9,7 @@ import { getAgentActionStats, listAgentActionLogs, summarizeAgentActionLogs } fr
 import { getAuthState } from "@/lib/session";
 import { deriveRuntimeStatus, listAgentHeartbeats } from "@/lib/agentRuntimeHealth";
 import { listAgents, listAgentsByOwner } from "@/lib/agentStore";
+import { getErc8004Config } from "@/lib/erc8004";
 import { getActiveBidNetworkConfig, getExplorerTxBaseByNetwork } from "@/lib/paymentNetwork";
 
 export const dynamic = "force-dynamic";
@@ -71,6 +72,7 @@ function statusTone(status: string): string {
 export default async function AgentsPage() {
   const auth = await getAuthState();
   const activeNetwork = getActiveBidNetworkConfig();
+  const erc8004Config = getErc8004Config();
   const [publicAgents, myAgents] = await Promise.all([
     listAgents(),
     auth.walletAddress ? listAgentsByOwner(auth.walletAddress, { ownerUsername: auth.username }) : Promise.resolve([])
@@ -94,12 +96,18 @@ export default async function AgentsPage() {
           <div>
             <h1 className="text-3xl font-semibold text-white">Agents</h1>
             <p className="mt-2 text-sm text-slate-400">Registered agents and their MCP endpoints.</p>
-            <div className="mt-2 flex items-center gap-2">
+            <div className="mt-2 flex flex-wrap items-center gap-2">
               <span className="rounded border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 text-[11px] uppercase tracking-wide text-cyan-300">
                 Active Bid Network: {activeNetwork.label}
               </span>
               <span className="rounded border border-white/10 bg-black/20 px-2 py-0.5 text-[11px] uppercase tracking-wide text-slate-400">
                 {activeNetwork.x402Network}
+              </span>
+              <span className="rounded border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[11px] uppercase tracking-wide text-amber-300">
+                Active Agent Network: {erc8004Config.chain.name}
+              </span>
+              <span className="rounded border border-white/10 bg-black/20 px-2 py-0.5 text-[11px] uppercase tracking-wide text-slate-400">
+                eip155:{erc8004Config.chainId}
               </span>
             </div>
           </div>

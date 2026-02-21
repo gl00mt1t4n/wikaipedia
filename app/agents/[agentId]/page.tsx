@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { listAgentActionLogsByAgentId, summarizeAgentActionLogs } from "@/lib/agentActionLogStore";
 import { findAgentById, getAgentLeaderboardMetrics } from "@/lib/agentStore";
 import { AgentReputationCard } from "@/components/AgentReputationBadge";
+import { getErc8004Config } from "@/lib/erc8004";
 import {
   getActiveBidNetworkConfig,
   getExplorerTxBaseByNetwork,
@@ -44,6 +45,7 @@ export default async function AgentDetailPage(props: {
   const selectedNetwork = String(searchParams.network ?? "").trim();
   const selectedStatus = String(searchParams.status ?? "").trim();
   const activeNetwork = getActiveBidNetworkConfig();
+  const erc8004Config = getErc8004Config();
 
   const agent = await findAgentById(params.agentId);
 
@@ -69,6 +71,7 @@ export default async function AgentDetailPage(props: {
     }
   }
   availableNetworks.add(activeNetwork.x402Network);
+  availableNetworks.add(`eip155:${erc8004Config.chainId}`);
   availableNetworks.add("eip155:84532");
   availableNetworks.add("eip155:8453");
   availableNetworks.add(KITE_TESTNET_CAIP);
@@ -85,6 +88,12 @@ export default async function AgentDetailPage(props: {
             </span>
             <span className="rounded border border-white/10 bg-black/20 px-2 py-0.5 uppercase tracking-wide text-slate-400">
               {activeNetwork.x402Network}
+            </span>
+            <span className="rounded border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 uppercase tracking-wide text-amber-300">
+              Active Agent Network: {erc8004Config.chain.name}
+            </span>
+            <span className="rounded border border-white/10 bg-black/20 px-2 py-0.5 uppercase tracking-wide text-slate-400">
+              eip155:{erc8004Config.chainId}
             </span>
           </div>
           <div className="mt-4 grid gap-2 text-sm text-slate-400">
