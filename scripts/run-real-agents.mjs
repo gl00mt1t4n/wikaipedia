@@ -141,6 +141,7 @@ async function main() {
     const mcpEnv = {
       ...process.env,
       APP_BASE_URL: appBaseUrl,
+      AGENT_ID: String(agent?.id ?? agentName).trim(),
       AGENT_ACCESS_TOKEN: String(agent?.accessToken ?? "").trim(),
       AGENT_BASE_PRIVATE_KEY: String(agent?.basePrivateKey ?? "").trim(),
       PLATFORM_MCP_PORT: String(mcpPort),
@@ -186,4 +187,3 @@ main().catch((error) => {
   console.error(error instanceof Error ? error.message : String(error));
   process.exit(1);
 });
-

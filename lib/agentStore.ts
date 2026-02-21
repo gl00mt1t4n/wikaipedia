@@ -134,6 +134,41 @@ export type AgentLeaderboardMetrics = {
   yieldCents: number;
 };
 
+const DEFAULT_OWNER_DELEGATION = "sahil:local_test_owner";
+
+function parseControlledOwnerUsernames(controllerUsername: string | null | undefined): string[] {
+  const normalizedController = String(controllerUsername ?? "").trim().toLowerCase();
+  if (!normalizedController) {
+    return [];
+  }
+
+  const controlled = new Set<string>([normalizedController]);
+  const rawDelegations = String(
+    process.env.AGENT_OWNER_DELEGATIONS ?? process.env.AGENT_OWNER_CONTROL ?? DEFAULT_OWNER_DELEGATION
+  ).trim();
+
+  if (!rawDelegations) {
+    return Array.from(controlled);
+  }
+
+  for (const entry of rawDelegations.split(/[,\n;]/)) {
+    const chunk = entry.trim();
+    if (!chunk) continue;
+    const [rawController, rawDelegates] = chunk.split(":");
+    const controller = String(rawController ?? "").trim().toLowerCase();
+    if (!controller || controller !== normalizedController) continue;
+    const delegates = String(rawDelegates ?? "")
+      .split(/[|]/)
+      .map((value) => value.trim().toLowerCase())
+      .filter(Boolean);
+    for (const delegate of delegates) {
+      controlled.add(delegate);
+    }
+  }
+
+  return Array.from(controlled);
+}
+
 export async function getAgentLeaderboardMetrics(): Promise<Map<string, AgentLeaderboardMetrics>> {
   const [replyCounts, winData] = await Promise.all([
     prisma.answer.groupBy({
@@ -214,10 +249,28 @@ export async function getAgentLeaderboardMetrics(): Promise<Map<string, AgentLea
   return metricsMap;
 }
 
-export async function listAgentsByOwner(ownerWalletAddress: string): Promise<PublicAgent[]> {
+export async function listAgentsByOwner(
+  ownerWalletAddress: string,
+  options?: { ownerUsername?: string | null }
+): Promise<PublicAgent[]> {
   const normalized = ownerWalletAddress.toLowerCase();
+  const controlledUsernames = parseControlledOwnerUsernames(options?.ownerUsername);
+  const ownerScope: Prisma.AgentWhereInput = controlledUsernames.length
+    ? {
+        OR: [
+          { ownerWalletAddress: normalized },
+          ...controlledUsernames.map((ownerUsername) => ({
+            ownerUsername: {
+              equals: ownerUsername,
+              mode: "insensitive" as const
+            }
+          }))
+        ]
+      }
+    : { ownerWalletAddress: normalized };
+
   const agents = await prisma.agent.findMany({
-    where: { ownerWalletAddress: normalized },
+    where: ownerScope,
     orderBy: { createdAt: "desc" }
   });
   const realOnly = String(process.env.REAL_AGENT_REGISTRY_ONLY ?? "1") !== "0";

@@ -12,30 +12,22 @@ import { registerExactEvmScheme } from "@x402/evm/exact/facilitator";
 import type { FacilitatorEvmSigner } from "@x402/evm";
 import { createPublicClient, createWalletClient, http } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { base, baseSepolia } from "viem/chains";
 import { getBuilderCode, getBuilderCodeDataSuffix } from "@/lib/builderCode";
+import { getChainByX402Network, getPaymentNetworkConfigByCaip, isBaseX402Network } from "@/lib/paymentNetwork";
 
-function getBaseChain(network: Network) {
-  if (network === "eip155:84532") {
-    return baseSepolia;
-  }
-  if (network === "eip155:8453") {
-    return base;
-  }
-  throw new Error(`Unsupported X402_BASE_NETWORK for local facilitator: ${network}`);
-}
-
-function requireFacilitatorPrivateKey(): `0x${string}` {
+function requireFacilitatorPrivateKey(network: Network): `0x${string}` {
   const value = (
     process.env.X402_FACILITATOR_PRIVATE_KEY ??
-    process.env.BASE_ESCROW_PRIVATE_KEY ??
+    (isBaseX402Network(network)
+      ? process.env.BASE_ESCROW_PRIVATE_KEY
+      : process.env.KITE_ESCROW_PRIVATE_KEY ?? process.env.BASE_ESCROW_PRIVATE_KEY) ??
     process.env.PRIVATE_KEY ??
     ""
   ).trim();
 
   if (!value) {
     throw new Error(
-      "Missing facilitator key. Set X402_FACILITATOR_PRIVATE_KEY (or BASE_ESCROW_PRIVATE_KEY / PRIVATE_KEY)."
+      "Missing facilitator key. Set X402_FACILITATOR_PRIVATE_KEY (or BASE_ESCROW_PRIVATE_KEY / KITE_ESCROW_PRIVATE_KEY / PRIVATE_KEY)."
     );
   }
   return value as `0x${string}`;
@@ -45,11 +37,16 @@ class LocalX402FacilitatorClient implements FacilitatorClient {
   private readonly facilitator = new x402Facilitator();
 
   constructor(network: Network) {
-    const chain = getBaseChain(network);
-    const account = privateKeyToAccount(requireFacilitatorPrivateKey());
-    const builderCode = getBuilderCode();
-    const dataSuffix = getBuilderCodeDataSuffix();
-    const rpcUrl = (process.env.X402_FACILITATOR_RPC_URL ?? "").trim() || undefined;
+    const chain = getChainByX402Network(network);
+    if (!chain) {
+      throw new Error(`Unsupported x402 network for local facilitator: ${network}`);
+    }
+
+    const account = privateKeyToAccount(requireFacilitatorPrivateKey(network));
+    const builderCode = isBaseX402Network(network) ? getBuilderCode() : null;
+    const dataSuffix = isBaseX402Network(network) ? getBuilderCodeDataSuffix() : undefined;
+    const networkConfig = getPaymentNetworkConfigByCaip(network);
+    const rpcUrl = (process.env.X402_FACILITATOR_RPC_URL ?? networkConfig?.rpcUrl ?? "").trim() || undefined;
     const transport = http(rpcUrl);
 
     console.info(
@@ -128,11 +125,15 @@ class LocalX402FacilitatorClient implements FacilitatorClient {
   }
 }
 
-let localFacilitatorClient: LocalX402FacilitatorClient | null = null;
+const localFacilitatorClients = new Map<Network, LocalX402FacilitatorClient>();
 
 export function getLocalX402FacilitatorClient(network: Network): FacilitatorClient {
-  if (!localFacilitatorClient) {
-    localFacilitatorClient = new LocalX402FacilitatorClient(network);
+  const existing = localFacilitatorClients.get(network);
+  if (existing) {
+    return existing;
   }
-  return localFacilitatorClient;
+
+  const created = new LocalX402FacilitatorClient(network);
+  localFacilitatorClients.set(network, created);
+  return created;
 }

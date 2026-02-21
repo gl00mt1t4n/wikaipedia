@@ -1,4 +1,5 @@
 import http from "node:http";
+import { randomBytes } from "node:crypto";
 import { mkdir, readFile, writeFile, appendFile } from "node:fs/promises";
 import path from "node:path";
 import { wrapFetchWithPaymentFromConfig } from "@x402/fetch";
@@ -18,10 +19,29 @@ const ACTION_LOG_FILE = path.join(LOG_DIR, "real-agent-actions.log");
 const AGENT_MAX_DAILY_SPEND_CENTS = Number(process.env.AGENT_MAX_DAILY_SPEND_CENTS ?? 1000);
 const AGENT_MAX_BID_CENTS = Number(process.env.AGENT_MAX_BID_CENTS ?? 200);
 const TOOL_RATE_LIMIT_PER_MINUTE = Number(process.env.AGENT_TOOL_RATE_LIMIT_PER_MINUTE ?? 60);
-const X402_BASE_NETWORK = String(process.env.X402_BASE_NETWORK ?? "eip155:84532").trim();
+const ACTIVE_BID_NETWORK = String(process.env.ACTIVE_BID_NETWORK ?? "").trim().toLowerCase();
+const X402_BASE_NETWORK = String(process.env.X402_BASE_NETWORK ?? "").trim();
 const AGENT_BASE_PRIVATE_KEY = String(process.env.AGENT_BASE_PRIVATE_KEY ?? "").trim();
+const AGENT_KITE_PRIVATE_KEY = String(process.env.AGENT_KITE_PRIVATE_KEY ?? "").trim();
+const AGENT_PAYMENT_PRIVATE_KEY = String(process.env.AGENT_PAYMENT_PRIVATE_KEY ?? "").trim();
 const AGENTKIT_MNEMONIC = String(process.env.AGENTKIT_MNEMONIC ?? process.env.MNEMONIC_PHRASE ?? "").trim();
 const AGENT_WALLET_DERIVATION_PATH = String(process.env.AGENT_WALLET_DERIVATION_PATH ?? "m/44'/60'/0'/0/0").trim();
+const AGENT_ID = String(process.env.AGENT_ID ?? process.env.AGENT_RUNTIME_AGENT_ID ?? "").trim();
+
+function resolveX402Network() {
+  if (X402_BASE_NETWORK) {
+    return X402_BASE_NETWORK;
+  }
+  if (ACTIVE_BID_NETWORK === "base_mainnet") {
+    return "eip155:8453";
+  }
+  if (ACTIVE_BID_NETWORK === "kite_testnet") {
+    return "eip155:2368";
+  }
+  return "eip155:84532";
+}
+
+const X402_PAYMENT_NETWORK = resolveX402Network();
 
 const runtime = {
   state: {
@@ -35,7 +55,11 @@ const runtime = {
 };
 
 let paymentAccount = null;
-if (AGENT_BASE_PRIVATE_KEY) {
+if (AGENT_PAYMENT_PRIVATE_KEY) {
+  paymentAccount = privateKeyToAccount(AGENT_PAYMENT_PRIVATE_KEY);
+} else if (X402_PAYMENT_NETWORK === "eip155:2368" && AGENT_KITE_PRIVATE_KEY) {
+  paymentAccount = privateKeyToAccount(AGENT_KITE_PRIVATE_KEY);
+} else if (AGENT_BASE_PRIVATE_KEY) {
   paymentAccount = privateKeyToAccount(AGENT_BASE_PRIVATE_KEY);
 } else if (AGENTKIT_MNEMONIC) {
   paymentAccount = mnemonicToAccount(AGENTKIT_MNEMONIC, { path: AGENT_WALLET_DERIVATION_PATH });
@@ -44,7 +68,7 @@ const fetchWithPayment = paymentAccount
   ? wrapFetchWithPaymentFromConfig(fetch, {
       schemes: [
         {
-          network: X402_BASE_NETWORK,
+          network: X402_PAYMENT_NETWORK,
           client: new ExactEvmScheme(paymentAccount)
         }
       ]
@@ -85,6 +109,21 @@ function makeHeaders(extra = {}) {
     ...(AGENT_ACCESS_TOKEN ? { Authorization: `Bearer ${AGENT_ACCESS_TOKEN}` } : {}),
     ...extra
   };
+}
+
+function generateActionId() {
+  return `act_${Date.now().toString(36)}_${randomBytes(6).toString("hex")}`;
+}
+
+function buildAgentIdentityMessage(envelope) {
+  return [
+    "agent-action-v1",
+    `actionId:${envelope.actionId}`,
+    `agentId:${envelope.agentId}`,
+    `postId:${envelope.postId}`,
+    `bidAmountCents:${envelope.bidAmountCents}`,
+    `issuedAt:${envelope.issuedAt}`
+  ].join("\n");
 }
 
 async function postCentralAgentLog({ type, payload }) {
@@ -407,15 +446,37 @@ async function tool_post_answer(args) {
   if (budgetError) return budgetError;
   if (bidAmountCents > 0 && !paymentAccount) {
     return fail(
-      "Bid requires signer wallet. Set AGENT_BASE_PRIVATE_KEY or AGENTKIT_MNEMONIC/MNEMONIC_PHRASE for x402 signing.",
+      "Bid requires signer wallet. Set AGENT_PAYMENT_PRIVATE_KEY (or AGENT_KITE_PRIVATE_KEY/AGENT_BASE_PRIVATE_KEY or AGENTKIT_MNEMONIC/MNEMONIC_PHRASE) for x402 signing.",
       400
     );
+  }
+
+  const actionId = generateActionId();
+  const headers = makeHeaders({ "x-agent-action-id": actionId });
+
+  if (bidAmountCents > 0) {
+    if (!AGENT_ID) {
+      return fail("Paid bids require AGENT_ID (or AGENT_RUNTIME_AGENT_ID) for identity proof headers.", 400);
+    }
+    const envelope = {
+      version: 1,
+      actionId,
+      agentId: AGENT_ID,
+      postId: questionId,
+      bidAmountCents,
+      issuedAt: nowIso()
+    };
+    const signature = await paymentAccount.signMessage({
+      message: buildAgentIdentityMessage(envelope)
+    });
+    headers["x-agent-identity-v1"] = Buffer.from(JSON.stringify(envelope), "utf8").toString("base64");
+    headers["x-agent-signature"] = signature;
   }
 
   try {
     const response = await fetchWithPayment(`${APP_BASE_URL}/api/posts/${encodeURIComponent(questionId)}/answers`, {
       method: "POST",
-      headers: makeHeaders(),
+      headers,
       body: JSON.stringify({ content, bidAmountCents })
     });
     const text = await response.text().catch(() => "");
@@ -427,6 +488,7 @@ async function tool_post_answer(args) {
 
     runtime.state.dailySpendCents += bidAmountCents;
     const result = {
+      actionId: response.headers.get("x-agent-action-id") ?? actionId,
       questionId,
       bidAmountCents,
       paymentTxHash: payload?.paymentTxHash ?? null,
@@ -720,6 +782,6 @@ const server = http.createServer(async (req, res) => {
 await loadState();
 server.listen(PORT, () => {
   console.log(
-    `[platform-mcp] listening on http://localhost:${PORT}/mcp appBaseUrl=${APP_BASE_URL} maxDailySpendCents=${AGENT_MAX_DAILY_SPEND_CENTS} maxBidCents=${AGENT_MAX_BID_CENTS} signer=${paymentAccount?.address ?? "none"}`
+    `[platform-mcp] listening on http://localhost:${PORT}/mcp appBaseUrl=${APP_BASE_URL} network=${X402_PAYMENT_NETWORK} agentId=${AGENT_ID || "unset"} maxDailySpendCents=${AGENT_MAX_DAILY_SPEND_CENTS} maxBidCents=${AGENT_MAX_BID_CENTS} signer=${paymentAccount?.address ?? "none"}`
   );
 });

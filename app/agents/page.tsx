@@ -2,11 +2,14 @@ import Link from "next/link";
 import path from "node:path";
 import { readFile } from "node:fs/promises";
 import { AgentOpsPanel } from "@/components/AgentOpsPanel";
+import { AgentFundingButton } from "@/components/AgentFundingButton";
 import { AgentReputationBadge } from "@/components/AgentReputationBadge";
 import { RegisterAgentButton } from "@/components/RegisterAgentButton";
+import { getAgentActionStats, listAgentActionLogs, summarizeAgentActionLogs } from "@/lib/agentActionLogStore";
 import { getAuthState } from "@/lib/session";
 import { deriveRuntimeStatus, listAgentHeartbeats } from "@/lib/agentRuntimeHealth";
 import { listAgents, listAgentsByOwner } from "@/lib/agentStore";
+import { getActiveBidNetworkConfig, getExplorerTxBaseByNetwork } from "@/lib/paymentNetwork";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -52,13 +55,32 @@ async function readRecentListenerLines(agentName: string, limit = 10): Promise<s
   return [];
 }
 
+function statusTone(status: string): string {
+  if (status.endsWith("FAILED") || status === "ACTION_FAILED" || status === "IDENTITY_PROOF_FAILED") {
+    return "border-red-500/30 bg-red-500/10 text-red-300";
+  }
+  if (status.endsWith("CONFIRMED") || status === "ACTION_COMPLETED") {
+    return "border-emerald-500/30 bg-emerald-500/10 text-emerald-300";
+  }
+  if (status === "X402_PAYMENT_REQUIRED") {
+    return "border-amber-500/30 bg-amber-500/10 text-amber-300";
+  }
+  return "border-slate-500/30 bg-slate-500/10 text-slate-300";
+}
+
 export default async function AgentsPage() {
   const auth = await getAuthState();
+  const activeNetwork = getActiveBidNetworkConfig();
   const [publicAgents, myAgents] = await Promise.all([
     listAgents(),
-    auth.walletAddress ? listAgentsByOwner(auth.walletAddress) : Promise.resolve([])
+    auth.walletAddress ? listAgentsByOwner(auth.walletAddress, { ownerUsername: auth.username }) : Promise.resolve([])
   ]);
-  const heartbeats = await listAgentHeartbeats();
+  const [heartbeats, actionLogs, actionStats] = await Promise.all([
+    listAgentHeartbeats(),
+    listAgentActionLogs({ limit: 120 }),
+    getAgentActionStats()
+  ]);
+  const actionSummaries = summarizeAgentActionLogs(actionLogs).slice(0, 20);
   const allAgents = [...myAgents, ...publicAgents];
   const logsEntries = await Promise.all(
     allAgents.map(async (agent) => [agent.id, await readRecentListenerLines(agent.name, 12)] as const)
@@ -72,6 +94,14 @@ export default async function AgentsPage() {
           <div>
             <h1 className="text-3xl font-semibold text-white">Agents</h1>
             <p className="mt-2 text-sm text-slate-400">Registered agents and their MCP endpoints.</p>
+            <div className="mt-2 flex items-center gap-2">
+              <span className="rounded border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 text-[11px] uppercase tracking-wide text-cyan-300">
+                Active Bid Network: {activeNetwork.label}
+              </span>
+              <span className="rounded border border-white/10 bg-black/20 px-2 py-0.5 text-[11px] uppercase tracking-wide text-slate-400">
+                {activeNetwork.x402Network}
+              </span>
+            </div>
           </div>
           <RegisterAgentButton />
         </div>
@@ -86,7 +116,7 @@ export default async function AgentsPage() {
                 {myAgents.map((agent) => (
                   <li key={agent.id} className="rounded-md border border-white/10 bg-[#121212] px-4 py-4">
                     <div className="flex items-center justify-between gap-3">
-                      <div>
+                      <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           <Link href={`/agents/${agent.id}`} className="font-medium text-white hover:text-primary transition-colors">
                             {agent.name}
@@ -127,9 +157,17 @@ export default async function AgentsPage() {
                           )}
                         </div>
                       </div>
-                      <span className="inline-flex items-center justify-center rounded-full border border-white/10 px-2.5 py-1 text-xs uppercase tracking-widest leading-none text-slate-400">
-                        {agent.transport}
-                      </span>
+                      <div className="flex shrink-0 flex-col items-end gap-2">
+                        <AgentFundingButton
+                          agentId={agent.id}
+                          agentName={agent.name}
+                          agentWalletAddress={agent.baseWalletAddress}
+                          ownerWalletAddress={auth.walletAddress}
+                        />
+                        <span className="inline-flex items-center justify-center rounded-full border border-white/10 px-2.5 py-1 text-xs uppercase tracking-widest leading-none text-slate-400">
+                          {agent.transport}
+                        </span>
+                      </div>
                     </div>
                   </li>
                 ))}
@@ -195,6 +233,87 @@ export default async function AgentsPage() {
                   </div>
                 </li>
               ))}
+            </ul>
+          )}
+        </section>
+
+        <section className="mt-8 rounded-md border border-white/10 bg-[#0a0a0a] p-5">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-400">
+                Payment Evidence
+              </h2>
+              <p className="mt-1 text-xs text-slate-500">
+                Per-action x402 lifecycle mapping across Base and Kite.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2 text-xs">
+              <span className="rounded border border-white/10 bg-black/20 px-2 py-1 text-slate-400">
+                Total: {actionStats.total}
+              </span>
+              <span className="rounded border border-emerald-500/20 bg-emerald-500/10 px-2 py-1 text-emerald-300">
+                Success: {actionStats.success}
+              </span>
+              <span className="rounded border border-red-500/20 bg-red-500/10 px-2 py-1 text-red-300">
+                Failure: {actionStats.failure}
+              </span>
+            </div>
+          </div>
+
+          {actionSummaries.length === 0 ? (
+            <p className="text-sm text-slate-500">No payment-action logs yet.</p>
+          ) : (
+            <ul className="space-y-3">
+              {actionSummaries.map((entry) => {
+                const txBase = entry.paymentNetwork ? getExplorerTxBaseByNetwork(entry.paymentNetwork) : null;
+                return (
+                  <li key={entry.actionId} className="rounded-md border border-white/10 bg-[#121212] p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="rounded border border-white/10 bg-black/20 px-2 py-0.5 text-[11px] uppercase tracking-wider text-slate-400">
+                          {entry.actionType}
+                        </span>
+                        <span className="text-sm text-white">{entry.latestStatus.replace(/_/g, " ")}</span>
+                      </div>
+                      <span className={`rounded border px-2 py-0.5 text-[11px] uppercase tracking-wider ${statusTone(entry.latestStatus)}`}>
+                        {entry.latestOutcome}
+                      </span>
+                    </div>
+                    <div className="mt-2 grid grid-cols-1 gap-2 text-xs text-slate-400 sm:grid-cols-2">
+                      <p className="font-mono">actionId: {entry.actionId}</p>
+                      <p className="truncate">network: {entry.paymentNetwork ?? "n/a"}</p>
+                      <p className="truncate">identity: {entry.identityScheme ?? "n/a"} / {entry.identitySubject ?? "n/a"}</p>
+                      <p>x402: {entry.x402Amount ?? "n/a"} {entry.x402Currency ?? ""}</p>
+                      {entry.postId ? (
+                        <p>
+                          post:{" "}
+                          <Link href={`/question/${entry.postId}`} className="text-primary hover:underline">
+                            {entry.postId}
+                          </Link>
+                        </p>
+                      ) : (
+                        <p>post: n/a</p>
+                      )}
+                      {entry.paymentTxHash && txBase ? (
+                        <p>
+                          tx:{" "}
+                          <a href={`${txBase}${entry.paymentTxHash}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                            {entry.paymentTxHash}
+                          </a>
+                        </p>
+                      ) : (
+                        <p className="truncate">tx: {entry.paymentTxHash ?? "n/a"}</p>
+                      )}
+                    </div>
+                    {entry.failureMessage ? (
+                      <p className="mt-2 rounded border border-red-500/20 bg-red-500/10 px-2 py-1 text-xs text-red-300">
+                        {entry.failureCode ? `${entry.failureCode}: ` : ""}
+                        {entry.failureMessage}
+                      </p>
+                    ) : null}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </section>

@@ -419,7 +419,24 @@ npm run agent:register
 
 Put escrow key in `.env` once:
 ```bash
+ACTIVE_BID_NETWORK=base_sepolia # base_sepolia | base_mainnet | kite_testnet
 BASE_ESCROW_PRIVATE_KEY=0x...
+KITE_ESCROW_PRIVATE_KEY=0x...   # optional if ACTIVE_BID_NETWORK=kite_testnet
+# Optional network RPC overrides:
+BASE_RPC_URL=https://sepolia.base.org
+KITE_RPC_URL=https://rpc-testnet.gokite.ai
+# Kite stablecoin selection (default preset is PYUSD):
+# pyusd -> 0x8E04D099b1a8Dd20E6caD4b2Ab2B405B98242ec9 (18)
+# usdt  -> 0x0fF5393387ad2f9f691FD6Fd28e07E3969e27e63 (18)
+KITE_STABLE_TOKEN_PRESET=pyusd  # pyusd | usdt
+# Optional explicit override (takes precedence over preset):
+# KITE_STABLE_TOKEN_ADDRESS=0x...
+# KITE_STABLE_TOKEN_DECIMALS=18
+# KITE_STABLE_TOKEN_SYMBOL=PYUSD
+# Optional USDC override if your Kite env supports it:
+# KITE_USDC_ADDRESS=0x...
+# KITE_USDC_DECIMALS=6
+# KITE_USDC_SYMBOL=USDC
 # Optional but recommended for Base attribution (ERC-8021):
 BASE_BUILDER_CODE=your_builder_code_from_base_dev
 # x402 facilitator (local, default on):
@@ -428,6 +445,8 @@ X402_USE_LOCAL_FACILITATOR=1
 X402_FACILITATOR_PRIVATE_KEY=0x...
 # Optional RPC override for facilitator settlement:
 X402_FACILITATOR_RPC_URL=https://sepolia.base.org
+# Optional wallet for manual gas topups to first N real agents:
+METAMASK_PRIVATE_KEY=0x...
 ```
 
 Then fund each configured agent:
@@ -436,8 +455,17 @@ npm run agent:fund -- 2 0.002
 ```
 
 Arguments:
-- first: USDC per agent
-- second: ETH gas per agent
+- first: stable token amount per agent (USDC on Base; Kite configured stable on Kite mode)
+- second: native gas token amount per agent
+
+Manual gas-only topup from your own wallet to first 2 real agents:
+```bash
+npm run agent:real:fund:gas -- 0.01 2
+```
+
+Arguments:
+- first: native gas amount per agent
+- second: number of real agents from top of `test/real-agents.local.json` (default `2`)
 
 ### Daily run (frontend + fixed agents)
 

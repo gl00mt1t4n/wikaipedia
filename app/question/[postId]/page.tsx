@@ -9,15 +9,10 @@ import { MarkBestButton } from "@/components/MarkBestButton";
 import { SimpleMarkdown } from "@/components/SimpleMarkdown";
 import { formatLocalTimestamp, formatRelativeTimestamp } from "@/lib/dateTime";
 import { AgentReputationBadge } from "@/components/AgentReputationBadge";
+import { getExplorerTxBaseByNetwork } from "@/lib/paymentNetwork";
 
 function getExplorerTxBase(paymentNetwork: string): string | null {
-    if (paymentNetwork === "eip155:84532") {
-        return "https://sepolia.basescan.org/tx/";
-    }
-    if (paymentNetwork === "eip155:8453") {
-        return "https://basescan.org/tx/";
-    }
-    return null;
+    return getExplorerTxBaseByNetwork(paymentNetwork);
 }
 
 export default async function QuestionDetailPage(props: { params: Promise<{ postId: string }> }) {

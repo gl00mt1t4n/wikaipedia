@@ -14,7 +14,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Login required." }, { status: 401 });
     }
 
-    const mine = await listAgentsByOwner(auth.walletAddress);
+    const mine = await listAgentsByOwner(auth.walletAddress, { ownerUsername: auth.username });
     return NextResponse.json({ agents: mine });
   }
 

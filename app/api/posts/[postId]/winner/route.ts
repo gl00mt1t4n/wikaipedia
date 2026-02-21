@@ -1,19 +1,29 @@
 import { NextResponse } from "next/server";
+import { appendAgentActionLog, generateAgentActionId } from "@/lib/agentActionLogStore";
 import { findAgentById } from "@/lib/agentStore";
 import { listAnswersByPost } from "@/lib/answerStore";
-import { disburseWinnerPayout } from "@/lib/baseSettlement";
+import { disburseWinnerPayout } from "@/lib/networkSettlement";
 import { formatUsdFromCents } from "@/lib/bidPricing";
 import { getPostById, settlePost } from "@/lib/postStore";
 import { recordWinnerReputation } from "@/lib/reputationStore";
 import { PLATFORM_FEE_BPS, WINNER_PAYOUT_BPS, computeSettlementSplit } from "@/lib/settlementRules";
 import { getAuthState } from "@/lib/session";
-import { X402_BASE_NETWORK } from "@/lib/x402Server";
-
+import { getActiveBidNetworkConfig } from "@/lib/paymentNetwork";
 
 export const runtime = "nodejs";
 
+async function safeLog(input: Parameters<typeof appendAgentActionLog>[0]): Promise<void> {
+  try {
+    await appendAgentActionLog(input);
+  } catch {}
+}
+
 export async function POST(request: Request, props: { params: Promise<{ postId: string }> }) {
   const params = await props.params;
+  const actionId = String(request.headers.get("x-agent-action-id") ?? "").trim() || generateAgentActionId();
+  const networkConfig = getActiveBidNetworkConfig();
+  const route = `/api/posts/${params.postId}/winner`;
+
   const auth = await getAuthState();
   if (!auth.loggedIn || !auth.username) {
     return NextResponse.json({ error: "Login required." }, { status: 401 });
@@ -24,7 +34,37 @@ export async function POST(request: Request, props: { params: Promise<{ postId: 
     return NextResponse.json({ error: "Post not found." }, { status: 404 });
   }
 
+  await safeLog({
+    actionId,
+    actionType: "winner_settlement",
+    route,
+    method: "POST",
+    stage: "ACTION_REQUESTED",
+    status: "ACTION_REQUESTED",
+    outcome: "info",
+    postId: post.id,
+    paymentNetwork: networkConfig.x402Network,
+    x402Currency: networkConfig.payoutToken.symbol,
+    x402TokenAddress: networkConfig.payoutToken.address
+  });
+
   if (post.poster !== auth.username) {
+    await safeLog({
+      actionId,
+      actionType: "winner_settlement",
+      route,
+      method: "POST",
+      stage: "ACTION_FAILED",
+      status: "ACTION_FAILED",
+      outcome: "failure",
+      postId: post.id,
+      paymentNetwork: networkConfig.x402Network,
+      httpStatus: 403,
+      failureCode: "not_post_owner",
+      failureMessage: "Only the question poster can select a winner.",
+      errorCode: "not_post_owner",
+      errorMessage: "Only the question poster can select a winner."
+    });
     return NextResponse.json({ error: "Only the question poster can select a winner." }, { status: 403 });
   }
 
@@ -60,15 +100,48 @@ export async function POST(request: Request, props: { params: Promise<{ postId: 
   const { winnerPayoutCents, platformFeeCents } = computeSettlementSplit(post.poolTotalCents);
 
   let payout;
+  await safeLog({
+    actionId,
+    actionType: "winner_settlement",
+    route,
+    method: "POST",
+    stage: "X402_SETTLEMENT_ATTEMPTED",
+    status: "X402_SETTLEMENT_ATTEMPTED",
+    outcome: "info",
+    postId: post.id,
+    paymentNetwork: networkConfig.x402Network,
+    bidAmountCents: winnerPayoutCents,
+    x402Currency: networkConfig.payoutToken.symbol,
+    x402TokenAddress: networkConfig.payoutToken.address,
+    x402Amount: (winnerPayoutCents / 100).toFixed(2)
+  });
   try {
     payout = await disburseWinnerPayout({
       to: winnerAgent.baseWalletAddress,
       amountCents: winnerPayoutCents
     });
   } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to disburse winner payout.";
+    await safeLog({
+      actionId,
+      actionType: "winner_settlement",
+      route,
+      method: "POST",
+      stage: "X402_SETTLEMENT_FAILED",
+      status: "X402_SETTLEMENT_FAILED",
+      outcome: "failure",
+      postId: post.id,
+      paymentNetwork: networkConfig.x402Network,
+      httpStatus: 502,
+      failureCode: "winner_payout_failed",
+      failureMessage: message,
+      errorCode: "winner_payout_failed",
+      errorMessage: message
+    });
+
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : "Failed to disburse winner payout."
+        error: message
       },
       { status: 502 }
     );
@@ -84,8 +157,43 @@ export async function POST(request: Request, props: { params: Promise<{ postId: 
   });
 
   if (!settled) {
+    await safeLog({
+      actionId,
+      actionType: "winner_settlement",
+      route,
+      method: "POST",
+      stage: "ACTION_FAILED",
+      status: "ACTION_FAILED",
+      outcome: "failure",
+      postId: post.id,
+      paymentNetwork: networkConfig.x402Network,
+      paymentTxHash: payout.txHash,
+      httpStatus: 500,
+      failureCode: "persist_settlement_failed",
+      failureMessage: "Failed to persist settlement.",
+      errorCode: "persist_settlement_failed",
+      errorMessage: "Failed to persist settlement."
+    });
     return NextResponse.json({ error: "Failed to persist settlement." }, { status: 500 });
   }
+
+  await safeLog({
+    actionId,
+    actionType: "winner_settlement",
+    route,
+    method: "POST",
+    stage: "ACTION_COMPLETED",
+    status: "ACTION_COMPLETED",
+    outcome: "success",
+    postId: post.id,
+    paymentNetwork: payout.paymentNetwork,
+    paymentTxHash: payout.txHash,
+    bidAmountCents: winnerPayoutCents,
+    x402Amount: payout.amountBaseUnits,
+    x402Currency: payout.tokenSymbol,
+    x402TokenAddress: payout.tokenAddress,
+    httpStatus: 200
+  });
 
   // Record +10 reputation bonus for winner (async, non-blocking)
   recordWinnerReputation({
@@ -95,12 +203,14 @@ export async function POST(request: Request, props: { params: Promise<{ postId: 
     console.error("Failed to record winner reputation:", err);
   });
 
-  return NextResponse.json({
+  const response = NextResponse.json({
     ok: true,
     post: settled,
     settlement: {
-      network: X402_BASE_NETWORK,
+      network: payout.paymentNetwork,
       txHash: payout.txHash,
+      tokenAddress: payout.tokenAddress,
+      tokenSymbol: payout.tokenSymbol,
       winnerWalletAddress: winnerAgent.baseWalletAddress,
       poolTotalUsd: formatUsdFromCents(post.poolTotalCents),
       winnerPayoutUsd: formatUsdFromCents(winnerPayoutCents),
@@ -109,4 +219,6 @@ export async function POST(request: Request, props: { params: Promise<{ postId: 
       platformFeeBps: PLATFORM_FEE_BPS
     }
   });
+  response.headers.set("x-agent-action-id", actionId);
+  return response;
 }
