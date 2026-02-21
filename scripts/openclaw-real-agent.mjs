@@ -47,6 +47,7 @@ const SSE_RECONNECT_MS = Math.max(1000, Number(process.env.REAL_AGENT_SSE_RECONN
 const DISCOVERY_INTERVAL_MS = Math.max(30000, Number(process.env.REAL_AGENT_DISCOVERY_INTERVAL_MS ?? 180000));
 const MAX_EVENT_REACTIONS_PER_LOOP = Math.max(1, Number(process.env.REAL_AGENT_MAX_EVENT_REACTIONS_PER_LOOP ?? 2));
 const MAX_EVENT_BODY_CHARS = Math.max(200, Number(process.env.REAL_AGENT_MAX_EVENT_BODY_CHARS ?? 280));
+const PERSONA_JSON = String(process.env.REAL_AGENT_PERSONA_JSON ?? "").trim();
 
 const runtime = {
   running: true,
@@ -65,6 +66,56 @@ const runtime = {
     reflections: []
   }
 };
+
+function parsePersonaProfile() {
+  const defaults = {
+    archetype: "generalist",
+    tone: "concise",
+    risk: "balanced",
+    domains: ["general"],
+    answerPropensity: 0.72,
+    reactionPropensity: 0.38,
+    minReactionConfidence: 0.63,
+    confidenceBias: 0,
+    evBias: 0,
+    borderlineCommitRate: 0.52,
+    maxDiscoveryJoinsPerPulse: 1
+  };
+  if (!PERSONA_JSON) return defaults;
+
+  try {
+    const parsed = JSON.parse(PERSONA_JSON);
+    const risk = String(parsed?.risk ?? defaults.risk).toLowerCase();
+    const riskTuned =
+      risk === "conservative"
+        ? { confidenceBias: 0.07, evBias: 0.08, answerPropensity: 0.58, reactionPropensity: 0.28, borderlineCommitRate: 0.32 }
+        : risk === "aggressive"
+          ? { confidenceBias: -0.04, evBias: -0.05, answerPropensity: 0.82, reactionPropensity: 0.5, borderlineCommitRate: 0.72 }
+          : { confidenceBias: 0, evBias: 0, answerPropensity: 0.72, reactionPropensity: 0.38, borderlineCommitRate: 0.52 };
+
+    return {
+      ...defaults,
+      ...riskTuned,
+      archetype: String(parsed?.archetype ?? defaults.archetype),
+      tone: String(parsed?.tone ?? defaults.tone),
+      risk,
+      domains: Array.isArray(parsed?.domains)
+        ? parsed.domains.map((value) => String(value).trim().toLowerCase()).filter(Boolean).slice(0, 8)
+        : defaults.domains,
+      answerPropensity: clamp(Number(parsed?.answerPropensity ?? riskTuned.answerPropensity), 0.2, 0.95),
+      reactionPropensity: clamp(Number(parsed?.reactionPropensity ?? riskTuned.reactionPropensity), 0.05, 0.9),
+      minReactionConfidence: clamp(Number(parsed?.minReactionConfidence ?? defaults.minReactionConfidence), 0.4, 0.95),
+      confidenceBias: clamp(Number(parsed?.confidenceBias ?? riskTuned.confidenceBias), -0.2, 0.2),
+      evBias: clamp(Number(parsed?.evBias ?? riskTuned.evBias), -0.2, 0.2),
+      borderlineCommitRate: clamp(Number(parsed?.borderlineCommitRate ?? riskTuned.borderlineCommitRate), 0.05, 0.95),
+      maxDiscoveryJoinsPerPulse: Math.max(0, Math.min(3, Number(parsed?.maxDiscoveryJoinsPerPulse ?? defaults.maxDiscoveryJoinsPerPulse)))
+    };
+  } catch {
+    return defaults;
+  }
+}
+
+const PERSONA = parsePersonaProfile();
 
 function nowIso() {
   return new Date().toISOString();
@@ -374,9 +425,10 @@ function eventHeaders() {
 async function decideReaction(input) {
   const prompt = [
     "You are a fast reaction gate for an autonomous agent.",
+    `Persona: ${PERSONA.archetype}, tone=${PERSONA.tone}, risk=${PERSONA.risk}, domains=${PERSONA.domains.join(",")}`,
     "Return strict JSON only.",
     'Schema: {"reaction":"like|dislike|none","confidence":0..1,"reason":"short"}',
-    "Pick none when low confidence or irrelevant.",
+    "Default to none unless the signal is clearly useful/strong.",
     `Context: ${JSON.stringify(input)}`
   ].join("\n");
 
@@ -389,10 +441,18 @@ async function decideReaction(input) {
   );
   const parsed = parseJsonObject(text);
   const reaction = String(parsed?.reaction ?? "none").toLowerCase();
+  const confidence = clamp(Number(parsed?.confidence ?? 0), 0, 1);
+  const reason = limitString(parsed?.reason ?? "no-reaction", 160);
+  if (confidence < PERSONA.minReactionConfidence) {
+    return { reaction: "none", confidence, reason: `below-threshold:${reason}` };
+  }
+  if (Math.random() > PERSONA.reactionPropensity) {
+    return { reaction: "none", confidence, reason: `low-priority:${reason}` };
+  }
   return {
     reaction: reaction === "like" || reaction === "dislike" ? reaction : "none",
-    confidence: clamp(Number(parsed?.confidence ?? 0), 0, 1),
-    reason: limitString(parsed?.reason ?? "no-reaction", 160)
+    confidence,
+    reason
   };
 }
 
@@ -410,9 +470,10 @@ async function runDiscoveryPulse(source = "loop") {
 
     const prompt = [
       "You decide if an autonomous agent should join any wiki right now.",
+      `Persona: ${PERSONA.archetype}, domains=${PERSONA.domains.join(",")}, risk=${PERSONA.risk}`,
       "Return strict JSON only.",
       'Schema: {"joinWikiIds":[string],"reason":"short"}',
-      "Join at most 2 wikis only when likely useful.",
+      `Join at most ${PERSONA.maxDiscoveryJoinsPerPulse} wikis only when likely useful.`,
       `Candidates: ${JSON.stringify(candidates)}`,
       `Current joined: ${JSON.stringify(discovery?.joinedWikiIds ?? [])}`,
       `Source: ${source}`
@@ -427,8 +488,19 @@ async function runDiscoveryPulse(source = "loop") {
     );
     const parsed = parseJsonObject(text);
     const joinWikiIds = Array.isArray(parsed?.joinWikiIds)
-      ? parsed.joinWikiIds.map((id) => String(id).trim().toLowerCase()).filter(Boolean).slice(0, 2)
+      ? parsed.joinWikiIds
+          .map((id) => String(id).trim().toLowerCase())
+          .filter(Boolean)
+          .slice(0, PERSONA.maxDiscoveryJoinsPerPulse)
       : [];
+
+    if (joinWikiIds.length === 0) {
+      await callTool("log_agent_event", {
+        type: "discovery_abstain",
+        payload: { source, reason: limitString(parsed?.reason ?? "no-join", 180) }
+      });
+      return;
+    }
 
     for (const wikiId of joinWikiIds) {
       try {
@@ -670,10 +742,11 @@ function normalizePlan(plan) {
 async function proposePlan(observation) {
   const prompt = [
     "You are a continuous autonomous agent with budget constraints.",
+    `Persona: ${PERSONA.archetype}, tone=${PERSONA.tone}, risk=${PERSONA.risk}, domains=${PERSONA.domains.join(",")}`,
     "Return JSON only.",
     'Schema: {"action":"answer|abstain","confidence":0..1,"expectedValue":-1..1,"bidAmountCents":int,"vote":"up|down|none","joinWikiIds":[string],"researchQueries":[string],"reason":string,"riskFlags":[string]}',
     "Requirements:",
-    "- Abstain when uncertain or EV is weak.",
+    "- Prefer abstain when uncertain or EV is weak.",
     "- Join wiki only if it improves fit.",
     "- Use no more than two research queries.",
     `Observation JSON: ${JSON.stringify(observation)}`
@@ -696,6 +769,7 @@ async function proposePlan(observation) {
 async function critiquePlan(observation, plan) {
   const prompt = [
     "You are a risk critic for an autonomous economic agent.",
+    `Persona policy target: risk=${PERSONA.risk}, confidenceBias=${PERSONA.confidenceBias}, evBias=${PERSONA.evBias}`,
     "Return JSON only.",
     'Schema: {"approve":boolean,"adjustedAction":"answer|abstain","adjustedBidAmountCents":int,"adjustedVote":"up|down|none","issues":[string],"confidenceAdjustment":number}',
     "Be strict on budget and uncertainty.",
@@ -727,8 +801,12 @@ async function critiquePlan(observation, plan) {
   };
 }
 
-function gatePlan(plan, critique, topicPrior, budget, requiredBidCents) {
-  const blendedConfidence = clamp(plan.confidence + topicPrior * 0.18 + critique.confidenceAdjustment, 0, 1);
+function gatePlan(plan, critique, topicPrior, budget, requiredBidCents, marketAnswerCount) {
+  const blendedConfidence = clamp(
+    plan.confidence + topicPrior * 0.18 + critique.confidenceAdjustment + PERSONA.confidenceBias,
+    0,
+    1
+  );
   const action = critique.adjustedAction;
   const bidAmountCents = critique.adjustedBidAmountCents > 0 ? critique.adjustedBidAmountCents : plan.bidAmountCents;
   const vote = critique.adjustedVote || plan.vote;
@@ -736,14 +814,25 @@ function gatePlan(plan, critique, topicPrior, budget, requiredBidCents) {
 
   const remaining = Number(budget?.remainingDailySpendCents ?? 0);
   const lowBudget = remaining <= Math.max(20, DEFAULT_BID_CENTS);
+  const answerCount = Math.max(0, Number(marketAnswerCount ?? 0));
+  const crowdingPenalty = Math.min(0.22, answerCount * 0.035);
+  const adjustedEv = clamp(plan.expectedValue - crowdingPenalty + PERSONA.evBias, -1, 1);
   const minEv = lowBudget ? MIN_EV_SCORE_TO_BID + 0.05 : MIN_EV_SCORE_TO_BID;
+  const minConfidence = clamp(MIN_CONFIDENCE_TO_ANSWER + PERSONA.confidenceBias, 0.45, 0.92);
   let shouldAnswer =
     critique.approve &&
     action === "answer" &&
-    blendedConfidence >= MIN_CONFIDENCE_TO_ANSWER &&
-    plan.expectedValue >= minEv;
+    blendedConfidence >= minConfidence &&
+    adjustedEv >= minEv;
+
+  shouldAnswer = shouldAnswer && Math.random() <= PERSONA.answerPropensity;
 
   if (shouldAnswer && requiredBid > MAX_BID_CENTS) {
+    shouldAnswer = false;
+  }
+
+  const nearBoundary = blendedConfidence < minConfidence + 0.08 || adjustedEv < minEv + 0.1;
+  if (shouldAnswer && nearBoundary && Math.random() > PERSONA.borderlineCommitRate) {
     shouldAnswer = false;
   }
 
@@ -759,7 +848,7 @@ function gatePlan(plan, critique, topicPrior, budget, requiredBidCents) {
     shouldAnswer,
     action: shouldAnswer ? "answer" : "abstain",
     confidence: blendedConfidence,
-    expectedValue: plan.expectedValue,
+    expectedValue: adjustedEv,
     bidAmountCents: gatedBid,
     vote: shouldAnswer ? vote : "none",
     reason,
@@ -804,6 +893,7 @@ async function researchEvidence(question, topics, plan) {
 async function composeAnswer(question, evidence, plan, topics) {
   const prompt = [
     "You are an autonomous answer writer.",
+    `Persona voice: ${PERSONA.tone}, archetype=${PERSONA.archetype}.`,
     "Write a concise, practical answer with clear assumptions.",
     "Target length: 2 to 4 short paragraphs total.",
     `Hard limit: ${MAX_ANSWER_CHARS} characters.`,
@@ -899,7 +989,14 @@ async function processQuestion(questionRef, world) {
     0,
     Math.floor(Number(question?.requiredBidCents ?? bidState?.requiredBidCents ?? DEFAULT_BID_CENTS))
   );
-  const gated = gatePlan(plan, critique, topicPrior, world.budget, requiredBidCents);
+  const gated = gatePlan(
+    plan,
+    critique,
+    topicPrior,
+    world.budget,
+    requiredBidCents,
+    Number(bidState?.answerCount ?? question?.answerCount ?? 0)
+  );
 
   await log("decision-summary", {
     questionId,
@@ -1122,6 +1219,7 @@ async function main() {
     agentId: AGENT_ID,
     model: MODEL,
     mcpUrl: PLATFORM_MCP_URL,
+    persona: PERSONA,
     loopIntervalMs: LOOP_INTERVAL_MS,
     maxQuestionsPerLoop: MAX_QUESTIONS_PER_LOOP,
     maxActionsPerLoop: MAX_ACTIONS_PER_LOOP,

@@ -22,7 +22,16 @@
       "basePrivateKey": "0x366dfaf2cadf6d47a3868c36ab046073d11a495db7e22c02bfb0d6ef260f2309",
       "baseWalletAddress": "0xB4F427e3a4133a56A58eb94e476584C56A1e1F95",
       "mcpServerUrl": "http://localhost:8890/mcp",
-      "personaProfile": null
+      "personaProfile": {
+        "archetype": "tech-builder",
+        "tone": "precise",
+        "risk": "balanced",
+        "domains": ["programming", "web3", "product", "systems"],
+        "answerPropensity": 0.74,
+        "reactionPropensity": 0.34,
+        "minReactionConfidence": 0.67,
+        "maxDiscoveryJoinsPerPulse": 1
+      }
     },
     {
       "id": "agnt_1771620678544-3ffl3wq",
@@ -44,7 +53,16 @@
       "basePrivateKey": "0x4ab1c9764e02139bb0320435d0b4ca67948e039b35f67bf8976db0eb43c6b319",
       "baseWalletAddress": "0x2aDBBccFf316162f71426d6251B039914f389E19",
       "mcpServerUrl": "http://localhost:8891/mcp",
-      "personaProfile": null
+      "personaProfile": {
+        "archetype": "sports-analyst",
+        "tone": "direct",
+        "risk": "aggressive",
+        "domains": ["sports", "fitness", "competition"],
+        "answerPropensity": 0.78,
+        "reactionPropensity": 0.46,
+        "minReactionConfidence": 0.61,
+        "maxDiscoveryJoinsPerPulse": 2
+      }
     },
     {
       "id": "agnt_1771620679730-f6lhs8w",
@@ -66,7 +84,16 @@
       "basePrivateKey": "0x46b15297a023fb541ce5a036cf22e850d8519255493bab13a5e1f55162274939",
       "baseWalletAddress": "0x27610Aa977bADa580A2abB8F0304bFfE2d0048e1",
       "mcpServerUrl": "http://localhost:8892/mcp",
-      "personaProfile": null
+      "personaProfile": {
+        "archetype": "game-master",
+        "tone": "concise",
+        "risk": "balanced",
+        "domains": ["gaming", "esports", "design"],
+        "answerPropensity": 0.69,
+        "reactionPropensity": 0.4,
+        "minReactionConfidence": 0.63,
+        "maxDiscoveryJoinsPerPulse": 1
+      }
     },
     {
       "id": "agnt_1771620680898-q7rt92p",
@@ -88,7 +115,16 @@
       "basePrivateKey": "0xac232481058b1122b5f2269229d2feb7b1f929b330b5dfaf2da524d5a0c865ba",
       "baseWalletAddress": "0x55A268393c0043e551d9CA8Fe6bbc2457a60D021",
       "mcpServerUrl": "http://localhost:8893/mcp",
-      "personaProfile": null
+      "personaProfile": {
+        "archetype": "bookworm-critic",
+        "tone": "explanatory",
+        "risk": "conservative",
+        "domains": ["books", "literature", "writing", "history"],
+        "answerPropensity": 0.55,
+        "reactionPropensity": 0.24,
+        "minReactionConfidence": 0.73,
+        "maxDiscoveryJoinsPerPulse": 1
+      }
     },
     {
       "id": "agnt_1771620682027-kdhzvb5",
@@ -110,7 +146,16 @@
       "basePrivateKey": "0xdcd65bbaf2912bbc444633f94dd887ac57702f25353ec700de7a2336af68d1bf",
       "baseWalletAddress": "0x844f91Be59540AcD959e4d9895a8510d40EaCD9B",
       "mcpServerUrl": "http://localhost:8894/mcp",
-      "personaProfile": null
+      "personaProfile": {
+        "archetype": "market-observer",
+        "tone": "high-signal",
+        "risk": "conservative",
+        "domains": ["finance", "economics", "markets", "crypto"],
+        "answerPropensity": 0.59,
+        "reactionPropensity": 0.26,
+        "minReactionConfidence": 0.72,
+        "maxDiscoveryJoinsPerPulse": 1
+      }
     }
   ]
 }

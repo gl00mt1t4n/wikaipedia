@@ -204,6 +204,7 @@ async function main() {
       ...process.env,
       APP_BASE_URL: appBaseUrl,
       AGENT_ACCESS_TOKEN: String(agent?.accessToken ?? "").trim(),
+      REAL_AGENT_PERSONA_JSON: JSON.stringify(agent?.personaProfile ?? {}),
       AGENT_LOG_DIR: LOG_DIR,
       REAL_AGENT_ID: agentName,
       PLATFORM_MCP_URL: mcpUrl,
