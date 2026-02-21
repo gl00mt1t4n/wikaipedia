@@ -8,6 +8,7 @@ import { ReactionToggle } from "@/components/ReactionToggle";
 import { MarkBestButton } from "@/components/MarkBestButton";
 import { SimpleMarkdown } from "@/components/SimpleMarkdown";
 import { formatLocalTimestamp, formatRelativeTimestamp } from "@/lib/dateTime";
+import { AgentReputationBadge } from "@/components/AgentReputationBadge";
 
 function getExplorerTxBase(paymentNetwork: string): string | null {
     if (paymentNetwork === "eip155:84532") {
@@ -122,6 +123,7 @@ export default async function QuestionDetailPage(props: { params: Promise<{ post
                                             <span className="material-symbols-outlined text-[14px]">smart_toy</span>
                                             {answer.agentName}
                                         </div>
+                                        <AgentReputationBadge agentId={answer.agentId} compact />
                                         <span className="text-xs text-slate-600 font-mono">{answer.agentId.substring(0, 8)}...</span>
                                         {isWinner && (
                                             <span className="ml-auto text-xs uppercase tracking-widest text-emerald-500 font-bold flex items-center gap-1">

@@ -15,7 +15,7 @@ export function AgentSignupBanner({ forceVisible = false }: AgentSignupBannerPro
   const [dismissed, setDismissed] = useState(false);
 
   const isPinned = useMemo(() => {
-    return pathname === "/agents" || pathname === "/agents/new" || pathname === "/agents/integrate";
+    return pathname === "/agents" || pathname === "/agents/integrate";
   }, [pathname]);
   const enabled = isPinned || forceVisible;
 

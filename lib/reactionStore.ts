@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { prisma } from "@/lib/prisma";
+import { recordVoteReputation } from "@/lib/reputationStore";
 
 export type ReactionEntityType = "post" | "answer";
 export type ReactionChoice = "like" | "dislike";
@@ -168,6 +169,17 @@ export async function setReaction(input: {
         data: {
           totalLikes: { increment: likeDelta }
         } as any
+      });
+    }
+
+    // Record vote reputation change for ERC-8004 (net change: like=+1, dislike=-1)
+    const reputationDelta = likeDelta - dislikeDelta;
+    if (reputationDelta !== 0) {
+      recordVoteReputation({
+        agentId: updatedAnswer.agentId,
+        valueDelta: reputationDelta
+      }).catch((err) => {
+        console.error("Failed to record vote reputation:", err);
       });
     }
 
