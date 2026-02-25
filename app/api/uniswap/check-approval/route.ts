@@ -1,38 +1,15 @@
 import { NextResponse } from "next/server";
 import { getAddress } from "viem";
-import { UNISWAP_CHAIN_ID, UNISWAP_TOKENS, UniswapApiError, extractTxRequest, uniswapCheckApproval } from "@/lib/uniswapApi";
+import { UNISWAP_CHAIN_ID, UniswapApiError, extractTxRequest, uniswapCheckApproval } from "@/lib/uniswapApi";
+import { allowedUniswapTokenSymbols, isHexAddress, resolveAllowedUniswapToken } from "@/lib/uniswapRouteHelpers";
 
 export const runtime = "nodejs";
-
-const TOKEN_MAP: Record<string, string> = {
-  ETH: UNISWAP_TOKENS.ETH,
-  WETH: UNISWAP_TOKENS.WETH,
-  USDC: UNISWAP_TOKENS.USDC
-};
 
 type CheckApprovalBody = {
   tokenIn?: unknown;
   amountIn?: unknown;
   walletAddress?: unknown;
 };
-
-function resolveToken(input: string): string | null {
-  const value = String(input ?? "").trim();
-  if (!value) return null;
-
-  if (/^0x[a-fA-F0-9]{40}$/.test(value)) {
-    const lowered = value.toLowerCase();
-    const allowed = Object.values(TOKEN_MAP).find((address) => address.toLowerCase() === lowered);
-    return allowed ? getAddress(allowed) : null;
-  }
-
-  const bySymbol = TOKEN_MAP[value.toUpperCase()];
-  return bySymbol ? getAddress(bySymbol) : null;
-}
-
-function isAddress(value: unknown): value is string {
-  return typeof value === "string" && /^0x[a-fA-F0-9]{40}$/.test(value.trim());
-}
 
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => null)) as CheckApprovalBody | null;
@@ -44,7 +21,7 @@ export async function POST(request: Request) {
   const amountIn = String(body.amountIn ?? "").trim();
   const walletAddress = String(body.walletAddress ?? "").trim();
 
-  if (!tokenIn || !/^\d+$/.test(amountIn) || !isAddress(walletAddress)) {
+  if (!tokenIn || !/^\d+$/.test(amountIn) || !isHexAddress(walletAddress)) {
     return NextResponse.json(
       {
         ok: false,
@@ -59,10 +36,10 @@ export async function POST(request: Request) {
     );
   }
 
-  const resolvedIn = resolveToken(tokenIn);
+  const resolvedIn = resolveAllowedUniswapToken(tokenIn);
   if (!resolvedIn) {
     return NextResponse.json(
-      { ok: false, error: `Unknown or disallowed tokenIn: ${tokenIn}. Allowed: ${Object.keys(TOKEN_MAP).join(", ")}` },
+      { ok: false, error: `Unknown or disallowed tokenIn: ${tokenIn}. Allowed: ${allowedUniswapTokenSymbols()}` },
       { status: 400 }
     );
   }

@@ -1,32 +1,8 @@
 import { NextResponse } from "next/server";
-import { getAddress } from "viem";
-import { UNISWAP_CHAIN_ID, extractPermitData, extractQuote, getSwapQuote, UNISWAP_TOKENS, UniswapApiError } from "@/lib/uniswapApi";
+import { UNISWAP_CHAIN_ID, extractPermitData, extractQuote, getSwapQuote, UniswapApiError } from "@/lib/uniswapApi";
+import { allowedUniswapTokenSymbols, isHexAddress, resolveAllowedUniswapToken } from "@/lib/uniswapRouteHelpers";
 
 export const runtime = "nodejs";
-
-const TOKEN_MAP: Record<string, string> = {
-  ETH: UNISWAP_TOKENS.ETH,
-  WETH: UNISWAP_TOKENS.WETH,
-  USDC: UNISWAP_TOKENS.USDC
-};
-
-function resolveToken(input: string): string | null {
-  const value = String(input ?? "").trim();
-  if (!value) return null;
-
-  if (/^0x[a-fA-F0-9]{40}$/.test(value)) {
-    const lowered = value.toLowerCase();
-    const allowed = Object.values(TOKEN_MAP).find((address) => address.toLowerCase() === lowered);
-    return allowed ? getAddress(allowed) : null;
-  }
-
-  const bySymbol = TOKEN_MAP[value.toUpperCase()];
-  return bySymbol ? getAddress(bySymbol) : null;
-}
-
-function isAddress(value: string): boolean {
-  return /^0x[a-fA-F0-9]{40}$/.test(value);
-}
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -67,7 +43,7 @@ export async function GET(request: Request) {
     slippageBps = parsed;
   }
 
-  if (swapperRaw.length > 0 && !isAddress(swapperRaw)) {
+  if (swapperRaw.length > 0 && !isHexAddress(swapperRaw)) {
     return NextResponse.json(
       {
         ok: false,
@@ -78,13 +54,13 @@ export async function GET(request: Request) {
     );
   }
 
-  const resolvedIn = resolveToken(tokenIn);
-  const resolvedOut = resolveToken(tokenOut);
+  const resolvedIn = resolveAllowedUniswapToken(tokenIn);
+  const resolvedOut = resolveAllowedUniswapToken(tokenOut);
   if (!resolvedIn) {
     return NextResponse.json(
       {
         ok: false,
-        error: `Unknown or disallowed tokenIn: ${tokenIn}. Allowed: ${Object.keys(TOKEN_MAP).join(", ")}`
+        error: `Unknown or disallowed tokenIn: ${tokenIn}. Allowed: ${allowedUniswapTokenSymbols()}`
       },
       { status: 400 }
     );
@@ -93,7 +69,7 @@ export async function GET(request: Request) {
     return NextResponse.json(
       {
         ok: false,
-        error: `Unknown or disallowed tokenOut: ${tokenOut}. Allowed: ${Object.keys(TOKEN_MAP).join(", ")}`
+        error: `Unknown or disallowed tokenOut: ${tokenOut}. Allowed: ${allowedUniswapTokenSymbols()}`
       },
       { status: 400 }
     );

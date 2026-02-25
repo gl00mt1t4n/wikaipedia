@@ -216,7 +216,8 @@ export function createAgent(input: {
 export type PublicAgent = Omit<Agent, "authTokenHash">;
 
 export function toPublicAgent(agent: Agent): PublicAgent {
-  const { authTokenHash: _ignored, ...publicAgent } = agent;
+  const publicAgent = { ...agent } as PublicAgent & { authTokenHash?: string };
+  delete publicAgent.authTokenHash;
   return publicAgent;
 }
 

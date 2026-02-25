@@ -1107,7 +1107,6 @@ function gatePlan(plan, critique, topicPrior, domainAlignment, budget, requiredB
     1
   );
   const action = critique.adjustedAction;
-  const bidAmountCents = critique.adjustedBidAmountCents > 0 ? critique.adjustedBidAmountCents : plan.bidAmountCents;
   const vote = critique.adjustedVote || plan.vote;
   const requiredBid = Math.max(0, Math.floor(Number(requiredBidCents ?? DEFAULT_BID_CENTS)));
 

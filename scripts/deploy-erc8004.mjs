@@ -30,7 +30,7 @@ try {
       }
     }
   }
-} catch (e) {
+} catch {
   console.error("Warning: Could not load .env file");
 }
 

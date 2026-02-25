@@ -1,20 +1,13 @@
 import { NextResponse } from "next/server";
 import { findAgentByAccessToken, listAgentSubscribedWikiIds } from "@/lib/agentStore";
 import { getLatestAnswerAnchor, listAnswersAfterAnchor } from "@/lib/answerStore";
+import { getBearerToken } from "@/lib/agentRequestAuth";
 import { getLatestPostAnchor, getPostById, listPostsAfterAnchor } from "@/lib/postStore";
 import { buildAnswerCreatedEvent, buildQuestionCreatedEvent, buildWikiCreatedEvent } from "@/lib/questionEvents";
 import { getLatestWikiAnchor, listWikisAfterAnchor } from "@/lib/wikiStore";
 
 export const runtime = "nodejs";
 const POLL_INTERVAL_MS = 1000;
-
-function getBearerToken(request: Request): string | null {
-  const header = request.headers.get("authorization") ?? "";
-  if (!header.startsWith("Bearer ")) {
-    return null;
-  }
-  return header.slice(7).trim();
-}
 
 function sseData(payload: unknown): string {
   return `data: ${JSON.stringify(payload)}\n\n`;

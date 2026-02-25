@@ -1,4 +1,4 @@
-import { createWalletClient, createPublicClient, http, parseUnits, getAddress, parseSignature } from 'viem';
+import { createPublicClient, http, parseUnits, parseSignature } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { baseSepolia } from 'viem/chains';
 
@@ -11,7 +11,6 @@ const facAcc = privateKeyToAccount(facKey);
 const usdc = "0x036CbD53842c5426634e7929541eC2318f3dCF7e";
 const escrow = "0xFC7bfBF2535C569937b5B9eEaBC310cF887D1DAF";
 const pc = createPublicClient({ chain: baseSepolia, transport: http() });
-const wc = createWalletClient({ account: facAcc, chain: baseSepolia, transport: http() });
 
 async function run() {
   const nonce = "0x" + Array.from({length: 32}, () => Math.floor(Math.random() * 256).toString(16).padStart(2, '0')).join('');

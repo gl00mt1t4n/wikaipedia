@@ -26,14 +26,6 @@ function getPrivyClient(): PrivyClient | null {
   return privyClient;
 }
 
-function getIdToken(request: Request, bodyToken?: string): string {
-  const header = request.headers.get("authorization") ?? request.headers.get("Authorization") ?? "";
-  if (header.toLowerCase().startsWith("bearer ")) {
-    return header.slice(7).trim();
-  }
-  return String(bodyToken ?? "").trim();
-}
-
 function getBearerToken(request: Request): string {
   const header = request.headers.get("authorization") ?? request.headers.get("Authorization") ?? "";
   if (header.toLowerCase().startsWith("bearer ")) {

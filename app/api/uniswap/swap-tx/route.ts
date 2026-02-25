@@ -1,32 +1,8 @@
 import { NextResponse } from "next/server";
-import { getAddress } from "viem";
-import { UNISWAP_CHAIN_ID, extractTxRequest, getSwapTx, uniswapSwap, UNISWAP_TOKENS, UniswapApiError } from "@/lib/uniswapApi";
+import { UNISWAP_CHAIN_ID, extractTxRequest, getSwapTx, uniswapSwap, UniswapApiError } from "@/lib/uniswapApi";
+import { allowedUniswapTokenSymbols, isHexAddress, resolveAllowedUniswapToken } from "@/lib/uniswapRouteHelpers";
 
 export const runtime = "nodejs";
-
-const TOKEN_MAP: Record<string, string> = {
-  ETH: UNISWAP_TOKENS.ETH,
-  WETH: UNISWAP_TOKENS.WETH,
-  USDC: UNISWAP_TOKENS.USDC
-};
-
-function resolveToken(input: string): string | null {
-  const value = String(input ?? "").trim();
-  if (!value) return null;
-
-  if (/^0x[a-fA-F0-9]{40}$/.test(value)) {
-    const lowered = value.toLowerCase();
-    const allowed = Object.values(TOKEN_MAP).find((address) => address.toLowerCase() === lowered);
-    return allowed ? getAddress(allowed) : null;
-  }
-
-  const bySymbol = TOKEN_MAP[value.toUpperCase()];
-  return bySymbol ? getAddress(bySymbol) : null;
-}
-
-function isAddress(value: unknown): value is string {
-  return typeof value === "string" && /^0x[a-fA-F0-9]{40}$/.test(value.trim());
-}
 
 type SwapTxRequestBody = {
   tokenIn?: unknown;
@@ -82,7 +58,7 @@ export async function POST(request: Request) {
   const swapper = String(body.swapper ?? "").trim();
   const recipient = body.recipient == null ? undefined : String(body.recipient).trim();
 
-  if (!tokenIn || !tokenOut || !/^\d+$/.test(amountIn) || !isAddress(swapper)) {
+  if (!tokenIn || !tokenOut || !/^\d+$/.test(amountIn) || !isHexAddress(swapper)) {
     return NextResponse.json(
       {
         ok: false,
@@ -110,20 +86,20 @@ export async function POST(request: Request) {
     slippageBps = parsed;
   }
 
-  if (recipient && !isAddress(recipient)) {
+  if (recipient && !isHexAddress(recipient)) {
     return NextResponse.json(
       { ok: false, error: "Invalid request body", details: { recipient: "must be a valid 0x address" } },
       { status: 400 }
     );
   }
 
-  const resolvedIn = resolveToken(tokenIn);
-  const resolvedOut = resolveToken(tokenOut);
+  const resolvedIn = resolveAllowedUniswapToken(tokenIn);
+  const resolvedOut = resolveAllowedUniswapToken(tokenOut);
   if (!resolvedIn) {
     return NextResponse.json(
       {
         ok: false,
-        error: `Unknown or disallowed tokenIn: ${tokenIn}. Allowed: ${Object.keys(TOKEN_MAP).join(", ")}`
+        error: `Unknown or disallowed tokenIn: ${tokenIn}. Allowed: ${allowedUniswapTokenSymbols()}`
       },
       { status: 400 }
     );
@@ -132,7 +108,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         ok: false,
-        error: `Unknown or disallowed tokenOut: ${tokenOut}. Allowed: ${Object.keys(TOKEN_MAP).join(", ")}`
+        error: `Unknown or disallowed tokenOut: ${tokenOut}. Allowed: ${allowedUniswapTokenSymbols()}`
       },
       { status: 400 }
     );

@@ -12,8 +12,6 @@ type VerifyResponse = {
     error?: string;
 };
 
-const PRIVY_APP_ID = String(process.env.NEXT_PUBLIC_PRIVY_APP_ID ?? "").trim();
-
 function isEthereumWalletAccount(
     account: LinkedAccountWithMetadata
 ): account is Extract<LinkedAccountWithMetadata, { type: "wallet" }> {
@@ -61,7 +59,6 @@ export function WalletConnect({
     initiallyLoggedIn = false,
     initialWalletAddress = null,
     initialUsername = null,
-    initialHasUsername = false,
     balanceAmount = "0.00",
 }: {
     initiallyLoggedIn?: boolean;
@@ -78,7 +75,6 @@ export function WalletConnect({
     const [loggedIn, setLoggedIn] = useState(initiallyLoggedIn);
     const [walletAddress, setWalletAddress] = useState(initialWalletAddress);
     const [username, setUsername] = useState(initialUsername);
-    const [hasUsername, setHasUsername] = useState(initialHasUsername);
     const [syncedPrivyUserId, setSyncedPrivyUserId] = useState<string | null>(null);
 
     const privyWalletAddress = useMemo(() => extractEthereumWallet(user), [user]);
@@ -127,7 +123,6 @@ export function WalletConnect({
                 const normalizedWallet = (verifyData.walletAddress ?? privyWalletAddress ?? "").toLowerCase() || null;
                 setLoggedIn(true);
                 setWalletAddress(normalizedWallet);
-                setHasUsername(Boolean(verifyData.hasUsername));
                 setUsername(verifyData.username ?? null);
                 setSyncedPrivyUserId(user.id);
 
@@ -166,7 +161,6 @@ export function WalletConnect({
             setLoggedIn(false);
             setWalletAddress(null);
             setUsername(null);
-            setHasUsername(false);
             setSyncedPrivyUserId(null);
             router.refresh();
             router.push("/");

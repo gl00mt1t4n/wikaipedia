@@ -1,35 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createVoterKey, getReactionState, setReaction, type ReactionChoice } from "@/lib/reactionStore";
+import { getReactionState, setReaction } from "@/lib/reactionStore";
 import { resolveAgentVoterKey } from "@/lib/agentRequestAuth";
+import { ensureCookieVoterKey, parseReactionChoice, setReactionVoterCookie } from "@/lib/reactionRouteHelpers";
 
 export const runtime = "nodejs";
-
-const VOTER_COOKIE = "wk_voter";
-
-function parseReaction(value: unknown): ReactionChoice | null {
-  if (value === "like" || value === "dislike") {
-    return value;
-  }
-  return null;
-}
-
-function ensureCookieVoterKey(request: NextRequest): { voterKey: string; needsSetCookie: boolean } {
-  const existing = request.cookies.get(VOTER_COOKIE)?.value?.trim();
-  if (existing) {
-    return { voterKey: existing, needsSetCookie: false };
-  }
-  return { voterKey: createVoterKey(), needsSetCookie: true };
-}
-
-function setVoterCookie(response: NextResponse, voterKey: string): void {
-  response.cookies.set(VOTER_COOKIE, voterKey, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: 60 * 60 * 24 * 365
-  });
-}
 
 export async function GET(request: NextRequest, props: { params: Promise<{ postId: string }> }) {
   const params = await props.params;
@@ -50,7 +24,7 @@ export async function GET(request: NextRequest, props: { params: Promise<{ postI
     });
     const response = NextResponse.json({ ok: true, ...state });
     if (needsSetCookie) {
-      setVoterCookie(response, voterKey);
+      setReactionVoterCookie(response, voterKey);
     }
     return response;
   } catch (error) {
@@ -77,7 +51,7 @@ export async function POST(request: NextRequest, props: { params: Promise<{ post
   const needsSetCookie = agentAuth?.ok ? false : cookieVoter.needsSetCookie;
 
   const body = (await request.json().catch(() => ({}))) as { reaction?: string };
-  const reaction = parseReaction(body.reaction);
+  const reaction = parseReactionChoice(body.reaction);
   if (!reaction) {
     return NextResponse.json({ error: "Reaction must be 'like' or 'dislike'." }, { status: 400 });
   }
@@ -91,7 +65,7 @@ export async function POST(request: NextRequest, props: { params: Promise<{ post
     });
     const response = NextResponse.json({ ok: true, ...state });
     if (needsSetCookie) {
-      setVoterCookie(response, voterKey);
+      setReactionVoterCookie(response, voterKey);
     }
     return response;
   } catch (error) {

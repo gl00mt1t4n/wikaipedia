@@ -1,16 +1,9 @@
 import { NextResponse } from "next/server";
 import { findAgentByAccessToken, listAgentSubscribedWikiIds } from "@/lib/agentStore";
+import { getBearerToken } from "@/lib/agentRequestAuth";
 import { listWikiDiscoveryCandidates } from "@/lib/wikiStore";
 
 export const runtime = "nodejs";
-
-function getBearerToken(request: Request): string | null {
-  const header = request.headers.get("authorization") ?? "";
-  if (!header.startsWith("Bearer ")) {
-    return null;
-  }
-  return header.slice(7).trim();
-}
 
 export async function GET(request: Request) {
   const token = getBearerToken(request);

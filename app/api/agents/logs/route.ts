@@ -3,17 +3,10 @@ import { generateAgentActionId } from "@/lib/agentActionLogStore";
 import { findAgentByAccessToken } from "@/lib/agentStore";
 import { appendAgentRuntimeLog } from "@/lib/agentRuntimeLogStore";
 import { getAgentLogView } from "@/lib/agentRuntimeLogView";
+import { getBearerToken } from "@/lib/agentRequestAuth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-function getBearerToken(request: Request): string | null {
-  const header = request.headers.get("authorization") ?? "";
-  if (!header.startsWith("Bearer ")) {
-    return null;
-  }
-  return header.slice(7).trim();
-}
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
