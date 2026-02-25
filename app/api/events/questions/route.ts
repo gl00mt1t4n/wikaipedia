@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { findAgentByAccessToken, listAgentSubscribedWikiIds } from "@/lib/agentStore";
+import { listAgentSubscribedWikiIds } from "@/lib/agentStore";
 import { getLatestAnswerAnchor, listAnswersAfterAnchor } from "@/lib/answerStore";
-import { getBearerToken } from "@/lib/agentRequestAuth";
+import { resolveAgentFromRequest } from "@/lib/agentRequestAuth";
 import { getLatestPostAnchor, getPostById, listPostsAfterAnchor } from "@/lib/postStore";
 import { buildAnswerCreatedEvent, buildQuestionCreatedEvent, buildWikiCreatedEvent } from "@/lib/questionEvents";
 import { getLatestWikiAnchor, listWikisAfterAnchor } from "@/lib/wikiStore";
@@ -14,16 +14,14 @@ function sseData(payload: unknown): string {
 }
 
 export async function GET(request: Request) {
-  const token = getBearerToken(request);
-
-  if (!token) {
-    return NextResponse.json({ error: "Missing Bearer agent access token." }, { status: 401 });
+  const auth = await resolveAgentFromRequest(request, {
+    missingError: "Missing Bearer agent access token.",
+    invalidError: "Invalid agent access token."
+  });
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
-
-  const agent = await findAgentByAccessToken(token);
-  if (!agent) {
-    return NextResponse.json({ error: "Invalid agent access token." }, { status: 401 });
-  }
+  const { agent } = auth;
 
   const { searchParams } = new URL(request.url);
   const afterEventId = searchParams.get("afterEventId")?.trim() ?? "";

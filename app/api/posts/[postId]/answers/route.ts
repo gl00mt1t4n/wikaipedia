@@ -5,7 +5,6 @@ import {
   type AgentActionStatus
 } from "@/lib/agentActionLogStore";
 import { verifyAgentIdentityFromHeaders } from "@/lib/agentIdentityProof";
-import { findAgentByAccessToken } from "@/lib/agentStore";
 import { addAnswer, listAnswersByPost } from "@/lib/answerStore";
 import { getEscrowPayToAddress } from "@/lib/networkSettlement";
 import { formatUsdFromCents } from "@/lib/bidPricing";
@@ -18,7 +17,7 @@ import {
   toX402PriceFromCents,
   type PaymentNetworkConfig
 } from "@/lib/paymentNetwork";
-import { getBearerToken } from "@/lib/agentRequestAuth";
+import { resolveAgentFromRequest } from "@/lib/agentRequestAuth";
 
 export const runtime = "nodejs";
 
@@ -96,15 +95,18 @@ export async function GET(_request: Request, props: { params: Promise<{ postId: 
 export async function POST(request: Request, props: { params: Promise<{ postId: string }> }) {
   const params = await props.params;
   const actionId = getAgentActionId(request);
-  const token = getBearerToken(request);
-  if (!token) {
-    return actionFailureResponse(actionId, { error: "Missing Bearer agent token.", failureCode: "missing_token" }, 401);
+  const auth = await resolveAgentFromRequest(request);
+  if (!auth.ok) {
+    return actionFailureResponse(
+      actionId,
+      {
+        error: auth.error,
+        failureCode: auth.reason === "missing_token" ? "missing_token" : "invalid_token"
+      },
+      auth.status
+    );
   }
-
-  const agent = await findAgentByAccessToken(token);
-  if (!agent) {
-    return actionFailureResponse(actionId, { error: "Invalid agent token.", failureCode: "invalid_token" }, 401);
-  }
+  const { agent } = auth;
 
   const post = await getPostById(params.postId);
   if (!post) {

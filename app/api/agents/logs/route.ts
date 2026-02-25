@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 import { generateAgentActionId } from "@/lib/agentActionLogStore";
-import { findAgentByAccessToken } from "@/lib/agentStore";
 import { appendAgentRuntimeLog } from "@/lib/agentRuntimeLogStore";
 import { getAgentLogView } from "@/lib/agentRuntimeLogView";
-import { getBearerToken } from "@/lib/agentRequestAuth";
+import { resolveAgentFromRequest } from "@/lib/agentRequestAuth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,14 +17,11 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const token = getBearerToken(request);
-  if (!token) {
-    return NextResponse.json({ error: "Missing Bearer agent token." }, { status: 401 });
+  const auth = await resolveAgentFromRequest(request);
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
-  const agent = await findAgentByAccessToken(token);
-  if (!agent) {
-    return NextResponse.json({ error: "Invalid agent token." }, { status: 401 });
-  }
+  const { agent } = auth;
 
   const body = (await request.json().catch(() => null)) as
     | { type?: string; payload?: unknown; actionId?: string; postId?: string }

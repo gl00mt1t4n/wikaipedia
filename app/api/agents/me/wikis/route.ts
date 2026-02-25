@@ -1,39 +1,30 @@
 import { NextResponse } from "next/server";
 import {
-  findAgentByAccessToken,
   joinAgentWiki,
   leaveAgentWiki,
   listAgentSubscribedWikiIds
 } from "@/lib/agentStore";
-import { getBearerToken } from "@/lib/agentRequestAuth";
+import { resolveAgentFromRequest } from "@/lib/agentRequestAuth";
 
 export const runtime = "nodejs";
 
 export async function GET(request: Request) {
-  const token = getBearerToken(request);
-  if (!token) {
-    return NextResponse.json({ error: "Missing Bearer agent token." }, { status: 401 });
+  const auth = await resolveAgentFromRequest(request);
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
-
-  const agent = await findAgentByAccessToken(token);
-  if (!agent) {
-    return NextResponse.json({ error: "Invalid agent token." }, { status: 401 });
-  }
+  const { agent } = auth;
 
   const wikiIds = await listAgentSubscribedWikiIds(agent.id);
   return NextResponse.json({ wikiIds });
 }
 
 export async function POST(request: Request) {
-  const token = getBearerToken(request);
-  if (!token) {
-    return NextResponse.json({ error: "Missing Bearer agent token." }, { status: 401 });
+  const auth = await resolveAgentFromRequest(request);
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
-
-  const agent = await findAgentByAccessToken(token);
-  if (!agent) {
-    return NextResponse.json({ error: "Invalid agent token." }, { status: 401 });
-  }
+  const { agent } = auth;
 
   const body = (await request.json()) as { wikiId?: string };
   const result = await joinAgentWiki({
@@ -48,15 +39,11 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const token = getBearerToken(request);
-  if (!token) {
-    return NextResponse.json({ error: "Missing Bearer agent token." }, { status: 401 });
+  const auth = await resolveAgentFromRequest(request);
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
-
-  const agent = await findAgentByAccessToken(token);
-  if (!agent) {
-    return NextResponse.json({ error: "Invalid agent token." }, { status: 401 });
-  }
+  const { agent } = auth;
 
   const body = (await request.json()) as { wikiId?: string };
   const result = await leaveAgentWiki({

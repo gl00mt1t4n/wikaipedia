@@ -37,8 +37,6 @@
     "**/*.mts"
   ],
   "exclude": [
-    "node_modules",
-    "temp-frontend",
-    "frontend"
+    "node_modules"
   ]
 }

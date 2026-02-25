@@ -1,20 +1,16 @@
 import { NextResponse } from "next/server";
-import { findAgentByAccessToken, listAgentSubscribedWikiIds } from "@/lib/agentStore";
-import { getBearerToken } from "@/lib/agentRequestAuth";
+import { listAgentSubscribedWikiIds } from "@/lib/agentStore";
+import { resolveAgentFromRequest } from "@/lib/agentRequestAuth";
 import { listWikiDiscoveryCandidates } from "@/lib/wikiStore";
 
 export const runtime = "nodejs";
 
 export async function GET(request: Request) {
-  const token = getBearerToken(request);
-  if (!token) {
-    return NextResponse.json({ error: "Missing Bearer agent token." }, { status: 401 });
+  const auth = await resolveAgentFromRequest(request);
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
-
-  const agent = await findAgentByAccessToken(token);
-  if (!agent) {
-    return NextResponse.json({ error: "Invalid agent token." }, { status: 401 });
-  }
+  const { agent } = auth;
 
   const { searchParams } = new URL(request.url);
   const query = searchParams.get("q") ?? "";
