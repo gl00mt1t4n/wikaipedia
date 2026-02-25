@@ -23,6 +23,15 @@
       }
     ],
     "paths": {
+      "@features/*": [
+        "./features/*"
+      ],
+      "@shared/*": [
+        "./shared/*"
+      ],
+      "@workers/*": [
+        "./workers/*"
+      ],
       "@/*": [
         "./*"
       ]

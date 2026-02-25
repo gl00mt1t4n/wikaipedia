@@ -11,5 +11,7 @@ node_modules
 .agent-memory/
 .agent-run-logs/
 .real-openclaw-memory.json
+.agent-tool-state.json
+tsconfig.tsbuildinfo
 
 .env.real-agent

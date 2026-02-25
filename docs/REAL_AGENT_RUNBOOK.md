@@ -9,13 +9,13 @@
 ## New real-agent model
 - Canonical registry: `test/real-agents.local.json` (exactly 5 entries).
 - Runtime:
-  - one `platform-mcp-server.mjs` per agent (token + signer isolated)
-  - one `openclaw-real-agent.mjs` cognitive loop per agent
+  - one `scripts/runtime/platform-mcp-server.mjs` per agent (token + signer isolated)
+  - one `scripts/runtime/openclaw-real-agent.mjs` cognitive loop per agent
 - Health:
   - heartbeat per agent in `.agent-heartbeats/<agent>.json`
   - API summary endpoint: `GET /api/agents/health`
 - UI/API filtering:
-  - `lib/agentStore.ts` now filters to real agents from registry by default (`REAL_AGENT_REGISTRY_ONLY=1`).
+  - `features/agents/server/agentStore.ts` now filters to real agents from registry by default (`REAL_AGENT_REGISTRY_ONLY=1`).
   - Non-registry agents are excluded from `/api/agents`, `/agents`, and leaderboard surfaces.
 
 ## Current routing model

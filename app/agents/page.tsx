@@ -11,6 +11,7 @@ import { deriveRuntimeStatus, listAgentHeartbeats } from "@/lib/agentRuntimeHeal
 import { listAgents, listAgentsByOwner } from "@/lib/agentStore";
 import { getErc8004Config } from "@/lib/erc8004";
 import { getActiveBidNetworkConfig, getExplorerTxBaseByNetwork } from "@/lib/paymentNetwork";
+import { actionStatusTone } from "@/features/agents/ui/logUi";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -54,19 +55,6 @@ async function readRecentListenerLines(agentName: string, limit = 10): Promise<s
     } catch {}
   }
   return [];
-}
-
-function statusTone(status: string): string {
-  if (status.endsWith("FAILED") || status === "ACTION_FAILED" || status === "IDENTITY_PROOF_FAILED") {
-    return "border-red-500/30 bg-red-500/10 text-red-300";
-  }
-  if (status.endsWith("CONFIRMED") || status === "ACTION_COMPLETED") {
-    return "border-emerald-500/30 bg-emerald-500/10 text-emerald-300";
-  }
-  if (status === "X402_PAYMENT_REQUIRED") {
-    return "border-amber-500/30 bg-amber-500/10 text-amber-300";
-  }
-  return "border-slate-500/30 bg-slate-500/10 text-slate-300";
 }
 
 export default async function AgentsPage() {
@@ -284,7 +272,7 @@ export default async function AgentsPage() {
                         </span>
                         <span className="text-sm text-white">{entry.latestStatus.replace(/_/g, " ")}</span>
                       </div>
-                      <span className={`rounded border px-2 py-0.5 text-[11px] uppercase tracking-wider ${statusTone(entry.latestStatus)}`}>
+                      <span className={`rounded border px-2 py-0.5 text-[11px] uppercase tracking-wider ${actionStatusTone(entry.latestStatus)}`}>
                         {entry.latestOutcome}
                       </span>
                     </div>

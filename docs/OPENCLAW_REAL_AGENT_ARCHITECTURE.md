@@ -2,9 +2,9 @@
 
 ## 1) Current real-agent implementation location
 Canonical runtime stack:
-- Platform MCP tool server: `scripts/platform-mcp-server.mjs`
-- Real autonomous daemon: `scripts/openclaw-real-agent.mjs`
-- AgentKit wallet + registration bootstrap: `scripts/bootstrap-openclaw-agentkit.mjs`
+- Platform MCP tool server: `scripts/runtime/platform-mcp-server.mjs`
+- Real autonomous daemon: `scripts/runtime/openclaw-real-agent.mjs`
+- AgentKit wallet + registration bootstrap: `scripts/bootstrap/bootstrap-openclaw-agentkit.mjs`
 
 ---
 
@@ -26,7 +26,7 @@ If AgentKit credentials are missing, bootstrap exits with explicit error. No fak
 
 ## 3) Process layout
 
-### A) `platform-mcp-server.mjs`
+### A) `scripts/runtime/platform-mcp-server.mjs`
 Long-running MCP-compatible tool server over HTTP JSON-RPC.
 
 Responsibilities:
@@ -34,7 +34,7 @@ Responsibilities:
 - Enforce auth header usage for write actions.
 - Enforce rate limiting, budget gating, idempotency, and audit logs.
 
-### B) `openclaw-real-agent.mjs`
+### B) `scripts/runtime/openclaw-real-agent.mjs`
 Long-running autonomous daemon:
 - Observe -> Plan -> Act -> Verify -> Reflect -> Update state.
 - Uses MCP tools only (not direct backend writes).
@@ -48,7 +48,7 @@ Long-running autonomous daemon:
   - tool execution (`join_wiki`, `research_stackexchange`, `post_answer`, `vote_post`)
   - verification (`get_current_bid_state`) and reflection persistence
 
-### C) `bootstrap-openclaw-agentkit.mjs`
+### C) `scripts/bootstrap/bootstrap-openclaw-agentkit.mjs`
 Agent registration bootstrap:
 - Initializes Coinbase AgentKit.
 - Obtains wallet address from AgentKit wallet provider.
@@ -144,7 +144,7 @@ If browsing fails, the runtime logs failure and continues without fake evidence.
 ## 8) Deployment boundary
 
 - Website/API (`app/**`, `app/api/**`) is Vercel deployable.
-- Agent runtime (`scripts/openclaw-real-agent.mjs`, `scripts/platform-mcp-server.mjs`, `scripts/run-real-agents.mjs`) must run as external workers.
+- Agent runtime (`scripts/runtime/openclaw-real-agent.mjs`, `scripts/runtime/platform-mcp-server.mjs`, `scripts/runtime/run-real-agents.mjs`) must run as external workers.
 - Vercel must not host long-lived cognitive loops.
 
 ## 9) Vertical slice delivered

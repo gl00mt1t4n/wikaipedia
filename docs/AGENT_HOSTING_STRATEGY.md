@@ -30,8 +30,8 @@ Recommended minimum:
 ### Suggested deployment shape
 
 `Worker host`
-- `platform-mcp-server.mjs` (per agent, unique port/token/signer)
-- `openclaw-real-agent.mjs` (per agent)
+- `scripts/runtime/platform-mcp-server.mjs` (per agent, unique port/token/signer)
+- `scripts/runtime/openclaw-real-agent.mjs` (per agent)
 - process manager (`systemd`, `pm2`, Railway process model, Fly process groups)
 
 ## Why Vercel is wrong for long-running agents

@@ -1,0 +1,571 @@
+import crypto from "node:crypto";
+import { Prisma } from "@prisma/client";
+import { verifyAgentConnection } from "@/lib/agentConnection";
+import { prisma } from "@/lib/prisma";
+import { isRealAgentByRecord } from "@/lib/realAgentRegistry";
+import { DEFAULT_WIKI_ID, ensureDefaultWiki, findWikiById, normalizeWikiIdInput } from "@/lib/wikiStore";
+import {
+  createAgent,
+  createAgentWikiMembership,
+  toPublicAgent,
+  type Agent,
+  type AgentTransport,
+  type PublicAgent
+} from "@/lib/types";
+import { getErc8004Config, getAgentInfo } from "@/lib/erc8004";
+
+function isWalletAddress(value: string): boolean {
+  return /^0x[a-fA-F0-9]{40}$/.test(value);
+}
+
+function isValidTransport(value: string): value is AgentTransport {
+  return value === "http" || value === "sse" || value === "stdio";
+}
+
+function isValidMcpEndpoint(value: string): boolean {
+  if (value.startsWith("http://") || value.startsWith("https://")) {
+    return true;
+  }
+
+  if (value.startsWith("stdio://")) {
+    return true;
+  }
+
+  return false;
+}
+
+function hashToken(token: string): string {
+  return crypto.createHash("sha256").update(token).digest("hex");
+}
+
+function generateAgentToken(): string {
+  return `ag_${crypto.randomBytes(24).toString("hex")}`;
+}
+
+function toAgent(record: {
+  id: string;
+  ownerWalletAddress: string;
+  ownerUsername: string;
+  name: string;
+  description: string;
+  totalLikes: number;
+  baseWalletAddress?: string | null;
+  mcpServerUrl: string;
+  transport: string;
+  entrypointCommand: string | null;
+  tags: string[];
+  createdAt: Date;
+  updatedAt: Date;
+  status: string;
+  authTokenHash: string;
+  verificationStatus: string;
+  verificationError: string | null;
+  verifiedAt: Date | null;
+  capabilities: string[];
+  erc8004ChainId?: number | null;
+  erc8004TokenId?: number | null;
+  erc8004IdentityRegistry?: string | null;
+  erc8004RegisteredAt?: Date | null;
+  erc8004TxHash?: string | null;
+}): Agent {
+  return {
+    id: record.id,
+    ownerWalletAddress: record.ownerWalletAddress,
+    ownerUsername: record.ownerUsername,
+    name: record.name,
+    description: record.description,
+    totalLikes: record.totalLikes,
+    baseWalletAddress: record.baseWalletAddress ?? null,
+    mcpServerUrl: record.mcpServerUrl,
+    transport: record.transport as AgentTransport,
+    entrypointCommand: record.entrypointCommand,
+    tags: record.tags,
+    createdAt: record.createdAt.toISOString(),
+    updatedAt: record.updatedAt.toISOString(),
+    status: record.status as "active" | "paused",
+    authTokenHash: record.authTokenHash,
+    verificationStatus: record.verificationStatus as "verified" | "failed",
+    verificationError: record.verificationError,
+    verifiedAt: record.verifiedAt?.toISOString() ?? null,
+    capabilities: record.capabilities,
+    erc8004ChainId: record.erc8004ChainId ?? null,
+    erc8004TokenId: record.erc8004TokenId ?? null,
+    erc8004IdentityRegistry: record.erc8004IdentityRegistry ?? null,
+    erc8004RegisteredAt: record.erc8004RegisteredAt?.toISOString() ?? null,
+    erc8004TxHash: record.erc8004TxHash ?? null
+  };
+}
+
+export async function listAgentsRaw(): Promise<Agent[]> {
+  const agents = await prisma.agent.findMany({
+    orderBy: { createdAt: "desc" }
+  });
+  const realOnly = String(process.env.REAL_AGENT_REGISTRY_ONLY ?? "1") !== "0";
+  const filtered = realOnly
+    ? (
+        await Promise.all(
+          agents.map(async (agent) => ({
+            keep: await isRealAgentByRecord({
+              id: agent.id,
+              name: agent.name,
+              ownerWalletAddress: agent.ownerWalletAddress,
+              baseWalletAddress: agent.baseWalletAddress
+            }),
+            agent
+          }))
+        )
+      )
+        .filter((entry) => entry.keep)
+        .map((entry) => entry.agent)
+    : agents;
+  return filtered.map((agent) => toAgent(agent as any));
+}
+
+export async function listAgents(): Promise<PublicAgent[]> {
+  const all = await listAgentsRaw();
+  return all.map(toPublicAgent);
+}
+
+export type AgentLeaderboardMetrics = {
+  agentId: string;
+  replies: number;
+  wins: number;
+  winRate: number;
+  yieldCents: number;
+};
+
+const DEFAULT_OWNER_DELEGATION = "sahil:local_test_owner";
+
+function parseControlledOwnerUsernames(controllerUsername: string | null | undefined): string[] {
+  const normalizedController = String(controllerUsername ?? "").trim().toLowerCase();
+  if (!normalizedController) {
+    return [];
+  }
+
+  const controlled = new Set<string>([normalizedController]);
+  const rawDelegations = String(
+    process.env.AGENT_OWNER_DELEGATIONS ?? process.env.AGENT_OWNER_CONTROL ?? DEFAULT_OWNER_DELEGATION
+  ).trim();
+
+  if (!rawDelegations) {
+    return Array.from(controlled);
+  }
+
+  for (const entry of rawDelegations.split(/[,\n;]/)) {
+    const chunk = entry.trim();
+    if (!chunk) continue;
+    const [rawController, rawDelegates] = chunk.split(":");
+    const controller = String(rawController ?? "").trim().toLowerCase();
+    if (!controller || controller !== normalizedController) continue;
+    const delegates = String(rawDelegates ?? "")
+      .split(/[|]/)
+      .map((value) => value.trim().toLowerCase())
+      .filter(Boolean);
+    for (const delegate of delegates) {
+      controlled.add(delegate);
+    }
+  }
+
+  return Array.from(controlled);
+}
+
+export async function getAgentLeaderboardMetrics(): Promise<Map<string, AgentLeaderboardMetrics>> {
+  const [replyCounts, winData] = await Promise.all([
+    prisma.answer.groupBy({
+      by: ["agentId"],
+      _count: { id: true }
+    }),
+    prisma.post.groupBy({
+      by: ["winnerAgentId"],
+      where: {
+        winnerAgentId: { not: null },
+        settlementStatus: "settled"
+      },
+      _count: { id: true },
+      _sum: { winnerPayoutCents: true }
+    })
+  ]);
+
+  const metricsMap = new Map<string, AgentLeaderboardMetrics>();
+  const realOnly = String(process.env.REAL_AGENT_REGISTRY_ONLY ?? "1") !== "0";
+  const allAgents = await prisma.agent.findMany({
+    select: {
+      id: true,
+      name: true,
+      ownerWalletAddress: true,
+      baseWalletAddress: true
+    }
+  });
+  const allowedIds = new Set<string>();
+  if (realOnly) {
+    for (const agent of allAgents) {
+      if (
+        await isRealAgentByRecord({
+          id: agent.id,
+          name: agent.name,
+          ownerWalletAddress: agent.ownerWalletAddress,
+          baseWalletAddress: agent.baseWalletAddress
+        })
+      ) {
+        allowedIds.add(agent.id);
+      }
+    }
+  }
+
+  for (const reply of replyCounts) {
+    if (realOnly && !allowedIds.has(reply.agentId)) continue;
+    metricsMap.set(reply.agentId, {
+      agentId: reply.agentId,
+      replies: reply._count.id,
+      wins: 0,
+      winRate: 0,
+      yieldCents: 0
+    });
+  }
+
+  for (const win of winData) {
+    if (!win.winnerAgentId) continue;
+    if (realOnly && !allowedIds.has(win.winnerAgentId)) continue;
+    
+    const existing = metricsMap.get(win.winnerAgentId);
+    const wins = win._count.id;
+    const yieldCents = win._sum.winnerPayoutCents ?? 0;
+    
+    if (existing) {
+      existing.wins = wins;
+      existing.winRate = existing.replies > 0 ? (wins / existing.replies) * 100 : 0;
+      existing.yieldCents = yieldCents;
+    } else {
+      metricsMap.set(win.winnerAgentId, {
+        agentId: win.winnerAgentId,
+        replies: 0,
+        wins,
+        winRate: 0,
+        yieldCents
+      });
+    }
+  }
+
+  return metricsMap;
+}
+
+export async function listAgentsByOwner(
+  ownerWalletAddress: string,
+  options?: { ownerUsername?: string | null }
+): Promise<PublicAgent[]> {
+  const normalized = ownerWalletAddress.toLowerCase();
+  const controlledUsernames = parseControlledOwnerUsernames(options?.ownerUsername);
+  const ownerScope: Prisma.AgentWhereInput = controlledUsernames.length
+    ? {
+        OR: [
+          { ownerWalletAddress: normalized },
+          ...controlledUsernames.map((ownerUsername) => ({
+            ownerUsername: {
+              equals: ownerUsername,
+              mode: "insensitive" as const
+            }
+          }))
+        ]
+      }
+    : { ownerWalletAddress: normalized };
+
+  const agents = await prisma.agent.findMany({
+    where: ownerScope,
+    orderBy: { createdAt: "desc" }
+  });
+  const realOnly = String(process.env.REAL_AGENT_REGISTRY_ONLY ?? "1") !== "0";
+  const filtered = realOnly
+    ? (
+        await Promise.all(
+          agents.map(async (agent) => ({
+            keep: await isRealAgentByRecord({
+              id: agent.id,
+              name: agent.name,
+              ownerWalletAddress: agent.ownerWalletAddress,
+              baseWalletAddress: agent.baseWalletAddress
+            }),
+            agent
+          }))
+        )
+      )
+        .filter((entry) => entry.keep)
+        .map((entry) => entry.agent)
+    : agents;
+  return filtered.map((agent) => toAgent(agent as any)).map(toPublicAgent);
+}
+
+export async function listAgentSubscribedWikiIds(agentId: string): Promise<string[]> {
+  await ensureDefaultWiki();
+  const memberships = await prisma.agentWikiMembership.findMany({
+    where: { agentId },
+    select: { wikiId: true },
+    orderBy: [{ subscribedAt: "asc" }]
+  });
+  return memberships.map((entry) => entry.wikiId);
+}
+
+export async function ensureAgentDefaultWikiMembership(agentId: string): Promise<void> {
+  await ensureDefaultWiki();
+  const membership = createAgentWikiMembership({
+    agentId,
+    wikiId: DEFAULT_WIKI_ID
+  });
+
+  await prisma.agentWikiMembership.upsert({
+    where: {
+      agentId_wikiId: {
+        agentId,
+        wikiId: DEFAULT_WIKI_ID
+      }
+    },
+    update: {},
+    create: {
+      id: membership.id,
+      agentId: membership.agentId,
+      wikiId: membership.wikiId,
+      subscribedAt: new Date(membership.subscribedAt)
+    }
+  });
+}
+
+export async function joinAgentWiki(input: {
+  agentId: string;
+  wikiQuery: string;
+}): Promise<{ ok: true; wikiId: string } | { ok: false; error: string }> {
+  const wikiId = normalizeWikiIdInput(input.wikiQuery);
+  if (!wikiId) {
+    return { ok: false, error: "Wiki id is required." };
+  }
+
+  const wiki = await findWikiById(wikiId);
+  if (!wiki) {
+    return { ok: false, error: "Wiki not found." };
+  }
+
+  const membership = createAgentWikiMembership({
+    agentId: input.agentId,
+    wikiId
+  });
+
+  try {
+    await prisma.agentWikiMembership.create({
+      data: {
+        id: membership.id,
+        agentId: membership.agentId,
+        wikiId: membership.wikiId,
+        subscribedAt: new Date(membership.subscribedAt)
+      }
+    });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      return { ok: true, wikiId };
+    }
+    throw error;
+  }
+
+  return { ok: true, wikiId };
+}
+
+export async function leaveAgentWiki(input: {
+  agentId: string;
+  wikiQuery: string;
+}): Promise<{ ok: true; wikiId: string } | { ok: false; error: string }> {
+  const wikiId = normalizeWikiIdInput(input.wikiQuery);
+  if (!wikiId) {
+    return { ok: false, error: "Wiki id is required." };
+  }
+
+  await prisma.agentWikiMembership.deleteMany({
+    where: {
+      agentId: input.agentId,
+      wikiId
+    }
+  });
+
+  return { ok: true, wikiId };
+}
+
+export async function findAgentByAccessToken(token: string): Promise<Agent | null> {
+  const tokenHash = hashToken(token);
+  const agent = await prisma.agent.findUnique({
+    where: { authTokenHash: tokenHash }
+  });
+  if (!agent) {
+    return null;
+  }
+  const realOnly = String(process.env.REAL_AGENT_REGISTRY_ONLY ?? "1") !== "0";
+  if (
+    realOnly &&
+    !(await isRealAgentByRecord({
+      id: agent.id,
+      name: agent.name,
+      ownerWalletAddress: agent.ownerWalletAddress,
+      baseWalletAddress: agent.baseWalletAddress
+    }))
+  ) {
+    return null;
+  }
+  await ensureAgentDefaultWikiMembership(agent.id);
+  return toAgent(agent as any);
+}
+
+export async function findAgentById(agentId: string): Promise<Agent | null> {
+  const agent = await prisma.agent.findUnique({ where: { id: agentId } });
+  return agent ? toAgent(agent as any) : null;
+}
+
+export async function registerAgent(input: {
+  ownerWalletAddress: string;
+  ownerUsername: string;
+  name: string;
+  description: string;
+  baseWalletAddress: string;
+  mcpServerUrl: string;
+  transport: string;
+  entrypointCommand?: string;
+  tags?: string[];
+  erc8004TokenId?: number;
+}): Promise<
+  | { ok: true; agent: PublicAgent; agentAccessToken: string }
+  | { ok: false; error: string }
+> {
+  const name = input.name.trim();
+  const description = input.description.trim();
+  const baseWalletAddress = input.baseWalletAddress.trim().toLowerCase();
+  const mcpServerUrl = input.mcpServerUrl.trim();
+  const transport = input.transport.trim().toLowerCase();
+
+  if (name.length < 3 || name.length > 80) {
+    return { ok: false, error: "Agent name must be 3-80 characters." };
+  }
+
+  if (description.length < 10 || description.length > 2000) {
+    return { ok: false, error: "Description must be 10-2000 characters." };
+  }
+
+  if (!isWalletAddress(baseWalletAddress)) {
+    return { ok: false, error: "Base wallet address must be a valid 0x wallet." };
+  }
+
+  if (!isValidTransport(transport)) {
+    return { ok: false, error: "Transport must be one of: http, sse, stdio." };
+  }
+
+  if (!isValidMcpEndpoint(mcpServerUrl)) {
+    return { ok: false, error: "MCP endpoint must start with http://, https://, or stdio://" };
+  }
+
+  const duplicateName = await prisma.agent.findFirst({
+    where: {
+      ownerWalletAddress: input.ownerWalletAddress.toLowerCase(),
+      name: {
+        equals: name,
+        mode: "insensitive"
+      }
+    },
+    select: { id: true }
+  });
+  if (duplicateName) {
+    return { ok: false, error: "You already have an agent with this name." };
+  }
+
+  const verification = await verifyAgentConnection({
+    transport,
+    mcpServerUrl,
+    entrypointCommand: input.entrypointCommand
+  });
+
+  if (!verification.ok) {
+    return { ok: false, error: verification.error ?? "Agent endpoint verification failed." };
+  }
+
+  // ERC-8004: require pre-registered token ID when configured
+  const erc8004Config = getErc8004Config();
+  let erc8004Data: {
+    erc8004ChainId?: number;
+    erc8004TokenId?: number;
+    erc8004IdentityRegistry?: string;
+  } = {};
+
+  if (erc8004Config.configured) {
+    const tokenId = input.erc8004TokenId;
+    if (tokenId == null || tokenId < 1) {
+      return {
+        ok: false,
+        error: "ERC-8004 Token ID is required. Your agent must be pre-registered on the Identity Registry."
+      };
+    }
+
+    const onChainInfo = await getAgentInfo(tokenId);
+    if (!onChainInfo) {
+      return {
+        ok: false,
+        error: `ERC-8004 Token ID ${tokenId} not found on the Identity Registry. Register your agent first.`
+      };
+    }
+
+    erc8004Data = {
+      erc8004ChainId: erc8004Config.chainId,
+      erc8004TokenId: tokenId,
+      erc8004IdentityRegistry: erc8004Config.identityRegistry
+    };
+  } else if (input.erc8004TokenId != null && input.erc8004TokenId >= 1) {
+    // ERC-8004 not fully configured but user provided token ID - store if identity registry exists
+    const identityRegistry = (process.env.ERC8004_IDENTITY_REGISTRY ?? "").trim();
+    const chainId = Number(process.env.ERC8004_CHAIN_ID ?? "84532");
+    if (identityRegistry) {
+      erc8004Data = {
+        erc8004ChainId: chainId,
+        erc8004TokenId: input.erc8004TokenId,
+        erc8004IdentityRegistry: identityRegistry
+      };
+    }
+  }
+
+  const accessToken = generateAgentToken();
+  const agent = createAgent({
+    ownerWalletAddress: input.ownerWalletAddress,
+    ownerUsername: input.ownerUsername,
+    name,
+    description,
+    baseWalletAddress,
+    mcpServerUrl,
+    transport,
+    entrypointCommand: input.entrypointCommand,
+    tags: input.tags,
+    authTokenHash: hashToken(accessToken),
+    verificationStatus: "verified",
+    verificationError: null,
+    verifiedAt: new Date().toISOString(),
+    capabilities: verification.capabilities ?? []
+  });
+
+  const created = await prisma.agent.create({
+    data: {
+      id: agent.id,
+      ownerWalletAddress: agent.ownerWalletAddress,
+      ownerUsername: agent.ownerUsername,
+      name: agent.name,
+      description: agent.description,
+      totalLikes: agent.totalLikes,
+      baseWalletAddress: agent.baseWalletAddress,
+      mcpServerUrl: agent.mcpServerUrl,
+      transport: agent.transport,
+      entrypointCommand: agent.entrypointCommand,
+      tags: agent.tags,
+      createdAt: new Date(agent.createdAt),
+      updatedAt: new Date(agent.updatedAt),
+      status: agent.status,
+      authTokenHash: agent.authTokenHash,
+      verificationStatus: agent.verificationStatus,
+      verificationError: agent.verificationError,
+      verifiedAt: agent.verifiedAt ? new Date(agent.verifiedAt) : null,
+      capabilities: agent.capabilities,
+      ...erc8004Data
+    } as any
+  });
+
+  await ensureAgentDefaultWikiMembership(created.id);
+
+  return { ok: true, agent: toPublicAgent(toAgent(created as any)), agentAccessToken: accessToken };
+}

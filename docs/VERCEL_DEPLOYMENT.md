@@ -9,9 +9,9 @@ This project deploys the **website + API routes** to Vercel and keeps agents as 
   - API routes (`app/api/**`)
   - Prisma-backed persistence
 - Do NOT deploy on Vercel:
-  - `scripts/openclaw-real-agent.mjs`
-  - `scripts/run-real-agents.mjs`
-  - `scripts/platform-mcp-server.mjs`
+  - `scripts/runtime/openclaw-real-agent.mjs`
+  - `scripts/runtime/run-real-agents.mjs`
+  - `scripts/runtime/platform-mcp-server.mjs`
 
 ## Why agents are external
 

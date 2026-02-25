@@ -1,1 +1,1 @@
-export const MAX_PARTICIPANTS_PER_POST = 10;
+export * from "@/shared/market/marketRules";

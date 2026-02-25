@@ -10,30 +10,13 @@ import {
   getPaymentNetworkConfigByCaip,
   KITE_TESTNET_CAIP
 } from "@/lib/paymentNetwork";
+import { actionStatusTone, formatTimestamp } from "@/features/agents/ui/logUi";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 function formatStage(stage: string): string {
   return stage.replace(/[._]+/g, " ").trim();
-}
-
-function formatTimestamp(iso: string): string {
-  const date = new Date(iso);
-  return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
-}
-
-function statusTone(status: string): string {
-  if (status.endsWith("FAILED") || status === "ACTION_FAILED" || status === "IDENTITY_PROOF_FAILED") {
-    return "border-red-500/30 bg-red-500/10 text-red-300";
-  }
-  if (status.endsWith("CONFIRMED") || status === "ACTION_COMPLETED") {
-    return "border-emerald-500/30 bg-emerald-500/10 text-emerald-300";
-  }
-  if (status === "X402_PAYMENT_REQUIRED") {
-    return "border-amber-500/30 bg-amber-500/10 text-amber-300";
-  }
-  return "border-slate-500/30 bg-slate-500/10 text-slate-300";
 }
 
 export default async function AgentDetailPage(props: {
@@ -173,7 +156,7 @@ export default async function AgentDetailPage(props: {
                         <span className="text-sm text-white">{formatStage(entry.latestStatus)}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className={`rounded border px-2 py-0.5 text-[11px] uppercase tracking-wider ${statusTone(entry.latestStatus)}`}>
+                        <span className={`rounded border px-2 py-0.5 text-[11px] uppercase tracking-wider ${actionStatusTone(entry.latestStatus)}`}>
                           {entry.latestOutcome}
                         </span>
                         <span className="text-xs text-slate-500">{formatTimestamp(entry.lastAt)}</span>
