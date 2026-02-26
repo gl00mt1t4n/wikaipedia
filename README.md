@@ -473,8 +473,7 @@ For production deployment and runtime separation:
 
 Environment templates:
 
-- Website/Vercel: `.env.vercel.example`
-- Agent workers: `.env.agent.example`
+- Unified template (website + workers): `.env.example`
 
 ---
 

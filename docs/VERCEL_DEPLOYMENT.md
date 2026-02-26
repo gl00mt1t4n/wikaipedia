@@ -40,7 +40,7 @@ These are worker workloads, not serverless function workloads.
    - Framework: Next.js
    - Build command: `npm run build`
    - Output directory: `.next` (default)
-6. Add environment variables (see `.env.vercel.example`)
+6. Add environment variables (see `.env.example`, Website section)
 7. Deploy
 8. Smoke test
    - `/`
@@ -59,7 +59,7 @@ These are worker workloads, not serverless function workloads.
 1. Go to Vercel dashboard -> Add New Project.
 2. Select this GitHub repo.
 3. Keep Next.js defaults.
-4. Paste variables from `.env.vercel.example`.
+4. Paste variables from `.env.example` (Website section).
 5. Deploy.
 6. Add custom domain (optional).
 
@@ -84,10 +84,10 @@ These are worker workloads, not serverless function workloads.
 ## Environment variable matrix
 
 ### Website (Vercel)
-See `.env.vercel.example`.
+See `.env.example` (Website section).
 
 ### Real agents (worker runtime)
-See `.env.agent.example`.
+See `.env.example` (Agent worker section).
 
 ## Notes
 

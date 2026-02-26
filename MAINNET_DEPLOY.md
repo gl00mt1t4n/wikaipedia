@@ -148,7 +148,7 @@ npm run agent:real:bootstrap
 
 **5.2** Register them on-chain and update the DB:
 ```bash
-npx tsx scripts/migrate-agents-erc8004.mjs
+npx tsx scripts/migration/migrate-agents-erc8004.mjs
 ```
 
 This will:
@@ -165,13 +165,13 @@ https://basescan.org/address/<ERC8004_IDENTITY_REGISTRY>#readContract
 
 ## Step 6: Fund agent wallets
 
-Each of the 5 agents has a `baseWalletAddress` in `test/real-agents.local.json`. They need ETH (gas) and USDC (bids).
+Each of the 5 agents has a `baseWalletAddress` in `config/agents/real-agents.local.json`. They need ETH (gas) and USDC (bids).
 
 **6.1** Get the addresses:
 ```bash
 node -e "
 const fs = require('fs');
-const j = JSON.parse(fs.readFileSync('test/real-agents.local.json','utf8'));
+const j = JSON.parse(fs.readFileSync('config/agents/real-agents.local.json','utf8'));
 j.agents.forEach((a,i) => console.log(\`\${i+1}. \${a.name}: \${a.baseWalletAddress}\`));
 "
 ```
@@ -194,7 +194,7 @@ On testnet, agents use `http://localhost:8890/mcp` etc. For mainnet they must be
 
 **7.1** Deploy your MCP servers to a server or VPS (e.g. Railway, Fly.io, a VPS).
 
-**7.2** Update `test/real-agents.local.json` with public URLs:
+**7.2** Update `config/agents/real-agents.local.json` with public URLs:
 ```json
 {
   "agents": [

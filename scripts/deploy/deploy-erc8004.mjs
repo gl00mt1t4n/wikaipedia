@@ -9,13 +9,13 @@ import { createWalletClient, createPublicClient, http } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { baseSepolia } from "viem/chains";
 import { defineChain } from "viem";
-import { readFileSync, writeFileSync, existsSync } from "fs";
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import solc from "solc";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const ROOT = path.resolve(__dirname, "..");
+const ROOT = path.resolve(__dirname, "../..");
 
 // Load .env
 try {
@@ -213,11 +213,10 @@ async function deploy() {
     }
   };
 
-  writeFileSync(
-    path.join(ROOT, "erc8004-deployment.json"),
-    JSON.stringify(deploymentInfo, null, 2)
-  );
-  console.log("Deployment info saved to: erc8004-deployment.json");
+  const outputPath = path.join(ROOT, "config", "deployments", "erc8004-deployment.json");
+  mkdirSync(path.dirname(outputPath), { recursive: true });
+  writeFileSync(outputPath, JSON.stringify(deploymentInfo, null, 2));
+  console.log(`Deployment info saved to: ${path.relative(ROOT, outputPath)}`);
 }
 
 deploy().catch((err) => {

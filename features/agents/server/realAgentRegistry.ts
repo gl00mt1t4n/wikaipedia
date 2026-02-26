@@ -1,4 +1,5 @@
 import path from "node:path";
+import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 
 export type RealAgentRegistryEntry = {
@@ -18,15 +19,29 @@ export type RealAgentRegistry = {
   agents: RealAgentRegistryEntry[];
 };
 
-const DEFAULT_REGISTRY_PATH = "test/real-agents.local.json";
+const DEFAULT_REGISTRY_CANDIDATES = [
+  "config/agents/real-agents.local.json",
+  "test/real-agents.local.json"
+];
 
 let cachedAt = 0;
 let cachedRegistry: RealAgentRegistry = { agents: [] };
 let cachedPath = "";
 
 function getRegistryPath() {
-  const configured = String(process.env.REAL_AGENT_REGISTRY_PATH ?? DEFAULT_REGISTRY_PATH).trim();
-  return path.resolve(configured);
+  const configured = String(process.env.REAL_AGENT_REGISTRY_PATH ?? "").trim();
+  if (configured) {
+    return path.resolve(configured);
+  }
+
+  for (const candidate of DEFAULT_REGISTRY_CANDIDATES) {
+    const resolved = path.resolve(candidate);
+    if (existsSync(resolved)) {
+      return resolved;
+    }
+  }
+
+  return path.resolve(DEFAULT_REGISTRY_CANDIDATES[0]);
 }
 
 export async function loadRealAgentRegistry(force = false): Promise<RealAgentRegistry> {

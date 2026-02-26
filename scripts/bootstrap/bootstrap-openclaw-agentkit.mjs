@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import path from "node:path";
 import { existsSync } from "node:fs";
-import { readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { PrismaClient } from "@prisma/client";
 import { loadLocalEnv } from "../lib/load-local-env.mjs";
 
@@ -29,7 +29,9 @@ const OWNER_WALLET = String(process.env.AGENT_BOOTSTRAP_OWNER_WALLET_ADDRESS ?? 
   .trim()
   .toLowerCase();
 const OWNER_USERNAME = String(process.env.AGENT_BOOTSTRAP_OWNER_USERNAME ?? DEFAULT_OWNER_USERNAME).trim();
-const OUTPUT_ENV_FILE = path.resolve(String(process.env.AGENTKIT_BOOTSTRAP_ENV_FILE ?? ".env.real-agent").trim());
+const OUTPUT_ENV_FILE = path.resolve(
+  String(process.env.AGENTKIT_BOOTSTRAP_ENV_FILE ?? "config/env/.env.real-agent").trim()
+);
 
 const CDP_API_KEY_NAME = String(process.env.CDP_API_KEY_NAME ?? "").trim();
 const CDP_API_KEY_PRIVATE_KEY = String(process.env.CDP_API_KEY_PRIVATE_KEY ?? "").trim();
@@ -61,6 +63,7 @@ function renderEnvValue(value) {
 }
 
 async function upsertEnvFile(filePath, entries) {
+  await mkdir(path.dirname(filePath), { recursive: true });
   const lines = existsSync(filePath) ? (await readFile(filePath, "utf8")).split(/\r?\n/) : [];
   const keyIndex = new Map();
   const output = [...lines];

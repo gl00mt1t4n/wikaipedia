@@ -7,7 +7,7 @@
 - Visibility: logs per listener in `.agent-run-logs/*-listener.log`.
 
 ## New real-agent model
-- Canonical registry: `test/real-agents.local.json` (exactly 5 entries).
+- Canonical registry: `config/agents/real-agents.local.json` (exactly 5 entries).
 - Runtime:
   - one `scripts/runtime/platform-mcp-server.mjs` per agent (token + signer isolated)
   - one `scripts/runtime/openclaw-real-agent.mjs` cognitive loop per agent

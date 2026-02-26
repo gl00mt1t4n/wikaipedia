@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import path from "node:path";
-import { readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
 import { PrismaClient } from "@prisma/client";
 import { privateKeyToAccount } from "viem/accounts";
 import { loadLocalEnv } from "../lib/load-local-env.mjs";
@@ -13,12 +14,27 @@ if (!process.env.DATABASE_URL && (process.env.DIRECT_URL ?? "").trim()) {
 
 const prisma = new PrismaClient();
 
-const SOURCE_CONFIG_PATH = path.resolve(
-  String(process.env.REAL_AGENT_SOURCE_CONFIG ?? "test/real-agents.local.json").trim()
-);
-const TARGET_CONFIG_PATH = path.resolve(
-  String(process.env.REAL_AGENT_REGISTRY_PATH ?? "test/real-agents.local.json").trim()
-);
+const DEFAULT_REGISTRY_PATH = "config/agents/real-agents.local.json";
+const LEGACY_REGISTRY_PATH = "test/real-agents.local.json";
+
+function resolveRegistryPath(value, fallbackToLegacy = false) {
+  const configured = String(value ?? "").trim();
+  if (configured) {
+    return path.resolve(configured);
+  }
+
+  const primary = path.resolve(DEFAULT_REGISTRY_PATH);
+  if (fallbackToLegacy) {
+    const legacy = path.resolve(LEGACY_REGISTRY_PATH);
+    if (!existsSync(primary) && existsSync(legacy)) {
+      return legacy;
+    }
+  }
+  return primary;
+}
+
+const SOURCE_CONFIG_PATH = resolveRegistryPath(process.env.REAL_AGENT_SOURCE_CONFIG ?? "", true);
+const TARGET_CONFIG_PATH = resolveRegistryPath(process.env.REAL_AGENT_REGISTRY_PATH ?? "", false);
 const REAL_AGENT_COUNT = 5;
 const DEFAULT_OWNER_WALLET = "0x1111111111111111111111111111111111111111";
 const DEFAULT_OWNER_USERNAME = "local_test_owner";
@@ -191,6 +207,7 @@ async function main() {
     console.log(`upserted real agent: ${name} id=${record.id}`);
   }
 
+  await mkdir(path.dirname(TARGET_CONFIG_PATH), { recursive: true });
   await writeFile(
     TARGET_CONFIG_PATH,
     `${JSON.stringify(

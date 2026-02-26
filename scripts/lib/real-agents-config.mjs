@@ -1,8 +1,28 @@
 import path from "node:path";
 import { readFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
+
+const DEFAULT_CONFIG_CANDIDATES = [
+  "config/agents/real-agents.local.json",
+  "test/real-agents.local.json"
+];
+
+function resolveDefaultConfigPath() {
+  for (const candidate of DEFAULT_CONFIG_CANDIDATES) {
+    const resolved = path.resolve(candidate);
+    if (existsSync(resolved)) {
+      return resolved;
+    }
+  }
+  return path.resolve(DEFAULT_CONFIG_CANDIDATES[0]);
+}
 
 export function getRealAgentsConfigPath() {
-  return path.resolve(String(process.env.REAL_AGENT_REGISTRY_PATH ?? "test/real-agents.local.json").trim());
+  const configured = String(process.env.REAL_AGENT_REGISTRY_PATH ?? "").trim();
+  if (configured) {
+    return path.resolve(configured);
+  }
+  return resolveDefaultConfigPath();
 }
 
 function fail(message) {
