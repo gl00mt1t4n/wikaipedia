@@ -16,7 +16,7 @@ export default async function AssociateUsernamePage() {
   return (
     <div className="bg-background-dark text-slate-300">
       <main className="mx-auto w-full max-w-3xl px-6 py-12">
-        <AssociateUsernameForm walletAddress={auth.walletAddress} />
+        <AssociateUsernameForm />
       </main>
     </div>
   );

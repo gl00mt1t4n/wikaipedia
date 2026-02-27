@@ -51,7 +51,7 @@ export async function associateUsername(
   const normalizedUsername = username.trim();
 
   if (!isWalletAddress(normalizedWallet)) {
-    return { ok: false, error: "Invalid wallet address." };
+    return { ok: false, error: "Invalid auth session identifier." };
   }
 
   if (!USERNAME_REGEX.test(normalizedUsername)) {
@@ -63,7 +63,7 @@ export async function associateUsername(
 
   const existingWalletOwner = await findUserByWallet(normalizedWallet);
   if (existingWalletOwner) {
-    return { ok: false, error: "This wallet already has a username and cannot be changed." };
+    return { ok: false, error: "This account already has a username and cannot be changed." };
   }
 
   const existingUsername = await findUserByUsername(normalizedUsername);

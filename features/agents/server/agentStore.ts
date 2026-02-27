@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import { Prisma } from "@prisma/client";
+import { Prisma, type Agent as PrismaAgent } from "@prisma/client";
 import { verifyAgentConnection } from "@/features/agents/server/agentConnection";
 import { prisma } from "@/shared/db/prisma";
 import { DEFAULT_WIKI_ID, ensureDefaultWiki, findWikiById, normalizeWikiIdInput } from "@/features/wikis/server/wikiStore";
@@ -14,6 +14,31 @@ import {
 
 function isWalletAddress(value: string): boolean {
   return /^0x[a-fA-F0-9]{40}$/.test(value);
+}
+
+function deriveDeterministicAgentIdentity(seed: string): string {
+  return `0x${crypto.createHash("sha256").update(seed).digest("hex").slice(0, 40)}`;
+}
+
+function normalizeAgentIdentity(input: {
+  providedIdentity: string;
+  ownerWalletAddress: string;
+  ownerUsername: string;
+  name: string;
+  mcpServerUrl: string;
+}): string {
+  const candidate = input.providedIdentity.trim().toLowerCase();
+  if (candidate && isWalletAddress(candidate)) {
+    return candidate;
+  }
+
+  if (candidate) {
+    return deriveDeterministicAgentIdentity(`custom:${candidate}`);
+  }
+
+  return deriveDeterministicAgentIdentity(
+    `${input.ownerWalletAddress.toLowerCase()}|${input.ownerUsername.toLowerCase()}|${input.name.toLowerCase()}|${input.mcpServerUrl}`
+  );
 }
 
 function isValidTransport(value: string): value is AgentTransport {
@@ -40,32 +65,7 @@ function generateAgentToken(): string {
   return `ag_${crypto.randomBytes(24).toString("hex")}`;
 }
 
-function toAgent(record: {
-  id: string;
-  ownerWalletAddress: string;
-  ownerUsername: string;
-  name: string;
-  description: string;
-  totalLikes: number;
-  baseWalletAddress?: string | null;
-  mcpServerUrl: string;
-  transport: string;
-  entrypointCommand: string | null;
-  tags: string[];
-  createdAt: Date;
-  updatedAt: Date;
-  status: string;
-  authTokenHash: string;
-  verificationStatus: string;
-  verificationError: string | null;
-  verifiedAt: Date | null;
-  capabilities: string[];
-  erc8004ChainId?: number | null;
-  erc8004TokenId?: number | null;
-  erc8004IdentityRegistry?: string | null;
-  erc8004RegisteredAt?: Date | null;
-  erc8004TxHash?: string | null;
-}): Agent {
+function toAgent(record: PrismaAgent): Agent {
   return {
     id: record.id,
     ownerWalletAddress: record.ownerWalletAddress,
@@ -98,7 +98,7 @@ export async function listAgentsRaw(): Promise<Agent[]> {
   const agents = await prisma.agent.findMany({
     orderBy: { createdAt: "desc" }
   });
-  return agents.map((agent) => toAgent(agent as any));
+  return agents.map((agent) => toAgent(agent));
 }
 
 export async function listAgents(): Promise<PublicAgent[]> {
@@ -221,7 +221,7 @@ export async function listAgentsByOwner(
     where: ownerScope,
     orderBy: { createdAt: "desc" }
   });
-  return agents.map((agent) => toAgent(agent as any)).map(toPublicAgent);
+  return agents.map((agent) => toAgent(agent)).map(toPublicAgent);
 }
 
 export async function listAgentSubscribedWikiIds(agentId: string): Promise<string[]> {
@@ -324,12 +324,12 @@ export async function findAgentByAccessToken(token: string): Promise<Agent | nul
     return null;
   }
   await ensureAgentDefaultWikiMembership(agent.id);
-  return toAgent(agent as any);
+  return toAgent(agent);
 }
 
 export async function findAgentById(agentId: string): Promise<Agent | null> {
   const agent = await prisma.agent.findUnique({ where: { id: agentId } });
-  return agent ? toAgent(agent as any) : null;
+  return agent ? toAgent(agent) : null;
 }
 
 export async function registerAgent(input: {
@@ -348,9 +348,15 @@ export async function registerAgent(input: {
 > {
   const name = input.name.trim();
   const description = input.description.trim();
-  const baseWalletAddress = input.baseWalletAddress.trim().toLowerCase();
   const mcpServerUrl = input.mcpServerUrl.trim();
   const transport = input.transport.trim().toLowerCase();
+  const baseWalletAddress = normalizeAgentIdentity({
+    providedIdentity: input.baseWalletAddress,
+    ownerWalletAddress: input.ownerWalletAddress,
+    ownerUsername: input.ownerUsername,
+    name,
+    mcpServerUrl
+  });
 
   if (name.length < 3 || name.length > 80) {
     return { ok: false, error: "Agent name must be 3-80 characters." };
@@ -358,10 +364,6 @@ export async function registerAgent(input: {
 
   if (description.length < 10 || description.length > 2000) {
     return { ok: false, error: "Description must be 10-2000 characters." };
-  }
-
-  if (!isWalletAddress(baseWalletAddress)) {
-    return { ok: false, error: "Base wallet address must be a valid 0x wallet." };
   }
 
   if (!isValidTransport(transport)) {
@@ -422,7 +424,7 @@ export async function registerAgent(input: {
       name: agent.name,
       description: agent.description,
       totalLikes: agent.totalLikes,
-      baseWalletAddress: agent.baseWalletAddress,
+      baseWalletAddress: agent.baseWalletAddress ?? baseWalletAddress,
       mcpServerUrl: agent.mcpServerUrl,
       transport: agent.transport,
       entrypointCommand: agent.entrypointCommand,
@@ -434,11 +436,11 @@ export async function registerAgent(input: {
       verificationStatus: agent.verificationStatus,
       verificationError: agent.verificationError,
       verifiedAt: agent.verifiedAt ? new Date(agent.verifiedAt) : null,
-      capabilities: agent.capabilities,
-    } as any
+      capabilities: agent.capabilities
+    }
   });
 
   await ensureAgentDefaultWikiMembership(created.id);
 
-  return { ok: true, agent: toPublicAgent(toAgent(created as any)), agentAccessToken: accessToken };
+  return { ok: true, agent: toPublicAgent(toAgent(created)), agentAccessToken: accessToken };
 }

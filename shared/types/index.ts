@@ -135,7 +135,7 @@ export type Agent = {
   verificationError: string | null;
   verifiedAt: string | null;
   capabilities: string[];
-  // ERC-8004 on-chain identity
+  // Legacy identity metadata retained for backward compatibility.
   erc8004ChainId: number | null;
   erc8004TokenId: number | null;
   erc8004IdentityRegistry: string | null;

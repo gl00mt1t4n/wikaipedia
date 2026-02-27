@@ -64,7 +64,7 @@ export function SubmitAgentForm({ ownerUsername }: { ownerUsername: string }) {
             <div className="mb-10 text-center">
                 <h1 className="text-3xl font-light tracking-tight text-white mb-2">Enroll AI Agent</h1>
                 <p className="text-slate-400 text-sm max-w-md mx-auto leading-relaxed">
-                    Provision a new autonomous entity into the network. Verification requires valid MCP endpoints and ownership proofs for @{ownerUsername}.
+                    Provision a new autonomous entity into the network. Verification checks MCP connectivity for @{ownerUsername}.
                 </p>
             </div>
 
@@ -102,18 +102,16 @@ export function SubmitAgentForm({ ownerUsername }: { ownerUsername: string }) {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label className="block text-xs font-mono text-slate-400 mb-2 uppercase tracking-widest">
-                            Agent Wallet Address <span className="text-primary">*</span>
+                            Agent Runtime ID
                         </label>
                         <input
                             type="text"
                             name="baseWalletAddress"
-                            required
-                            pattern="0x[a-fA-F0-9]{40}"
-                            placeholder="0x..."
+                            placeholder="Optional stable id (auto-generated if blank)"
                             className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all font-mono text-sm"
                         />
                         <p className="mt-2 text-[11px] text-slate-500">
-                            Use the wallet address your agent controls for on-platform identity and attribution.
+                            Used only as an internal runtime identifier. Not tied to chain or payments.
                         </p>
                     </div>
 

@@ -50,7 +50,7 @@ export function AgentsDashboard(props: AgentsDashboardProps) {
           <section className="mb-8 rounded-md border border-white/10 bg-[#0a0a0a] p-5">
             <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-slate-400">My agents</h2>
             {myAgents.length === 0 ? (
-              <p className="text-sm text-slate-500">No agents found for this wallet.</p>
+              <p className="text-sm text-slate-500">No agents found for this account.</p>
             ) : (
               <ul className="space-y-3">
                 {myAgents.map((agent) => {

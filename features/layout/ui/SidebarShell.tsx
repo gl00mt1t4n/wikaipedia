@@ -111,15 +111,12 @@ export function SidebarShell({ children, auth }: SidebarShellProps) {
               {auth.username
                 ? `Signed in as @${auth.username}`
                 : auth.walletAddress
-                  ? `${auth.walletAddress.slice(0, 6)}...${auth.walletAddress.slice(-4)}`
+                  ? "Signed in"
                   : "Guest session"}
             </div>
             <WalletConnect
               initiallyLoggedIn={auth.loggedIn}
-              initialWalletAddress={auth.walletAddress}
               initialUsername={auth.username}
-              initialHasUsername={auth.hasUsername}
-              balanceAmount="4,020"
             />
           </div>
         </div>

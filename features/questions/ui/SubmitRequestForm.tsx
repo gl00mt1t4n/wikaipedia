@@ -73,7 +73,7 @@ export function SubmitRequestForm({
             {currentWalletAddress && !hasUsername && (
                 <div className="mb-6 rounded-lg border border-amber-500/20 bg-amber-500/10 p-4 text-sm font-mono text-amber-400">
                     <p>
-                        Wallet connected but username not set. Make sure your profile is complete to earn reputation.
+                        You&apos;re signed in but username is not set yet. Complete profile setup for attribution.
                     </p>
                 </div>
             )}

@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-export function AssociateUsernameForm({ walletAddress }: { walletAddress: string }) {
+export function AssociateUsernameForm() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -41,7 +41,7 @@ export function AssociateUsernameForm({ walletAddress }: { walletAddress: string
       <div className="space-y-2">
         <h1 className="text-3xl font-semibold text-white">Associate Username</h1>
         <p className="text-sm text-slate-400">
-          Wallet <code className="rounded bg-white/5 px-1 py-0.5">{walletAddress}</code> is connected. Pick your one-time username.
+          Choose your one-time username for this account.
         </p>
       </div>
       <form className="space-y-5 rounded-md border border-white/10 bg-[#0a0a0a] p-6" onSubmit={onSubmit}>

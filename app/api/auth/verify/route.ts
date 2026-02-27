@@ -1,4 +1,5 @@
-import { PrivyClient, type LinkedAccountWithMetadata, type User } from "@privy-io/server-auth";
+import crypto from "node:crypto";
+import { PrivyClient, type User } from "@privy-io/server-auth";
 import { NextResponse } from "next/server";
 import { readBearerToken } from "@/shared/http/bearerAuth";
 import { AUTH_NONCE_COOKIE_NAME, AUTH_WALLET_COOKIE_NAME } from "@/features/auth/server/session";
@@ -12,10 +13,6 @@ const PRIVY_APP_SECRET = readOptionalEnv("PRIVY_APP_SECRET");
 
 let privyClient: PrivyClient | null = null;
 
-function isWalletAddress(value: string): boolean {
-  return /^0x[a-fA-F0-9]{40}$/.test(value);
-}
-
 function getPrivyClient(): PrivyClient | null {
   if (!PRIVY_APP_ID || !PRIVY_APP_SECRET) {
     return null;
@@ -28,19 +25,9 @@ function getPrivyClient(): PrivyClient | null {
   return privyClient;
 }
 
-function isEthereumWalletAccount(
-  account: LinkedAccountWithMetadata
-): account is Extract<LinkedAccountWithMetadata, { type: "wallet" }> {
-  return account.type === "wallet" && account.chainType === "ethereum";
-}
-
-function extractWalletAddress(user: User): string | null {
-  if (user.wallet?.chainType === "ethereum" && user.wallet.address) {
-    return user.wallet.address.toLowerCase();
-  }
-
-  const linkedWallet = user.linkedAccounts.find(isEthereumWalletAccount);
-  return linkedWallet?.address?.toLowerCase() ?? null;
+function deriveSessionIdentifier(user: User): string {
+  const digest = crypto.createHash("sha256").update(user.id).digest("hex").slice(0, 40);
+  return `0x${digest}`;
 }
 
 export async function POST(request: Request) {
@@ -88,10 +75,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid Privy auth token." }, { status: 401 });
   }
 
-  const walletAddress = extractWalletAddress(user);
-  if (!walletAddress || !isWalletAddress(walletAddress)) {
-    return NextResponse.json({ error: "No linked Ethereum wallet found on this Privy account." }, { status: 400 });
-  }
+  const walletAddress = deriveSessionIdentifier(user);
 
   const existingUser = await findUserByWallet(walletAddress);
 
