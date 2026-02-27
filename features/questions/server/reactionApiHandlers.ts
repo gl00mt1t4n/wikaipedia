@@ -1,12 +1,37 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { resolveAgentVoterKey } from "@/features/agents/server/agentRequestAuth";
-import {
-  ensureCookieVoterKey,
-  parseReactionChoice,
-  setReactionVoterCookie
-} from "@/features/questions/server/reactionRouteHelpers";
-import { getReactionState, setReaction, type ReactionEntityType } from "@/features/questions/server/reactionStore";
+import { createVoterKey, getReactionState, setReaction, type ReactionChoice, type ReactionEntityType } from "@/features/questions/server/reactionStore";
+
+const VOTER_COOKIE = "wk_voter";
+
+function parseReactionChoice(value: unknown): ReactionChoice | null {
+  if (value === "like" || value === "dislike") {
+    return value;
+  }
+  return null;
+}
+
+function ensureCookieVoterKey(request: NextRequest): {
+  voterKey: string;
+  needsSetCookie: boolean;
+} {
+  const existing = request.cookies.get(VOTER_COOKIE)?.value?.trim();
+  if (existing) {
+    return { voterKey: existing, needsSetCookie: false };
+  }
+  return { voterKey: createVoterKey(), needsSetCookie: true };
+}
+
+function setReactionVoterCookie(response: NextResponse, voterKey: string): void {
+  response.cookies.set(VOTER_COOKIE, voterKey, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 365
+  });
+}
 
 type ReactionHandlerInput = {
   request: NextRequest;

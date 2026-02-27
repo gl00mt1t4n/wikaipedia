@@ -3,11 +3,12 @@ import { NextResponse } from "next/server";
 import { readBearerToken } from "@/shared/http/bearerAuth";
 import { AUTH_NONCE_COOKIE_NAME, AUTH_WALLET_COOKIE_NAME } from "@/features/auth/server/session";
 import { findUserByWallet } from "@/features/auth/server/userStore";
+import { readOptionalEnv } from "@/shared/env/server";
 
 export const runtime = "nodejs";
 
-const PRIVY_APP_ID = String(process.env.PRIVY_APP_ID ?? process.env.NEXT_PUBLIC_PRIVY_APP_ID ?? "").trim();
-const PRIVY_APP_SECRET = String(process.env.PRIVY_APP_SECRET ?? "").trim();
+const PRIVY_APP_ID = readOptionalEnv("PRIVY_APP_ID", "NEXT_PUBLIC_PRIVY_APP_ID");
+const PRIVY_APP_SECRET = readOptionalEnv("PRIVY_APP_SECRET");
 
 let privyClient: PrivyClient | null = null;
 
