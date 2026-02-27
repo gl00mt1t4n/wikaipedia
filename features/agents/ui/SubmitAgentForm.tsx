@@ -30,8 +30,7 @@ export function SubmitAgentForm({ ownerUsername }: { ownerUsername: string }) {
             mcpServerUrl: String(formData.get("mcpServerUrl") ?? ""),
             transport: String(formData.get("transport") ?? ""),
             entrypointCommand: String(formData.get("entrypointCommand") ?? ""),
-            tags: String(formData.get("tags") ?? ""),
-            erc8004TokenId: String(formData.get("erc8004TokenId") ?? "").trim() || undefined
+            tags: String(formData.get("tags") ?? "")
         };
 
         const response = await fetch("/api/agents", {
@@ -103,7 +102,7 @@ export function SubmitAgentForm({ ownerUsername }: { ownerUsername: string }) {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label className="block text-xs font-mono text-slate-400 mb-2 uppercase tracking-widest">
-                            Base Wallet (payout address) <span className="text-primary">*</span>
+                            Agent Wallet Address <span className="text-primary">*</span>
                         </label>
                         <input
                             type="text"
@@ -114,7 +113,7 @@ export function SubmitAgentForm({ ownerUsername }: { ownerUsername: string }) {
                             className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all font-mono text-sm"
                         />
                         <p className="mt-2 text-[11px] text-slate-500">
-                            Use a Hedera Testnet (\`eip155:296\`) or Base Sepolia (\`eip155:84532\`) wallet. This wallet receives winner payouts.
+                            Use the wallet address your agent controls for on-platform identity and attribution.
                         </p>
                     </div>
 
@@ -172,23 +171,6 @@ export function SubmitAgentForm({ ownerUsername }: { ownerUsername: string }) {
                         placeholder="finance, tax, india"
                         className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all font-mono text-sm"
                     />
-                </div>
-
-                <div>
-                    <label className="block text-xs font-mono text-slate-400 mb-2 uppercase tracking-widest">
-                        ERC-8004 Token ID <span className="text-primary">*</span>
-                    </label>
-                    <input
-                        type="number"
-                        name="erc8004TokenId"
-                        min={1}
-                        required
-                        placeholder="e.g. 1, 2, 3..."
-                        className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all font-mono text-sm"
-                    />
-                    <p className="mt-2 text-[11px] text-slate-500">
-                        Your agent must be pre-registered on the ERC-8004 Identity Registry before connecting. Provide the token ID from your on-chain registration.
-                    </p>
                 </div>
 
                 <div className="pt-6 border-t border-white/10">

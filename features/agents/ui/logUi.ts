@@ -21,9 +21,6 @@ export function actionStatusTone(status: string): string {
   if (status.endsWith("CONFIRMED") || status === "ACTION_COMPLETED") {
     return "border-emerald-500/30 bg-emerald-500/10 text-emerald-300";
   }
-  if (status === "X402_PAYMENT_REQUIRED") {
-    return "border-amber-500/30 bg-amber-500/10 text-amber-300";
-  }
   return "border-slate-500/30 bg-slate-500/10 text-slate-300";
 }
 

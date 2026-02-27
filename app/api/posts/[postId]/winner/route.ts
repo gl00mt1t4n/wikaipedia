@@ -1,14 +1,8 @@
 import { NextResponse } from "next/server";
 import { appendAgentActionLog, generateAgentActionId } from "@/features/agents/server/agentActionLogStore";
-import { findAgentById } from "@/features/agents/server/agentStore";
 import { listAnswersByPost } from "@/features/questions/server/answerStore";
-import { disburseWinnerPayout } from "@/features/payments/server/networkSettlement";
-import { formatUsdFromCents } from "@/shared/market/bidPricing";
 import { getPostById, settlePost } from "@/features/questions/server/postStore";
-import { recordWinnerReputation } from "@/features/reputation/server/reputationStore";
-import { PLATFORM_FEE_BPS, WINNER_PAYOUT_BPS, computeSettlementSplit } from "@/shared/market/settlementRules";
 import { getAuthState } from "@/features/auth/server/session";
-import { getActiveBidNetworkConfig } from "@/features/payments/server/paymentNetwork";
 
 export const runtime = "nodejs";
 
@@ -21,7 +15,6 @@ async function safeLog(input: Parameters<typeof appendAgentActionLog>[0]): Promi
 export async function POST(request: Request, props: { params: Promise<{ postId: string }> }) {
   const params = await props.params;
   const actionId = String(request.headers.get("x-agent-action-id") ?? "").trim() || generateAgentActionId();
-  const networkConfig = getActiveBidNetworkConfig();
   const route = `/api/posts/${params.postId}/winner`;
 
   const auth = await getAuthState();
@@ -34,42 +27,12 @@ export async function POST(request: Request, props: { params: Promise<{ postId: 
     return NextResponse.json({ error: "Post not found." }, { status: 404 });
   }
 
-  await safeLog({
-    actionId,
-    actionType: "winner_settlement",
-    route,
-    method: "POST",
-    stage: "ACTION_REQUESTED",
-    status: "ACTION_REQUESTED",
-    outcome: "info",
-    postId: post.id,
-    paymentNetwork: networkConfig.x402Network,
-    x402Currency: networkConfig.payoutToken.symbol,
-    x402TokenAddress: networkConfig.payoutToken.address
-  });
-
   if (post.poster !== auth.username) {
-    await safeLog({
-      actionId,
-      actionType: "winner_settlement",
-      route,
-      method: "POST",
-      stage: "ACTION_FAILED",
-      status: "ACTION_FAILED",
-      outcome: "failure",
-      postId: post.id,
-      paymentNetwork: networkConfig.x402Network,
-      httpStatus: 403,
-      failureCode: "not_post_owner",
-      failureMessage: "Only the question poster can select a winner.",
-      errorCode: "not_post_owner",
-      errorMessage: "Only the question poster can select a winner."
-    });
-    return NextResponse.json({ error: "Only the question poster can select a winner." }, { status: 403 });
+    return NextResponse.json({ error: "Only the question poster can select a best answer." }, { status: 403 });
   }
 
   if (post.settlementStatus !== "open") {
-    return NextResponse.json({ error: "Post has already been settled." }, { status: 400 });
+    return NextResponse.json({ error: "Post has already been closed." }, { status: 400 });
   }
 
   const body = (await request.json()) as { answerId?: string };
@@ -80,145 +43,38 @@ export async function POST(request: Request, props: { params: Promise<{ postId: 
 
   const answers = await listAnswersByPost(params.postId);
   const winnerAnswer = answers.find((answer) => answer.id === answerId);
-
   if (!winnerAnswer) {
     return NextResponse.json({ error: "Selected answer does not belong to this post." }, { status: 400 });
   }
 
-  if (post.poolTotalCents <= 0) {
-    return NextResponse.json({ error: "Escrow pool is empty." }, { status: 400 });
-  }
-
-  const winnerAgent = await findAgentById(winnerAnswer.agentId);
-  if (!winnerAgent) {
-    return NextResponse.json({ error: "Winning agent record not found." }, { status: 404 });
-  }
-  if (!winnerAgent.baseWalletAddress) {
-    return NextResponse.json({ error: "Winning agent has no payout wallet configured." }, { status: 400 });
-  }
-
-  const { winnerPayoutCents, platformFeeCents } = computeSettlementSplit(post.poolTotalCents);
-
-  let payout;
-  await safeLog({
-    actionId,
-    actionType: "winner_settlement",
-    route,
-    method: "POST",
-    stage: "X402_SETTLEMENT_ATTEMPTED",
-    status: "X402_SETTLEMENT_ATTEMPTED",
-    outcome: "info",
-    postId: post.id,
-    paymentNetwork: networkConfig.x402Network,
-    bidAmountCents: winnerPayoutCents,
-    x402Currency: networkConfig.payoutToken.symbol,
-    x402TokenAddress: networkConfig.payoutToken.address,
-    x402Amount: (winnerPayoutCents / 100).toFixed(2)
-  });
-  try {
-    payout = await disburseWinnerPayout({
-      to: winnerAgent.baseWalletAddress,
-      amountCents: winnerPayoutCents
-    });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to disburse winner payout.";
-    await safeLog({
-      actionId,
-      actionType: "winner_settlement",
-      route,
-      method: "POST",
-      stage: "X402_SETTLEMENT_FAILED",
-      status: "X402_SETTLEMENT_FAILED",
-      outcome: "failure",
-      postId: post.id,
-      paymentNetwork: networkConfig.x402Network,
-      httpStatus: 502,
-      failureCode: "winner_payout_failed",
-      failureMessage: message,
-      errorCode: "winner_payout_failed",
-      errorMessage: message
-    });
-
-    return NextResponse.json(
-      {
-        error: message
-      },
-      { status: 502 }
-    );
-  }
-
-  const settled = await settlePost({
+  const updated = await settlePost({
     postId: post.id,
     winnerAnswerId: winnerAnswer.id,
     winnerAgentId: winnerAnswer.agentId,
-    winnerPayoutCents,
-    platformFeeCents,
-    settlementTxHash: payout.txHash
+    winnerPayoutCents: 0,
+    platformFeeCents: 0,
+    settlementTxHash: "manual-selection"
   });
 
-  if (!settled) {
-    await safeLog({
-      actionId,
-      actionType: "winner_settlement",
-      route,
-      method: "POST",
-      stage: "ACTION_FAILED",
-      status: "ACTION_FAILED",
-      outcome: "failure",
-      postId: post.id,
-      paymentNetwork: networkConfig.x402Network,
-      paymentTxHash: payout.txHash,
-      httpStatus: 500,
-      failureCode: "persist_settlement_failed",
-      failureMessage: "Failed to persist settlement.",
-      errorCode: "persist_settlement_failed",
-      errorMessage: "Failed to persist settlement."
-    });
-    return NextResponse.json({ error: "Failed to persist settlement." }, { status: 500 });
+  if (!updated) {
+    return NextResponse.json({ error: "Failed to persist selection." }, { status: 500 });
   }
 
   await safeLog({
     actionId,
-    actionType: "winner_settlement",
+    actionType: "best_answer_selection",
     route,
     method: "POST",
     stage: "ACTION_COMPLETED",
     status: "ACTION_COMPLETED",
     outcome: "success",
     postId: post.id,
-    paymentNetwork: payout.paymentNetwork,
-    paymentTxHash: payout.txHash,
-    bidAmountCents: winnerPayoutCents,
-    x402Amount: payout.amountBaseUnits,
-    x402Currency: payout.tokenSymbol,
-    x402TokenAddress: payout.tokenAddress,
-    httpStatus: 200
-  });
-
-  // Record +10 reputation bonus for winner (async, non-blocking)
-  recordWinnerReputation({
     agentId: winnerAnswer.agentId,
-    postId: post.id
-  }).catch((err) => {
-    console.error("Failed to record winner reputation:", err);
+    agentName: winnerAnswer.agentName,
+    metadata: { answerId: winnerAnswer.id }
   });
 
-  const response = NextResponse.json({
-    ok: true,
-    post: settled,
-    settlement: {
-      network: payout.paymentNetwork,
-      txHash: payout.txHash,
-      tokenAddress: payout.tokenAddress,
-      tokenSymbol: payout.tokenSymbol,
-      winnerWalletAddress: winnerAgent.baseWalletAddress,
-      poolTotalUsd: formatUsdFromCents(post.poolTotalCents),
-      winnerPayoutUsd: formatUsdFromCents(winnerPayoutCents),
-      platformFeeUsd: formatUsdFromCents(platformFeeCents),
-      winnerShareBps: WINNER_PAYOUT_BPS,
-      platformFeeBps: PLATFORM_FEE_BPS
-    }
-  });
+  const response = NextResponse.json({ ok: true, post: updated });
   response.headers.set("x-agent-action-id", actionId);
   return response;
 }

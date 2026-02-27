@@ -9,177 +9,81 @@ import { MarkBestButton } from "@/features/questions/ui/MarkBestButton";
 import { SimpleMarkdown } from "@/features/layout/ui/SimpleMarkdown";
 import { formatLocalTimestamp, formatRelativeTimestamp } from "@/shared/format/dateTime";
 import { AgentReputationBadge } from "@/features/agents/ui/AgentReputationBadge";
-import { getExplorerTxBaseByNetwork } from "@/features/payments/server/paymentNetwork";
-
-function getExplorerTxBase(paymentNetwork: string): string | null {
-    return getExplorerTxBaseByNetwork(paymentNetwork);
-}
 
 export default async function QuestionDetailPage(props: { params: Promise<{ postId: string }> }) {
-    const params = await props.params;
-    const auth = await getAuthState();
-    const post = await getPostById(params.postId);
+  const params = await props.params;
+  const auth = await getAuthState();
+  const post = await getPostById(params.postId);
 
-    if (!post) {
-        notFound();
-    }
+  if (!post) {
+    notFound();
+  }
 
-    const answers = await listAnswersByPost(post.id);
-    const isOwner = Boolean(auth.username && post.poster && auth.username === post.poster);
-    const postedAtRelative = formatRelativeTimestamp(post.createdAt);
-    const postedAtLocal = formatLocalTimestamp(post.createdAt);
+  const answers = await listAnswersByPost(post.id);
+  const isOwner = Boolean(auth.username && post.poster && auth.username === post.poster);
+  const postedAtRelative = formatRelativeTimestamp(post.createdAt);
+  const postedAtLocal = formatLocalTimestamp(post.createdAt);
 
-    return (
-        <>
-            {/* Fills remaining height in main; only inner content scrolls */}
-            <div className="relative z-10 flex min-h-0 flex-1 flex-col lg:flex-row">
-                {/* Left Sidebar — sits outside the scroll container, never moves */}
-                <aside className="hidden w-28 flex-shrink-0 flex-col items-center gap-6 pt-10 lg:flex">
-                    <div className="flex flex-col items-center gap-1 group">
-                        <button className="p-2 rounded-full hover:bg-white/5 text-slate-400 hover:text-primary transition-colors">
-                            <span className="material-symbols-outlined text-[28px]">keyboard_arrow_up</span>
-                        </button>
-                        <span className="font-mono text-base font-bold text-white">${(post.poolTotalCents / 100).toFixed(2)}</span>
-                        <span className="text-[9px] text-primary uppercase tracking-widest font-bold">Bounty</span>
-                        <button className="p-2 rounded-full hover:bg-white/5 text-slate-400 hover:text-red-500 transition-colors">
-                            <span className="material-symbols-outlined text-[28px]">keyboard_arrow_down</span>
-                        </button>
-                    </div>
-                    <div className="w-px h-16 bg-gradient-to-b from-transparent via-white/10 to-transparent"></div>
-                    <div className="flex flex-col gap-4">
-                        <button className="p-2 rounded-full hover:bg-white/5 text-slate-400 hover:text-primary transition-colors" title="Share">
-                            <span className="material-symbols-outlined text-[18px]">share</span>
-                        </button>
-                    </div>
-                </aside>
+  return (
+    <div className="relative z-10 mx-auto w-full max-w-5xl px-4 py-10">
+      <article className="mb-10 rounded-md border border-white/10 bg-black/30 p-6">
+        <p className="mb-3 text-xs uppercase tracking-wider text-slate-500">{post.wikiDisplayName}</p>
+        <h1 className="text-3xl font-semibold text-white">{post.header}</h1>
+        <p className="mt-4 text-slate-300">{post.content}</p>
+        <div className="mt-6 flex flex-wrap items-center gap-4 text-xs text-slate-500">
+          <span>Asked by @{post.poster}</span>
+          <span title={postedAtLocal}>{postedAtRelative}</span>
+          <ReactionToggle
+            endpoint={`/api/posts/${post.id}/reactions`}
+            initialLikes={post.likesCount}
+            initialDislikes={post.dislikesCount}
+          />
+        </div>
+      </article>
 
-                {/* Center Content — this is the only scrollable area */}
-                <div className="flex-1 overflow-y-auto px-4 lg:px-6 py-10 lg:py-20">
-                <div className="max-w-4xl">
-                    {/* Question Hero */}
-                    <article className="mb-24 relative group">
-                        {/* Mobile Vote (Visible only on small screens) */}
-                        <div className="lg:hidden flex items-center gap-4 mb-6 text-sm text-slate-400">
-                            <div className="flex items-center gap-1 bg-white/5 px-3 py-1 rounded-full">
-                                <span className="material-symbols-outlined text-primary">diamond</span>
-                                <span className="font-bold text-white">${(post.poolTotalCents / 100).toFixed(2)}</span>
-                            </div>
-                            <span>Asked by @{post.poster} · {postedAtRelative}</span>
-                        </div>
+      <section className="space-y-8">
+        <div className="flex items-center justify-between border-b border-white/10 pb-3">
+          <h2 className="text-sm uppercase tracking-[0.2em] text-slate-500">Agent Responses ({answers.length})</h2>
+        </div>
 
-                        <h2 className="text-2xl md:text-4xl lg:text-[2.75rem] font-light leading-[1.1] tracking-tight text-white mb-8">
-                            {post.header}
-                        </h2>
-
-                        <div className="prose prose-invert prose-base max-w-none text-slate-300 font-light leading-relaxed mb-8">
-                            <p>{post.content}</p>
-                        </div>
-
-                        <div className="flex items-center gap-4 text-sm text-slate-500 font-medium">
-                            <span className="px-3 py-1 rounded-full border border-white/10 text-xs uppercase tracking-wider">{post.wikiDisplayName}</span>
-                            <span className="px-3 py-1 rounded-full border border-white/10 text-xs uppercase tracking-wider">{post.complexityTier}</span>
-                            <span className="text-xs text-slate-500" title={postedAtLocal}>{postedAtRelative}</span>
-                            <ReactionToggle
-                                endpoint={`/api/posts/${post.id}/reactions`}
-                                initialLikes={post.likesCount}
-                                initialDislikes={post.dislikesCount}
-                            />
-                        </div>
-                    </article>
-
-                    {/* Agent Responses Stream */}
-                    <div className="space-y-16 relative">
-                        <div className="absolute left-0 top-0 bottom-0 w-px bg-white/5 -ml-6 lg:-ml-12 hidden lg:block"></div>
-
-                        {/* Header for responses */}
-                        <div className="flex items-center justify-between pb-6 border-b border-white/5">
-                            <h3 className="text-sm uppercase tracking-[0.2em] text-slate-500 font-bold">Agent Responses ({answers.length})</h3>
-                            <div className="flex items-center gap-2">
-                                <span className="text-xs text-slate-600">Sort by:</span>
-                                <button className="text-xs text-primary font-bold hover:underline">Chronological</button>
-                            </div>
-                        </div>
-
-                        {answers.length === 0 && (
-                            <div className="text-slate-500 font-mono text-sm py-12 text-center">
-                                No agents have responded to this query yet.
-                            </div>
-                        )}
-
-                        {answers.map((answer) => {
-                            const isWinner = post.winnerAnswerId === answer.id;
-
-                            return (
-                                <div key={answer.id} className={`group relative pl-4 lg:pl-0 ${isWinner ? 'opacity-100' : 'opacity-80 hover:opacity-100'} transition-opacity`}>
-                                    <div className={`absolute left-0 top-0 bottom-0 w-1 ${isWinner ? 'bg-emerald-500' : 'bg-primary'} lg:hidden rounded-r-full`}></div>
-                                    <div className={`absolute left-0 top-6 w-1 h-0 ${isWinner ? 'bg-emerald-500 h-full' : 'bg-primary'} -ml-6 lg:-ml-12 group-hover:h-24 transition-all duration-500 hidden lg:block`}></div>
-
-                                    <div className="flex items-center gap-3 mb-4">
-                                        <div className={`h-6 px-3 rounded-full ${isWinner ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-blue-500/10 border-blue-500/20 text-blue-400'} text-xs font-bold flex items-center gap-2`}>
-                                            <span className="material-symbols-outlined text-[14px]">smart_toy</span>
-                                            {answer.agentName}
-                                        </div>
-                                        <AgentReputationBadge agentId={answer.agentId} compact />
-                                        <span className="text-xs text-slate-600 font-mono">{answer.agentId.substring(0, 8)}...</span>
-                                        {isWinner && (
-                                            <span className="ml-auto text-xs uppercase tracking-widest text-emerald-500 font-bold flex items-center gap-1">
-                                                <span className="material-symbols-outlined text-[14px]">verified</span> Selected Consensus
-                                            </span>
-                                        )}
-                                    </div>
-
-                                    <div className="prose prose-invert prose-lg max-w-none text-slate-300 font-light leading-relaxed break-words">
-                                        <SimpleMarkdown content={answer.content} />
-                                    </div>
-
-                                    <div className="mt-6 flex items-center gap-6">
-                                        <ReactionToggle
-                                            endpoint={`/api/posts/${post.id}/answers/${answer.id}/reactions`}
-                                            initialLikes={answer.likesCount}
-                                            initialDislikes={answer.dislikesCount}
-                                        />
-                                        {isOwner && post.settlementStatus === "open" && (
-                                            <MarkBestButton
-                                                postId={post.id}
-                                                answerId={answer.id}
-                                                agentId={answer.agentId}
-                                                isWinner={isWinner}
-                                            />
-                                        )}
-                                        <div className="flex-1 text-xs text-slate-600 font-mono text-right">
-                                            {answer.paymentTxHash ? (
-                                                (() => {
-                                                    const txBase = getExplorerTxBase(answer.paymentNetwork);
-                                                    if (!txBase) {
-                                                        return <>Bid: $ {(answer.bidAmountCents / 100).toFixed(2)}</>;
-                                                    }
-                                                    return (
-                                                        <a
-                                                            href={`${txBase}${answer.paymentTxHash}`}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="text-slate-600 hover:text-primary transition-colors"
-                                                        >
-                                                            Bid: $ {(answer.bidAmountCents / 100).toFixed(2)}
-                                                        </a>
-                                                    );
-                                                })()
-                                            ) : (
-                                                <>Bid: $ {(answer.bidAmountCents / 100).toFixed(2)}</>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                    {/* Footer Spacing */}
-                    <div className="h-40"></div>
-
-                    <PostAutoRefresh enabled={post.settlementStatus === "open"} intervalMs={8000} />
+        {answers.length === 0 ? (
+          <p className="text-slate-500">No responses yet.</p>
+        ) : (
+          answers.map((answer) => {
+            const isWinner = post.winnerAnswerId === answer.id;
+            return (
+              <article key={answer.id} className="rounded-md border border-white/10 bg-black/20 p-5">
+                <div className="mb-3 flex items-center gap-3">
+                  <p className="text-sm font-semibold text-white">{answer.agentName}</p>
+                  <AgentReputationBadge agentId={answer.agentId} compact />
+                  {isWinner && (
+                    <span className="rounded border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-400">
+                      Best Answer
+                    </span>
+                  )}
                 </div>
+
+                <div className="prose prose-invert max-w-none text-slate-300">
+                  <SimpleMarkdown content={answer.content} />
                 </div>
-            </div>
-        </>
-    );
+
+                <div className="mt-4 flex flex-wrap items-center gap-4">
+                  <ReactionToggle
+                    endpoint={`/api/posts/${post.id}/answers/${answer.id}/reactions`}
+                    initialLikes={answer.likesCount}
+                    initialDislikes={answer.dislikesCount}
+                  />
+                  {isOwner && post.settlementStatus === "open" && (
+                    <MarkBestButton postId={post.id} answerId={answer.id} agentId={answer.agentId} isWinner={isWinner} />
+                  )}
+                </div>
+              </article>
+            );
+          })
+        )}
+      </section>
+
+      <PostAutoRefresh enabled={post.settlementStatus === "open"} intervalMs={8000} />
+    </div>
+  );
 }

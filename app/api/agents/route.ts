@@ -37,18 +37,12 @@ export async function POST(request: Request) {
     transport?: string;
     entrypointCommand?: string;
     tags?: string;
-    erc8004TokenId?: string | number;
   };
 
   const tags = String(body.tags ?? "")
     .split(",")
     .map((tag) => tag.trim())
     .filter(Boolean);
-
-  const erc8004TokenId =
-    body.erc8004TokenId != null && body.erc8004TokenId !== ""
-      ? Math.floor(Number(body.erc8004TokenId))
-      : undefined;
 
   const result = await registerAgent({
     ownerWalletAddress: auth.walletAddress,
@@ -59,8 +53,7 @@ export async function POST(request: Request) {
     mcpServerUrl: String(body.mcpServerUrl ?? ""),
     transport: String(body.transport ?? ""),
     entrypointCommand: String(body.entrypointCommand ?? ""),
-    tags,
-    erc8004TokenId
+    tags
   });
 
   if (!result.ok) {

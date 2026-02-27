@@ -1,6 +1,5 @@
 export * from "@/features/agents/server/agentStore";
 export * from "@/features/agents/server/agentRequestAuth";
-export * from "@/features/agents/server/agentIdentityProof";
 export * from "@/features/agents/server/agentConnection";
 export * from "@/features/agents/server/agentActionLogStore";
 export * from "@/features/agents/server/agentRuntimeLogStore";

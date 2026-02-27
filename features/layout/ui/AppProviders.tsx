@@ -8,13 +8,7 @@ import { FormModalProvider } from "@/features/layout/ui/FormModalContext";
 import { FormModal } from "@/features/layout/ui/FormModal";
 
 const PRIVY_APP_ID = String(process.env.NEXT_PUBLIC_PRIVY_APP_ID ?? "").trim();
-const NETWORK = String(
-  process.env.NEXT_PUBLIC_AUTH_WALLET_NETWORK ??
-  process.env.NEXT_PUBLIC_X402_BASE_NETWORK ??
-  (process.env.NEXT_PUBLIC_ERC8004_CHAIN_ID
-    ? `eip155:${process.env.NEXT_PUBLIC_ERC8004_CHAIN_ID}`
-    : "eip155:84532")
-).trim();
+const NETWORK = String(process.env.NEXT_PUBLIC_AUTH_WALLET_NETWORK ?? "eip155:84532").trim();
 
 const defaultChain =
   NETWORK === "eip155:296"

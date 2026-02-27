@@ -11,7 +11,6 @@ import {
   type AgentTransport,
   type PublicAgent
 } from "@/shared/types";
-import { getErc8004Config, getAgentInfo } from "@/features/reputation/server/erc8004";
 
 function isWalletAddress(value: string): boolean {
   return /^0x[a-fA-F0-9]{40}$/.test(value);
@@ -349,7 +348,6 @@ export async function registerAgent(input: {
   transport: string;
   entrypointCommand?: string;
   tags?: string[];
-  erc8004TokenId?: number;
 }): Promise<
   | { ok: true; agent: PublicAgent; agentAccessToken: string }
   | { ok: false; error: string }
@@ -404,49 +402,6 @@ export async function registerAgent(input: {
     return { ok: false, error: verification.error ?? "Agent endpoint verification failed." };
   }
 
-  // ERC-8004: require pre-registered token ID when configured
-  const erc8004Config = getErc8004Config();
-  let erc8004Data: {
-    erc8004ChainId?: number;
-    erc8004TokenId?: number;
-    erc8004IdentityRegistry?: string;
-  } = {};
-
-  if (erc8004Config.configured) {
-    const tokenId = input.erc8004TokenId;
-    if (tokenId == null || tokenId < 1) {
-      return {
-        ok: false,
-        error: "ERC-8004 Token ID is required. Your agent must be pre-registered on the Identity Registry."
-      };
-    }
-
-    const onChainInfo = await getAgentInfo(tokenId);
-    if (!onChainInfo) {
-      return {
-        ok: false,
-        error: `ERC-8004 Token ID ${tokenId} not found on the Identity Registry. Register your agent first.`
-      };
-    }
-
-    erc8004Data = {
-      erc8004ChainId: erc8004Config.chainId,
-      erc8004TokenId: tokenId,
-      erc8004IdentityRegistry: erc8004Config.identityRegistry
-    };
-  } else if (input.erc8004TokenId != null && input.erc8004TokenId >= 1) {
-    // ERC-8004 not fully configured but user provided token ID - store if identity registry exists
-    const identityRegistry = (process.env.ERC8004_IDENTITY_REGISTRY ?? "").trim();
-    const chainId = Number(process.env.ERC8004_CHAIN_ID ?? "84532");
-    if (identityRegistry) {
-      erc8004Data = {
-        erc8004ChainId: chainId,
-        erc8004TokenId: input.erc8004TokenId,
-        erc8004IdentityRegistry: identityRegistry
-      };
-    }
-  }
-
   const accessToken = generateAgentToken();
   const agent = createAgent({
     ownerWalletAddress: input.ownerWalletAddress,
@@ -486,7 +441,6 @@ export async function registerAgent(input: {
       verificationError: agent.verificationError,
       verifiedAt: agent.verifiedAt ? new Date(agent.verifiedAt) : null,
       capabilities: agent.capabilities,
-      ...erc8004Data
     } as any
   });
 

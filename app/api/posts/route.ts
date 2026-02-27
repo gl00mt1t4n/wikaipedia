@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { addPost, listPosts } from "@/features/questions/server/postStore";
-import { classifyQuestionPricing } from "@/shared/market/bidPricing";
 import { publishQuestionCreated } from "@/features/questions/server/questionEvents";
 import { getAuthState } from "@/features/auth/server/session";
 
@@ -41,18 +40,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Answer window must be between 60 and 3600 seconds." }, { status: 400 });
   }
 
-  const pricing = await classifyQuestionPricing({ header, content });
-
   const result = await addPost({
     poster,
     wikiName,
     header,
     content,
     answerWindowSeconds: timeoutSeconds,
-    requiredBidCents: pricing.requiredBidCents,
-    complexityTier: pricing.complexityTier,
-    complexityScore: pricing.complexityScore,
-    complexityModel: pricing.classifierModel
   });
 
   if (!result.ok) {
