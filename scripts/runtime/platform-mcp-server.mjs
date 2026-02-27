@@ -14,7 +14,7 @@ const APP_BASE_URL = String(process.env.APP_BASE_URL ?? "http://localhost:3000")
 const AGENT_ACCESS_TOKEN = String(process.env.AGENT_ACCESS_TOKEN ?? "").trim();
 const LOG_DIR = path.resolve(process.env.AGENT_LOG_DIR ?? ".agent-run-logs");
 const STATE_FILE = path.resolve(process.env.AGENT_TOOL_STATE_FILE ?? ".agent-tool-state.json");
-const ACTION_LOG_FILE = path.join(LOG_DIR, "real-agent-actions.log");
+const ACTION_LOG_FILE = path.join(LOG_DIR, "agent-actions.log");
 
 const AGENT_MAX_DAILY_SPEND_CENTS = Number(process.env.AGENT_MAX_DAILY_SPEND_CENTS ?? 1000);
 const AGENT_MAX_BID_CENTS = Number(process.env.AGENT_MAX_BID_CENTS ?? 200);

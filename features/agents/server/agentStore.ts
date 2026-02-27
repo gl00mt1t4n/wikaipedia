@@ -2,7 +2,6 @@ import crypto from "node:crypto";
 import { Prisma } from "@prisma/client";
 import { verifyAgentConnection } from "@/features/agents/server/agentConnection";
 import { prisma } from "@/shared/db/prisma";
-import { isRealAgentByRecord } from "@/features/agents/server/realAgentRegistry";
 import { DEFAULT_WIKI_ID, ensureDefaultWiki, findWikiById, normalizeWikiIdInput } from "@/features/wikis/server/wikiStore";
 import {
   createAgent,
@@ -100,25 +99,7 @@ export async function listAgentsRaw(): Promise<Agent[]> {
   const agents = await prisma.agent.findMany({
     orderBy: { createdAt: "desc" }
   });
-  const realOnly = String(process.env.REAL_AGENT_REGISTRY_ONLY ?? "1") !== "0";
-  const filtered = realOnly
-    ? (
-        await Promise.all(
-          agents.map(async (agent) => ({
-            keep: await isRealAgentByRecord({
-              id: agent.id,
-              name: agent.name,
-              ownerWalletAddress: agent.ownerWalletAddress,
-              baseWalletAddress: agent.baseWalletAddress
-            }),
-            agent
-          }))
-        )
-      )
-        .filter((entry) => entry.keep)
-        .map((entry) => entry.agent)
-    : agents;
-  return filtered.map((agent) => toAgent(agent as any));
+  return agents.map((agent) => toAgent(agent as any));
 }
 
 export async function listAgents(): Promise<PublicAgent[]> {
@@ -187,33 +168,8 @@ export async function getAgentLeaderboardMetrics(): Promise<Map<string, AgentLea
   ]);
 
   const metricsMap = new Map<string, AgentLeaderboardMetrics>();
-  const realOnly = String(process.env.REAL_AGENT_REGISTRY_ONLY ?? "1") !== "0";
-  const allAgents = await prisma.agent.findMany({
-    select: {
-      id: true,
-      name: true,
-      ownerWalletAddress: true,
-      baseWalletAddress: true
-    }
-  });
-  const allowedIds = new Set<string>();
-  if (realOnly) {
-    for (const agent of allAgents) {
-      if (
-        await isRealAgentByRecord({
-          id: agent.id,
-          name: agent.name,
-          ownerWalletAddress: agent.ownerWalletAddress,
-          baseWalletAddress: agent.baseWalletAddress
-        })
-      ) {
-        allowedIds.add(agent.id);
-      }
-    }
-  }
 
   for (const reply of replyCounts) {
-    if (realOnly && !allowedIds.has(reply.agentId)) continue;
     metricsMap.set(reply.agentId, {
       agentId: reply.agentId,
       replies: reply._count.id,
@@ -225,12 +181,11 @@ export async function getAgentLeaderboardMetrics(): Promise<Map<string, AgentLea
 
   for (const win of winData) {
     if (!win.winnerAgentId) continue;
-    if (realOnly && !allowedIds.has(win.winnerAgentId)) continue;
-    
+
     const existing = metricsMap.get(win.winnerAgentId);
     const wins = win._count.id;
     const yieldCents = win._sum.winnerPayoutCents ?? 0;
-    
+
     if (existing) {
       existing.wins = wins;
       existing.winRate = existing.replies > 0 ? (wins / existing.replies) * 100 : 0;
@@ -273,25 +228,7 @@ export async function listAgentsByOwner(
     where: ownerScope,
     orderBy: { createdAt: "desc" }
   });
-  const realOnly = String(process.env.REAL_AGENT_REGISTRY_ONLY ?? "1") !== "0";
-  const filtered = realOnly
-    ? (
-        await Promise.all(
-          agents.map(async (agent) => ({
-            keep: await isRealAgentByRecord({
-              id: agent.id,
-              name: agent.name,
-              ownerWalletAddress: agent.ownerWalletAddress,
-              baseWalletAddress: agent.baseWalletAddress
-            }),
-            agent
-          }))
-        )
-      )
-        .filter((entry) => entry.keep)
-        .map((entry) => entry.agent)
-    : agents;
-  return filtered.map((agent) => toAgent(agent as any)).map(toPublicAgent);
+  return agents.map((agent) => toAgent(agent as any)).map(toPublicAgent);
 }
 
 export async function listAgentSubscribedWikiIds(agentId: string): Promise<string[]> {
@@ -391,18 +328,6 @@ export async function findAgentByAccessToken(token: string): Promise<Agent | nul
     where: { authTokenHash: tokenHash }
   });
   if (!agent) {
-    return null;
-  }
-  const realOnly = String(process.env.REAL_AGENT_REGISTRY_ONLY ?? "1") !== "0";
-  if (
-    realOnly &&
-    !(await isRealAgentByRecord({
-      id: agent.id,
-      name: agent.name,
-      ownerWalletAddress: agent.ownerWalletAddress,
-      baseWalletAddress: agent.baseWalletAddress
-    }))
-  ) {
     return null;
   }
   await ensureAgentDefaultWikiMembership(agent.id);

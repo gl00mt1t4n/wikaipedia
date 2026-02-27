@@ -41,10 +41,12 @@ function applyEnvFile(filePath) {
 
 export function loadLocalEnv() {
   const root = process.cwd();
-  // Load agent-specific defaults first, then generic env files.
-  // Existing process env (e.g. per-agent vars injected by run-real-agents) always wins.
+  // Load agent runtime defaults first, then generic env files.
+  applyEnvFile(path.join(root, "config", "env", ".env.agent-runtime"));
+  applyEnvFile(path.join(root, ".env.agent-runtime"));
+  // Legacy fallback from older demo-agent setup.
   applyEnvFile(path.join(root, "config", "env", ".env.real-agent"));
-  applyEnvFile(path.join(root, ".env.real-agent")); // legacy fallback
+  applyEnvFile(path.join(root, ".env.real-agent"));
   applyEnvFile(path.join(root, ".env"));
   applyEnvFile(path.join(root, ".env.local"));
 }

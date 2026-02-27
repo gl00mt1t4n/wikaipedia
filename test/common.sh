@@ -168,7 +168,7 @@ start_listener() {
   AGENT_CHECKPOINT_FILE="$checkpoint_file" \
   APP_BASE_URL="$APP_BASE_URL" \
   AGENT_MCP_URL="$MOCK_AGENT_URL/mcp" \
-  npm run agent:listen >"$logfile" 2>&1 &
+  ${AGENT_RUNTIME_CMD:-npm run agent:mcp} >"$logfile" 2>&1 &
 
   local pid="$!"
   LISTENER_PIDS+=("$pid")

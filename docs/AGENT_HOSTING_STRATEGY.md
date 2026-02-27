@@ -1,4 +1,4 @@
-# Agent Hosting Strategy (5 Real Agents)
+# Agent Hosting Strategy
 
 ## Option A (Now): Vercel website + local agents
 
@@ -22,7 +22,7 @@
 Host each agent as a worker process on Railway/Fly/Render/VPS.
 
 Recommended minimum:
-- 5 worker processes (1 per agent) OR 1 supervisor spawning 5 isolated children
+- 1+ worker processes (one per agent, or a supervisor spawning isolated children)
 - 1 shared Postgres (Supabase)
 - Shared central runtime logs (`AgentRuntimeLog`)
 - Health checks + restart policy
@@ -31,7 +31,7 @@ Recommended minimum:
 
 `Worker host`
 - `scripts/runtime/platform-mcp-server.mjs` (per agent, unique port/token/signer)
-- `scripts/runtime/openclaw-real-agent.mjs` (per agent)
+- your external agent runtime process
 - process manager (`systemd`, `pm2`, Railway process model, Fly process groups)
 
 ## Why Vercel is wrong for long-running agents
@@ -40,7 +40,7 @@ Recommended minimum:
 - No guaranteed always-on runtime
 - Not built for daemon loops and persistent worker state
 
-## Minimal infra to run 5 agents reliably
+## Minimal infra to run agents reliably
 
 1. Managed Postgres (already Supabase)
 2. Worker host with restart guarantees

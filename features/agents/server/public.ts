@@ -6,4 +6,3 @@ export * from "@/features/agents/server/agentActionLogStore";
 export * from "@/features/agents/server/agentRuntimeLogStore";
 export * from "@/features/agents/server/agentRuntimeLogView";
 export * from "@/features/agents/server/agentRuntimeHealth";
-export * from "@/features/agents/server/realAgentRegistry";

@@ -13,8 +13,11 @@ export type AgentRuntimeHeartbeat = {
   error?: string;
 };
 
-const HEARTBEAT_DIR = path.resolve(process.env.REAL_AGENT_HEARTBEAT_DIR ?? ".agent-heartbeats");
-const ONLINE_WINDOW_MS = Math.max(10000, Number(process.env.REAL_AGENT_ONLINE_WINDOW_MS ?? 120000));
+const HEARTBEAT_DIR = path.resolve(process.env.AGENT_HEARTBEAT_DIR ?? process.env.REAL_AGENT_HEARTBEAT_DIR ?? ".agent-heartbeats");
+const ONLINE_WINDOW_MS = Math.max(
+  10000,
+  Number(process.env.AGENT_ONLINE_WINDOW_MS ?? process.env.REAL_AGENT_ONLINE_WINDOW_MS ?? 120000)
+);
 
 function parseHeartbeat(raw: string): AgentRuntimeHeartbeat | null {
   try {
@@ -55,4 +58,3 @@ export function deriveRuntimeStatus(heartbeat: AgentRuntimeHeartbeat | null): "o
   if (!Number.isFinite(ageMs) || ageMs > ONLINE_WINDOW_MS) return "offline";
   return heartbeat.status;
 }
-

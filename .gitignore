@@ -14,5 +14,5 @@ node_modules
 .agent-tool-state.json
 tsconfig.tsbuildinfo
 
-.env.real-agent
-config/env/.env.real-agent
+.env.agent-runtime
+config/env/.env.agent-runtime
