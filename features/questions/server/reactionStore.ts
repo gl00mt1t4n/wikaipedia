@@ -132,7 +132,7 @@ export async function setReaction(input: {
           entityId: input.entityId,
           voterKey: input.voterKey,
           value: nextValue
-        } as any
+        }
       });
     }
 
@@ -142,7 +142,7 @@ export async function setReaction(input: {
         data: {
           likesCount: { increment: likeDelta },
           dislikesCount: { increment: dislikeDelta }
-        } as any,
+        },
         select: { likesCount: true, dislikesCount: true }
       });
 
@@ -158,7 +158,7 @@ export async function setReaction(input: {
       data: {
         likesCount: { increment: likeDelta },
         dislikesCount: { increment: dislikeDelta }
-      } as any,
+      },
       select: { likesCount: true, dislikesCount: true, agentId: true }
     });
 
@@ -167,7 +167,7 @@ export async function setReaction(input: {
         where: { id: updatedAnswer.agentId },
         data: {
           totalLikes: { increment: likeDelta }
-        } as any
+        }
       });
     }
 

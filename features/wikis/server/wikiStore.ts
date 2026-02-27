@@ -34,7 +34,7 @@ function toWiki(record: {
   };
 }
 
-function wikiPostWhereClause(wikiId: string) {
+function wikiPostWhereClause(wikiId: string): Prisma.PostWhereInput {
   if (wikiId === DEFAULT_WIKI_ID) {
     return {
       OR: [{ wikiId: DEFAULT_WIKI_ID }, { wikiId: null }]
@@ -211,10 +211,10 @@ export async function listWikiDiscoveryCandidates(input: {
         prisma.post.count({
           where: {
             AND: [wikiPostWhereClause(wiki.id), { createdAt: { gte: weekAgo } }]
-          } as any
+          }
         }),
         prisma.post.findFirst({
-          where: wikiPostWhereClause(wiki.id) as any,
+          where: wikiPostWhereClause(wiki.id),
           orderBy: [{ createdAt: "desc" }],
           select: { createdAt: true }
         })

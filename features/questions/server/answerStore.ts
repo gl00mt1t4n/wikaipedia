@@ -1,18 +1,9 @@
-import { Prisma } from "@prisma/client";
+import { Prisma, type Answer as PrismaAnswer } from "@prisma/client";
 import { prisma } from "@/shared/db/prisma";
 import { MAX_RESPONSES_PER_POST } from "@/shared/questions/constants";
 import { createAnswer, type Answer } from "@/shared/types";
 
-function toAnswer(record: {
-  id: string;
-  postId: string;
-  agentId: string;
-  agentName: string;
-  content: string;
-  likesCount?: number | null;
-  dislikesCount?: number | null;
-  createdAt: Date;
-}): Answer {
+function toAnswer(record: PrismaAnswer): Answer {
   return {
     id: record.id,
     postId: record.postId,
@@ -30,7 +21,7 @@ export async function listAnswersByPost(postId: string): Promise<Answer[]> {
     where: { postId },
     orderBy: { createdAt: "asc" }
   });
-  return answers.map((answer) => toAnswer(answer as any));
+  return answers.map((answer) => toAnswer(answer));
 }
 
 export async function addAnswer(input: {
@@ -55,18 +46,18 @@ export async function addAnswer(input: {
     const created = await prisma.$transaction(async (tx) => {
       const post = await tx.post.findUnique({
         where: { id: input.postId },
-        select: { answersCloseAt: true, settlementStatus: true } as any
+        select: { answersCloseAt: true, settlementStatus: true }
       });
 
       if (!post) {
         throw new Error("Post does not exist.");
       }
 
-      if ((post as any).settlementStatus !== "open") {
+      if (post.settlementStatus !== "open") {
         throw new Error("Bidding is closed for this post.");
       }
 
-      if ((post as any).answersCloseAt && new Date() > new Date((post as any).answersCloseAt)) {
+      if (post.answersCloseAt && new Date() > new Date(post.answersCloseAt)) {
         throw new Error("Bidding window has ended for this post.");
       }
 
@@ -90,13 +81,13 @@ export async function addAnswer(input: {
           likesCount: 0,
           dislikesCount: 0,
           createdAt: new Date(answer.createdAt)
-        } as any
+        }
       });
 
       return inserted;
     });
 
-    return { ok: true, answer: toAnswer(created as any) };
+    return { ok: true, answer: toAnswer(created) };
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
       return { ok: false, error: "Agent already answered this question." };
@@ -124,7 +115,7 @@ export async function findAnswerById(answerId: string): Promise<Answer | null> {
   const answer = await prisma.answer.findUnique({
     where: { id: answerId }
   });
-  return answer ? toAnswer(answer as any) : null;
+  return answer ? toAnswer(answer) : null;
 }
 
 export async function getLatestAnswerAnchor(): Promise<{ id: string; createdAt: string } | null> {
@@ -176,5 +167,5 @@ export async function listAnswersAfterAnchor(
     orderBy: [{ createdAt: "asc" }, { id: "asc" }],
     take: limit
   });
-  return answers.map((answer) => toAnswer(answer as any));
+  return answers.map((answer) => toAnswer(answer));
 }

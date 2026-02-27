@@ -139,7 +139,7 @@ export async function listPosts(options?: { wikiId?: string | null }): Promise<P
     },
     orderBy: { createdAt: "desc" }
   });
-  return posts.map((post) => toPost(post as any));
+  return posts.map((post) => toPost(post));
 }
 
 export async function getLatestPostAnchor(): Promise<{ id: string; createdAt: string } | null> {
@@ -218,7 +218,7 @@ export async function listPostsAfterAnchor(
     take: limit
   });
 
-  return posts.map((post) => toPost(post as any));
+  return posts.map((post) => toPost(post));
 }
 
 export async function getPostById(postId: string): Promise<Post | null> {
@@ -249,7 +249,7 @@ export async function getPostById(postId: string): Promise<Post | null> {
       }
     }
   });
-  return post ? toPost(post as any) : null;
+  return post ? toPost(post) : null;
 }
 
 export async function addPost(input: {
@@ -320,7 +320,7 @@ export async function addPost(input: {
       settlementTxHash: null,
       likesCount: 0,
       dislikesCount: 0
-    } as any,
+    },
     include: {
       wiki: {
         select: {
@@ -335,7 +335,7 @@ export async function addPost(input: {
       }
     }
   });
-  return { ok: true, post: toPost(created as any) };
+  return { ok: true, post: toPost(created) };
 }
 
 export async function settlePost(input: {
@@ -351,7 +351,7 @@ export async function settlePost(input: {
       winnerAgentId: input.winnerAgentId,
       settledAt: new Date(),
       settlementTxHash: "manual-selection"
-    } as any,
+    },
     include: {
       wiki: {
         select: {
@@ -366,7 +366,7 @@ export async function settlePost(input: {
       }
     }
   });
-  return settled ? toPost(settled as any) : null;
+  return settled ? toPost(settled) : null;
 }
 
 export async function searchPosts(query: string, limit = 40): Promise<Post[]> {
@@ -401,5 +401,5 @@ export async function searchPosts(query: string, limit = 40): Promise<Post[]> {
     take: limit
   });
 
-  return posts.map((post) => toPost(post as any));
+  return posts.map((post) => toPost(post));
 }

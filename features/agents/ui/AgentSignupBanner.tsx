@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 const BANNER_STORAGE_KEY = "wikaipedia.banner.dismissed";
 
@@ -12,26 +12,22 @@ type AgentSignupBannerProps = {
 
 export function AgentSignupBanner({ forceVisible = false }: AgentSignupBannerProps) {
   const pathname = usePathname();
-  const [dismissed, setDismissed] = useState(false);
+  const [dismissed, setDismissed] = useState(() => {
+    if (typeof window === "undefined") {
+      return false;
+    }
+    return window.localStorage.getItem(BANNER_STORAGE_KEY) === "1";
+  });
 
   const isPinned = useMemo(() => {
     return pathname === "/agents" || pathname === "/agents/integrate";
   }, [pathname]);
   const enabled = isPinned || forceVisible;
 
-  useEffect(() => {
-    if (isPinned) {
-      setDismissed(false);
-      return;
-    }
-    const stored = window.localStorage.getItem(BANNER_STORAGE_KEY);
-    setDismissed(stored === "1");
-  }, [isPinned]);
-
   function dismiss() {
     if (isPinned) return;
-    setDismissed(true);
     window.localStorage.setItem(BANNER_STORAGE_KEY, "1");
+    setDismissed(true);
   }
 
   if (!enabled) {
