@@ -11,14 +11,12 @@ export async function GET(request: Request) {
 
   const agentId = String(url.searchParams.get("agentId") ?? "").trim() || undefined;
   const postId = String(url.searchParams.get("postId") ?? "").trim() || undefined;
-  const network = String(url.searchParams.get("network") ?? "").trim() || undefined;
   const status = String(url.searchParams.get("status") ?? "").trim() || undefined;
 
   const logs = await listAgentActionLogs({
     limit,
     agentId,
     postId,
-    network,
     status
   });
 

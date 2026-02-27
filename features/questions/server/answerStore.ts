@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/shared/db/prisma";
-import { MAX_PARTICIPANTS_PER_POST } from "@/shared/market/marketRules";
+import { MAX_RESPONSES_PER_POST } from "@/shared/questions/constants";
 import { createAnswer, type Answer } from "@/shared/types";
 
 function toAnswer(record: {
@@ -9,9 +9,6 @@ function toAnswer(record: {
   agentId: string;
   agentName: string;
   content: string;
-  bidAmountCents?: number | null;
-  paymentNetwork?: string | null;
-  paymentTxHash?: string | null;
   likesCount?: number | null;
   dislikesCount?: number | null;
   createdAt: Date;
@@ -22,9 +19,6 @@ function toAnswer(record: {
     agentId: record.agentId,
     agentName: record.agentName,
     content: record.content,
-    bidAmountCents: Number(record.bidAmountCents ?? 0),
-    paymentNetwork: record.paymentNetwork ?? "internal",
-    paymentTxHash: record.paymentTxHash ?? null,
     likesCount: Number(record.likesCount ?? 0),
     dislikesCount: Number(record.dislikesCount ?? 0),
     createdAt: record.createdAt.toISOString()
@@ -44,31 +38,17 @@ export async function addAnswer(input: {
   agentId: string;
   agentName: string;
   content: string;
-  bidAmountCents: number;
-  paymentNetwork: string;
-  paymentTxHash?: string | null;
 }): Promise<{ ok: true; answer: Answer } | { ok: false; error: string }> {
   const content = input.content.trim();
   if (content.length < 3) {
     return { ok: false, error: "Answer content too short." };
   }
 
-  if (!Number.isFinite(input.bidAmountCents) || !Number.isInteger(input.bidAmountCents)) {
-    return { ok: false, error: "Bid amount must be an integer number of cents." };
-  }
-
-  if (input.bidAmountCents < 0) {
-    return { ok: false, error: "Bid amount cannot be negative." };
-  }
-
   const answer = createAnswer({
     postId: input.postId,
     agentId: input.agentId,
     agentName: input.agentName,
-    content,
-    bidAmountCents: input.bidAmountCents,
-    paymentNetwork: input.paymentNetwork,
-    paymentTxHash: input.paymentTxHash ?? null
+    content
   });
 
   try {
@@ -96,8 +76,8 @@ export async function addAnswer(input: {
         where: { postId: input.postId }
       });
 
-      if (answerCount >= MAX_PARTICIPANTS_PER_POST) {
-        throw new Error(`Participant cap reached for this post (${MAX_PARTICIPANTS_PER_POST}).`);
+      if (answerCount >= MAX_RESPONSES_PER_POST) {
+        throw new Error(`Response cap reached for this post (${MAX_RESPONSES_PER_POST}).`);
       }
 
       const inserted = await tx.answer.create({
@@ -107,21 +87,9 @@ export async function addAnswer(input: {
           agentId: answer.agentId,
           agentName: answer.agentName,
           content: answer.content,
-          bidAmountCents: answer.bidAmountCents,
-          paymentNetwork: answer.paymentNetwork,
-          paymentTxHash: answer.paymentTxHash,
           likesCount: 0,
           dislikesCount: 0,
           createdAt: new Date(answer.createdAt)
-        } as any
-      });
-
-      await tx.post.update({
-        where: { id: input.postId },
-        data: {
-          poolTotalCents: {
-            increment: answer.bidAmountCents
-          }
         } as any
       });
 
@@ -145,8 +113,8 @@ export async function addAnswer(input: {
     if (error instanceof Error && error.message === "Bidding window has ended for this post.") {
       return { ok: false, error: "Bidding window has ended for this post." };
     }
-    if (error instanceof Error && error.message === `Participant cap reached for this post (${MAX_PARTICIPANTS_PER_POST}).`) {
-      return { ok: false, error: `Participant cap reached for this post (${MAX_PARTICIPANTS_PER_POST}).` };
+    if (error instanceof Error && error.message === `Response cap reached for this post (${MAX_RESPONSES_PER_POST}).`) {
+      return { ok: false, error: `Response cap reached for this post (${MAX_RESPONSES_PER_POST}).` };
     }
     throw error;
   }

@@ -4,8 +4,6 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "dev:testnet": "ACTIVE_BID_NETWORK=base_sepolia next dev",
-    "dev:kite": "ACTIVE_BID_NETWORK=kite_testnet next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",

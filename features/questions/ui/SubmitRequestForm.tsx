@@ -84,7 +84,7 @@ export function SubmitRequestForm({
                 <div className="mb-10 text-center">
                     <h1 className="mb-2 text-3xl font-light tracking-tight text-white">Ask Question</h1>
                     <p className="mx-auto max-w-md text-sm leading-relaxed text-slate-400">
-                        Deploy a new intelligence bounty to the agent network.
+                        Share a question with the agent network and let agents opt in to respond.
                     </p>
                 </div>
 

@@ -111,7 +111,6 @@ export type AgentLeaderboardMetrics = {
   replies: number;
   wins: number;
   winRate: number;
-  yieldCents: number;
 };
 
 const DEFAULT_OWNER_DELEGATION = "sahil:local_test_owner";
@@ -161,8 +160,7 @@ export async function getAgentLeaderboardMetrics(): Promise<Map<string, AgentLea
         winnerAgentId: { not: null },
         settlementStatus: "settled"
       },
-      _count: { id: true },
-      _sum: { winnerPayoutCents: true }
+      _count: { id: true }
     })
   ]);
 
@@ -173,8 +171,7 @@ export async function getAgentLeaderboardMetrics(): Promise<Map<string, AgentLea
       agentId: reply.agentId,
       replies: reply._count.id,
       wins: 0,
-      winRate: 0,
-      yieldCents: 0
+      winRate: 0
     });
   }
 
@@ -183,19 +180,16 @@ export async function getAgentLeaderboardMetrics(): Promise<Map<string, AgentLea
 
     const existing = metricsMap.get(win.winnerAgentId);
     const wins = win._count.id;
-    const yieldCents = win._sum.winnerPayoutCents ?? 0;
 
     if (existing) {
       existing.wins = wins;
       existing.winRate = existing.replies > 0 ? (wins / existing.replies) * 100 : 0;
-      existing.yieldCents = yieldCents;
     } else {
       metricsMap.set(win.winnerAgentId, {
         agentId: win.winnerAgentId,
         replies: 0,
         wins,
-        winRate: 0,
-        yieldCents
+        winRate: 0
       });
     }
   }

@@ -22,7 +22,6 @@ export type Post = {
   header: string;
   content: string;
   createdAt: string;
-  requiredBidCents: number;
   complexityTier: "simple" | "medium" | "complex";
   complexityScore: number;
   complexityModel: string | null;
@@ -33,9 +32,6 @@ export type Post = {
   winnerAgentId: string | null;
   settledAt: string | null;
   settlementTxHash: string | null;
-  poolTotalCents: number;
-  winnerPayoutCents: number;
-  platformFeeCents: number;
   likesCount: number;
   dislikesCount: number;
   answerCount: number;
@@ -51,7 +47,6 @@ export function createPost(input: {
   wikiDisplayName?: string;
   header: string;
   content: string;
-  requiredBidCents?: number;
   complexityTier?: "simple" | "medium" | "complex";
   complexityScore?: number;
   complexityModel?: string | null;
@@ -69,7 +64,6 @@ export function createPost(input: {
     header: input.header.trim(),
     content: input.content.trim(),
     createdAt: now.toISOString(),
-    requiredBidCents: Math.max(1, Math.floor(input.requiredBidCents ?? 75)),
     complexityTier: input.complexityTier ?? "medium",
     complexityScore: Math.min(5, Math.max(1, Math.floor(input.complexityScore ?? 3))),
     complexityModel: input.complexityModel ?? null,
@@ -80,9 +74,6 @@ export function createPost(input: {
     winnerAgentId: null,
     settledAt: null,
     settlementTxHash: null,
-    poolTotalCents: 0,
-    winnerPayoutCents: 0,
-    platformFeeCents: 0,
     likesCount: 0,
     dislikesCount: 0,
     answerCount: 0,
@@ -97,9 +88,6 @@ export type Answer = {
   agentId: string;
   agentName: string;
   content: string;
-  bidAmountCents: number;
-  paymentNetwork: string;
-  paymentTxHash: string | null;
   likesCount: number;
   dislikesCount: number;
   createdAt: string;
@@ -110,9 +98,6 @@ export function createAnswer(input: {
   agentId: string;
   agentName: string;
   content: string;
-  bidAmountCents: number;
-  paymentNetwork: string;
-  paymentTxHash?: string | null;
 }): Answer {
   return {
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -120,9 +105,6 @@ export function createAnswer(input: {
     agentId: input.agentId,
     agentName: input.agentName,
     content: input.content.trim(),
-    bidAmountCents: input.bidAmountCents,
-    paymentNetwork: input.paymentNetwork,
-    paymentTxHash: input.paymentTxHash?.trim() || null,
     likesCount: 0,
     dislikesCount: 0,
     createdAt: new Date().toISOString()

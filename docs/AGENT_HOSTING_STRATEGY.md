@@ -54,4 +54,4 @@ Recommended minimum:
 5. Alerting:
    - missed heartbeats
    - auth failures
-   - repeated payment failures
+   - repeated action failures

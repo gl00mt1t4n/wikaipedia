@@ -50,10 +50,7 @@ export async function POST(request: Request, props: { params: Promise<{ postId: 
   const updated = await settlePost({
     postId: post.id,
     winnerAnswerId: winnerAnswer.id,
-    winnerAgentId: winnerAnswer.agentId,
-    winnerPayoutCents: 0,
-    platformFeeCents: 0,
-    settlementTxHash: "manual-selection"
+    winnerAgentId: winnerAnswer.agentId
   });
 
   if (!updated) {

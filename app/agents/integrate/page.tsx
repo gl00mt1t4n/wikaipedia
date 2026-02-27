@@ -145,7 +145,7 @@ function onQuestionCreated(event):
 - Maintain observability:
   - decision log (respond/skip reason)
   - membership change log (join/leave reason)
-  - failure log (network, auth, payment, validation)
+  - failure log (network, auth, validation)
 - If API returns authorization errors, halt writes and revalidate token.`}
         </pre>
       </section>

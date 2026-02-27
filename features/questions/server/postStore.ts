@@ -32,7 +32,6 @@ function toPost(record: {
   header: string;
   content: string;
   createdAt: Date;
-  requiredBidCents?: number | null;
   complexityTier?: string | null;
   complexityScore?: number | null;
   complexityModel?: string | null;
@@ -43,9 +42,6 @@ function toPost(record: {
   winnerAgentId?: string | null;
   settledAt?: Date | null;
   settlementTxHash?: string | null;
-  poolTotalCents?: number | null;
-  winnerPayoutCents?: number | null;
-  platformFeeCents?: number | null;
   likesCount?: number | null;
   dislikesCount?: number | null;
   answerCount?: number | null;
@@ -82,7 +78,6 @@ function toPost(record: {
     header: record.header,
     content: record.content,
     createdAt: record.createdAt.toISOString(),
-    requiredBidCents: Number(record.requiredBidCents ?? 75),
     complexityTier:
       record.complexityTier === "simple" || record.complexityTier === "complex"
         ? record.complexityTier
@@ -96,9 +91,6 @@ function toPost(record: {
     winnerAgentId: record.winnerAgentId ?? null,
     settledAt: record.settledAt?.toISOString() ?? null,
     settlementTxHash: record.settlementTxHash ?? null,
-    poolTotalCents: Number(record.poolTotalCents ?? 0),
-    winnerPayoutCents: Number(record.winnerPayoutCents ?? 0),
-    platformFeeCents: Number(record.platformFeeCents ?? 0),
     likesCount: Number(record.likesCount ?? 0),
     dislikesCount: Number(record.dislikesCount ?? 0),
     answerCount,
@@ -266,7 +258,6 @@ export async function addPost(input: {
   wikiId?: string;
   header: string;
   content: string;
-  requiredBidCents?: number;
   complexityTier?: "simple" | "medium" | "complex";
   complexityScore?: number;
   complexityModel?: string | null;
@@ -289,9 +280,6 @@ export async function addPost(input: {
     return { ok: false, error: "Answer window must be between 60 and 3600 seconds." };
   }
 
-  const requiredBidCents = Number.isFinite(Number(input.requiredBidCents))
-    ? Math.max(1, Math.floor(Number(input.requiredBidCents)))
-    : 75;
   const wikiQuery = input.wikiName?.trim() || input.wikiId?.trim() || "";
   const resolvedWiki = await resolveWikiForPost({
     wikiQuery
@@ -307,7 +295,6 @@ export async function addPost(input: {
     wikiDisplayName: resolvedWiki.wiki.displayName,
     header: input.header,
     content: input.content,
-    requiredBidCents,
     complexityTier: input.complexityTier ?? "medium",
     complexityScore: input.complexityScore ?? 3,
     complexityModel: input.complexityModel ?? null,
@@ -321,7 +308,6 @@ export async function addPost(input: {
       header: post.header,
       content: post.content,
       createdAt: new Date(post.createdAt),
-      requiredBidCents: post.requiredBidCents,
       complexityTier: post.complexityTier,
       complexityScore: post.complexityScore,
       complexityModel: post.complexityModel,
@@ -332,9 +318,6 @@ export async function addPost(input: {
       winnerAgentId: post.winnerAgentId,
       settledAt: null,
       settlementTxHash: null,
-      poolTotalCents: 0,
-      winnerPayoutCents: 0,
-      platformFeeCents: 0,
       likesCount: 0,
       dislikesCount: 0
     } as any,
@@ -359,9 +342,6 @@ export async function settlePost(input: {
   postId: string;
   winnerAnswerId: string;
   winnerAgentId: string;
-  winnerPayoutCents: number;
-  platformFeeCents: number;
-  settlementTxHash: string;
 }): Promise<Post | null> {
   const settled = await prisma.post.update({
     where: { id: input.postId },
@@ -370,9 +350,7 @@ export async function settlePost(input: {
       winnerAnswerId: input.winnerAnswerId,
       winnerAgentId: input.winnerAgentId,
       settledAt: new Date(),
-      settlementTxHash: input.settlementTxHash,
-      winnerPayoutCents: input.winnerPayoutCents,
-      platformFeeCents: input.platformFeeCents
+      settlementTxHash: "manual-selection"
     } as any,
     include: {
       wiki: {

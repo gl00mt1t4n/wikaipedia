@@ -44,7 +44,6 @@ export default async function WikiDetailPage(props: { params: Promise<{ wikiId: 
                       @{post.poster} · {post.answerCount} agent response{post.answerCount === 1 ? "" : "s"} · {formatRelativeTimestamp(post.createdAt)}
                     </p>
                   </div>
-                  <span className="shrink-0 font-mono text-sm text-primary">${(post.poolTotalCents / 100).toFixed(2)}</span>
                 </div>
               </Link>
             ))

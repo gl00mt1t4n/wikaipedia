@@ -8,10 +8,6 @@ export type AgentActionStatus =
   | "ACTION_REQUESTED"
   | "IDENTITY_PROOF_ATTACHED"
   | "IDENTITY_PROOF_FAILED"
-  | "X402_PAYMENT_REQUIRED"
-  | "X402_SETTLEMENT_ATTEMPTED"
-  | "X402_SETTLEMENT_CONFIRMED"
-  | "X402_SETTLEMENT_FAILED"
   | "ACTION_COMPLETED"
   | "ACTION_FAILED";
 
@@ -27,13 +23,6 @@ export type AgentActionLogEntry = {
   agentId: string | null;
   agentName: string | null;
   postId: string | null;
-  bidAmountCents: number | null;
-  paymentNetwork: string | null;
-  paymentTxHash: string | null;
-  x402PaymentRequired: boolean | null;
-  x402Amount: string | null;
-  x402Currency: string | null;
-  x402TokenAddress: string | null;
   facilitatorResponseCode: string | null;
   httpStatus: number | null;
   errorCode: string | null;
@@ -53,11 +42,6 @@ export type AgentActionSummary = {
   agentId: string | null;
   agentName: string | null;
   postId: string | null;
-  paymentNetwork: string | null;
-  paymentTxHash: string | null;
-  x402Amount: string | null;
-  x402Currency: string | null;
-  x402TokenAddress: string | null;
   latestStatus: string;
   latestOutcome: AgentActionOutcome;
   failureCode: string | null;
@@ -74,7 +58,6 @@ export type AgentActionStats = {
   success: number;
   failure: number;
   byStatus: Array<{ status: string; count: number }>;
-  byNetwork: Array<{ network: string; count: number }>;
   failureReasons: Array<{ failureCode: string; count: number }>;
 };
 
@@ -107,10 +90,6 @@ function deriveStatus(stage: string, outcome: AgentActionOutcome): AgentActionSt
     "ACTION_REQUESTED",
     "IDENTITY_PROOF_ATTACHED",
     "IDENTITY_PROOF_FAILED",
-    "X402_PAYMENT_REQUIRED",
-    "X402_SETTLEMENT_ATTEMPTED",
-    "X402_SETTLEMENT_CONFIRMED",
-    "X402_SETTLEMENT_FAILED",
     "ACTION_COMPLETED",
     "ACTION_FAILED"
   ];
@@ -141,10 +120,6 @@ function isMissingTableOrColumnError(error: unknown): boolean {
 type LegacyActionMetadata = {
   actionType?: string;
   status?: string;
-  x402PaymentRequired?: boolean;
-  x402Amount?: string;
-  x402Currency?: string;
-  x402TokenAddress?: string;
   facilitatorResponseCode?: string;
   failureCode?: string;
   failureMessage?: string;
@@ -161,10 +136,6 @@ function readLegacyMetadata(metadata: Prisma.JsonValue | null): LegacyActionMeta
   return {
     actionType: typeof obj.actionType === "string" ? obj.actionType : undefined,
     status: typeof obj.status === "string" ? obj.status : undefined,
-    x402PaymentRequired: typeof obj.x402PaymentRequired === "boolean" ? obj.x402PaymentRequired : undefined,
-    x402Amount: typeof obj.x402Amount === "string" ? obj.x402Amount : undefined,
-    x402Currency: typeof obj.x402Currency === "string" ? obj.x402Currency : undefined,
-    x402TokenAddress: typeof obj.x402TokenAddress === "string" ? obj.x402TokenAddress : undefined,
     facilitatorResponseCode: typeof obj.facilitatorResponseCode === "string" ? obj.facilitatorResponseCode : undefined,
     failureCode: typeof obj.failureCode === "string" ? obj.failureCode : undefined,
     failureMessage: typeof obj.failureMessage === "string" ? obj.failureMessage : undefined,
@@ -185,13 +156,6 @@ export async function appendAgentActionLog(input: {
   agentId?: string | null;
   agentName?: string | null;
   postId?: string | null;
-  bidAmountCents?: number | null;
-  paymentNetwork?: string | null;
-  paymentTxHash?: string | null;
-  x402PaymentRequired?: boolean | null;
-  x402Amount?: string | null;
-  x402Currency?: string | null;
-  x402TokenAddress?: string | null;
   facilitatorResponseCode?: string | null;
   httpStatus?: number | null;
   errorCode?: string | null;
@@ -209,12 +173,8 @@ export async function appendAgentActionLog(input: {
     ...(input.metadata && typeof input.metadata === "object" && !Array.isArray(input.metadata)
       ? (input.metadata as Record<string, unknown>)
       : {}),
-    actionType: input.actionType?.trim().slice(0, 64) || "agent_paid_action",
+    actionType: input.actionType?.trim().slice(0, 64) || "agent_action",
     status,
-    x402PaymentRequired: typeof input.x402PaymentRequired === "boolean" ? input.x402PaymentRequired : null,
-    x402Amount: input.x402Amount?.trim() || null,
-    x402Currency: input.x402Currency?.trim() || null,
-    x402TokenAddress: input.x402TokenAddress?.trim() || null,
     facilitatorResponseCode: input.facilitatorResponseCode?.trim() || null,
     failureCode: input.failureCode?.trim() || input.errorCode?.trim() || null,
     failureMessage: input.failureMessage?.trim() || input.errorMessage?.trim() || null,
@@ -234,9 +194,6 @@ export async function appendAgentActionLog(input: {
       agentId: input.agentId?.trim() || null,
       agentName: input.agentName?.trim() || null,
       postId: input.postId?.trim() || null,
-      bidAmountCents: typeof input.bidAmountCents === "number" ? input.bidAmountCents : null,
-      paymentNetwork: input.paymentNetwork?.trim() || null,
-      paymentTxHash: input.paymentTxHash?.trim() || null,
       httpStatus: typeof input.httpStatus === "number" ? input.httpStatus : null,
       errorCode: input.errorCode?.trim() || null,
       errorMessage: input.errorMessage?.trim() || null,
@@ -256,7 +213,7 @@ function toAgentActionLogEntry(record: AgentActionLogRow): AgentActionLogEntry {
   return {
     id: record.id,
     actionId: record.actionId,
-    actionType: legacy.actionType ?? "agent_paid_action",
+    actionType: legacy.actionType ?? "agent_action",
     route: record.route,
     method: record.method,
     stage: record.stage,
@@ -265,13 +222,6 @@ function toAgentActionLogEntry(record: AgentActionLogRow): AgentActionLogEntry {
     agentId: record.agentId,
     agentName: record.agentName,
     postId: record.postId,
-    bidAmountCents: record.bidAmountCents,
-    paymentNetwork: record.paymentNetwork,
-    paymentTxHash: record.paymentTxHash,
-    x402PaymentRequired: legacy.x402PaymentRequired ?? null,
-    x402Amount: legacy.x402Amount ?? null,
-    x402Currency: legacy.x402Currency ?? null,
-    x402TokenAddress: legacy.x402TokenAddress ?? null,
     facilitatorResponseCode: legacy.facilitatorResponseCode ?? null,
     httpStatus: record.httpStatus,
     errorCode: record.errorCode,
@@ -288,18 +238,16 @@ function toAgentActionLogEntry(record: AgentActionLogRow): AgentActionLogEntry {
 
 export async function listAgentActionLogsByAgentId(
   agentId: string,
-  options?: { limit?: number; network?: string; status?: string }
+  options?: { limit?: number; status?: string }
 ): Promise<AgentActionLogEntry[]> {
   const limitRaw = options?.limit ?? 60;
   const take = Math.min(500, Math.max(1, Math.floor(limitRaw)));
-  const network = String(options?.network ?? "").trim();
   const status = String(options?.status ?? "").trim();
 
   try {
     const rows = await prisma.agentActionLog.findMany({
       where: {
-        agentId: agentId.trim(),
-        ...(network ? { paymentNetwork: network } : {})
+        agentId: agentId.trim()
       },
       orderBy: [{ createdAt: "desc" }],
       take
@@ -319,7 +267,6 @@ export async function listAgentActionLogs(options?: {
   limit?: number;
   postId?: string;
   agentId?: string;
-  network?: string;
   status?: string;
 }): Promise<AgentActionLogEntry[]> {
   const limitRaw = options?.limit ?? 120;
@@ -327,16 +274,12 @@ export async function listAgentActionLogs(options?: {
   const where: {
     postId?: string;
     agentId?: string;
-    paymentNetwork?: string;
   } = {};
   if (options?.postId?.trim()) {
     where.postId = options.postId.trim();
   }
   if (options?.agentId?.trim()) {
     where.agentId = options.agentId.trim();
-  }
-  if (options?.network?.trim()) {
-    where.paymentNetwork = options.network.trim();
   }
 
   try {
@@ -383,11 +326,6 @@ export function summarizeAgentActionLogs(logs: AgentActionLogEntry[]): AgentActi
         agentId: first.agentId,
         agentName: first.agentName,
         postId: first.postId,
-        paymentNetwork: latest.paymentNetwork ?? first.paymentNetwork,
-        paymentTxHash: latest.paymentTxHash ?? first.paymentTxHash,
-        x402Amount: latest.x402Amount ?? first.x402Amount,
-        x402Currency: latest.x402Currency ?? first.x402Currency,
-        x402TokenAddress: latest.x402TokenAddress ?? first.x402TokenAddress,
         latestStatus: latest.status,
         latestOutcome: latest.outcome,
         failureCode: failure?.failureCode ?? null,
@@ -402,29 +340,19 @@ export function summarizeAgentActionLogs(logs: AgentActionLogEntry[]): AgentActi
     .sort((a, b) => b.lastAt.localeCompare(a.lastAt));
 }
 
-export async function getAgentActionStats(options?: { network?: string }): Promise<AgentActionStats> {
-  const network = String(options?.network ?? "").trim();
-  const where = network ? { paymentNetwork: network } : undefined;
-
+export async function getAgentActionStats(): Promise<AgentActionStats> {
   try {
-    const [total, success, failure, byStageRows, byNetworkRows, failedRows] = await Promise.all([
-      prisma.agentActionLog.count({ where }),
-      prisma.agentActionLog.count({ where: { ...(where ?? {}), outcome: "success" } }),
-      prisma.agentActionLog.count({ where: { ...(where ?? {}), outcome: "failure" } }),
+    const [total, success, failure, byStageRows, failedRows] = await Promise.all([
+      prisma.agentActionLog.count(),
+      prisma.agentActionLog.count({ where: { outcome: "success" } }),
+      prisma.agentActionLog.count({ where: { outcome: "failure" } }),
       prisma.agentActionLog.groupBy({
         by: ["stage"],
-        where,
-        _count: { _all: true }
-      }),
-      prisma.agentActionLog.groupBy({
-        by: ["paymentNetwork"],
-        where,
         _count: { _all: true }
       }),
       prisma.agentActionLog.groupBy({
         by: ["errorCode"],
         where: {
-          ...(where ?? {}),
           outcome: "failure"
         },
         _count: { _all: true }
@@ -438,9 +366,6 @@ export async function getAgentActionStats(options?: { network?: string }): Promi
       byStatus: byStageRows
         .map((row) => ({ status: row.stage, count: row._count._all }))
         .sort((a, b) => b.count - a.count),
-      byNetwork: byNetworkRows
-        .map((row) => ({ network: row.paymentNetwork ?? "unknown", count: row._count._all }))
-        .sort((a, b) => b.count - a.count),
       failureReasons: failedRows
         .map((row) => ({ failureCode: row.errorCode ?? "unknown", count: row._count._all }))
         .sort((a, b) => b.count - a.count)
@@ -452,7 +377,6 @@ export async function getAgentActionStats(options?: { network?: string }): Promi
         success: 0,
         failure: 0,
         byStatus: [],
-        byNetwork: [],
         failureReasons: []
       };
     }

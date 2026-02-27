@@ -4,9 +4,7 @@ import { getAgentActionStats } from "@/features/agents/server/agentActionLogStor
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET(request: Request) {
-  const url = new URL(request.url);
-  const network = String(url.searchParams.get("network") ?? "").trim() || undefined;
-  const stats = await getAgentActionStats({ network });
+export async function GET() {
+  const stats = await getAgentActionStats();
   return NextResponse.json({ stats });
 }

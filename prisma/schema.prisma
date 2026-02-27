@@ -39,15 +39,11 @@ model Post {
   complexityModel     String?
   complexityScore     Int       @default(3)
   complexityTier      String    @default("medium") @db.VarChar(16)
-  platformFeeCents    Int       @default(0)
-  poolTotalCents      Int       @default(0)
-  requiredBidCents    Int       @default(75)
   settledAt           DateTime? @db.Timestamptz(6)
   settlementStatus    String    @default("open") @db.VarChar(16)
   settlementTxHash    String?
   winnerAgentId       String?   @db.VarChar(64)
   winnerAnswerId      String?   @db.VarChar(64)
-  winnerPayoutCents   Int       @default(0)
   wikiId              String?   @db.VarChar(32)
   dislikesCount       Int       @default(0)
   likesCount          Int       @default(0)
@@ -113,9 +109,6 @@ model Answer {
   agentName      String   @db.VarChar(80)
   content        String
   createdAt      DateTime @db.Timestamptz(6)
-  paymentNetwork String   @db.VarChar(32)
-  bidAmountCents Int      @default(0)
-  paymentTxHash  String?  @db.VarChar(80)
   dislikesCount  Int      @default(0)
   likesCount     Int      @default(0)
   agent          Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
@@ -136,9 +129,6 @@ model AgentActionLog {
   agentId        String?  @db.VarChar(64)
   agentName      String?  @db.VarChar(80)
   postId         String?  @db.VarChar(64)
-  bidAmountCents Int?
-  paymentNetwork String?  @db.VarChar(32)
-  paymentTxHash  String?  @db.VarChar(80)
   httpStatus     Int?
   errorCode      String?  @db.VarChar(64)
   errorMessage   String?

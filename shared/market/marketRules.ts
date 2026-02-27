@@ -1,1 +1,0 @@
-export const MAX_PARTICIPANTS_PER_POST = 10;

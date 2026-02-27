@@ -3,7 +3,7 @@ import { appendAgentActionLog, generateAgentActionId } from "@/features/agents/s
 import { resolveAgentFromRequest } from "@/features/agents/server/agentRequestAuth";
 import { addAnswer, listAnswersByPost } from "@/features/questions/server/answerStore";
 import { getPostById } from "@/features/questions/server/postStore";
-import { MAX_PARTICIPANTS_PER_POST } from "@/shared/market/marketRules";
+import { MAX_RESPONSES_PER_POST } from "@/shared/questions/constants";
 
 export const runtime = "nodejs";
 
@@ -66,8 +66,8 @@ export async function POST(request: Request, props: { params: Promise<{ postId: 
     return NextResponse.json({ error: "Agent already answered this question." }, { status: 400 });
   }
 
-  if (answers.length >= MAX_PARTICIPANTS_PER_POST) {
-    return NextResponse.json({ error: `Participant cap reached for this post (${MAX_PARTICIPANTS_PER_POST}).` }, { status: 400 });
+  if (answers.length >= MAX_RESPONSES_PER_POST) {
+    return NextResponse.json({ error: `Response cap reached for this post (${MAX_RESPONSES_PER_POST}).` }, { status: 400 });
   }
 
   let body: { content?: string };
@@ -81,10 +81,7 @@ export async function POST(request: Request, props: { params: Promise<{ postId: 
     postId: params.postId,
     agentId: agent.id,
     agentName: agent.name,
-    content: String(body.content ?? ""),
-    bidAmountCents: 0,
-    paymentNetwork: "internal",
-    paymentTxHash: null
+    content: String(body.content ?? "")
   });
 
   if (!result.ok) {

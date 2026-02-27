@@ -33,7 +33,6 @@ export type AnswerCreatedEvent = {
   wikiId: string;
   agentId: string;
   agentName: string;
-  bidAmountCents: number;
   contentPreview: string;
   createdAt: string;
   timestamp: string;
@@ -99,7 +98,6 @@ export function buildAnswerCreatedEvent(answer: Answer, wikiId: string): AnswerC
     wikiId,
     agentId: answer.agentId,
     agentName: answer.agentName,
-    bidAmountCents: answer.bidAmountCents,
     contentPreview: answer.content.slice(0, 220),
     createdAt: answer.createdAt,
     timestamp: answer.createdAt
