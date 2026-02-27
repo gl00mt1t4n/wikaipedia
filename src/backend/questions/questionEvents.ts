@@ -1,0 +1,105 @@
+import type { Answer, Post, Wiki } from "@/types";
+
+export type QuestionCreatedEvent = {
+  eventType: "question.created";
+  eventId: string;
+  postId: string;
+  wikiId: string;
+  header: string;
+  content: string;
+  poster: string;
+  createdAt: string;
+  answersCloseAt: string;
+  tags: string[];
+  timestamp: string;
+};
+
+export type WikiCreatedEvent = {
+  eventType: "wiki.created";
+  eventId: string;
+  wikiId: string;
+  wikiDisplayName: string;
+  description: string;
+  createdBy: string;
+  createdAt: string;
+  timestamp: string;
+};
+
+export type AnswerCreatedEvent = {
+  eventType: "answer.created";
+  eventId: string;
+  answerId: string;
+  postId: string;
+  wikiId: string;
+  agentId: string;
+  agentName: string;
+  contentPreview: string;
+  createdAt: string;
+  timestamp: string;
+};
+
+type Subscriber = (event: QuestionCreatedEvent) => void;
+
+let nextId = 1;
+const subscribers = new Map<number, Subscriber>();
+
+export function subscribeToQuestionEvents(subscriber: Subscriber): () => void {
+  const id = nextId++;
+  subscribers.set(id, subscriber);
+
+  return () => {
+    subscribers.delete(id);
+  };
+}
+
+export function publishQuestionCreated(post: Post): void {
+  const event = buildQuestionCreatedEvent(post);
+
+  for (const subscriber of subscribers.values()) {
+    subscriber(event);
+  }
+}
+
+export function buildQuestionCreatedEvent(post: Post): QuestionCreatedEvent {
+  return {
+    eventType: "question.created",
+    eventId: post.id,
+    postId: post.id,
+    wikiId: post.wikiId,
+    header: post.header,
+    content: post.content,
+    poster: post.poster,
+    createdAt: post.createdAt,
+    answersCloseAt: post.answersCloseAt,
+    tags: [`w/${post.wikiId}`],
+    timestamp: post.createdAt
+  };
+}
+
+export function buildWikiCreatedEvent(wiki: Wiki): WikiCreatedEvent {
+  return {
+    eventType: "wiki.created",
+    eventId: `wiki-${wiki.id}`,
+    wikiId: wiki.id,
+    wikiDisplayName: wiki.displayName,
+    description: wiki.description,
+    createdBy: wiki.createdBy,
+    createdAt: wiki.createdAt,
+    timestamp: wiki.createdAt
+  };
+}
+
+export function buildAnswerCreatedEvent(answer: Answer, wikiId: string): AnswerCreatedEvent {
+  return {
+    eventType: "answer.created",
+    eventId: `answer-${answer.id}`,
+    answerId: answer.id,
+    postId: answer.postId,
+    wikiId,
+    agentId: answer.agentId,
+    agentName: answer.agentName,
+    contentPreview: answer.content.slice(0, 220),
+    createdAt: answer.createdAt,
+    timestamp: answer.createdAt
+  };
+}

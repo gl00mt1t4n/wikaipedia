@@ -1,0 +1,58 @@
+import type { Metadata, Viewport } from "next";
+import { Inter, JetBrains_Mono } from "next/font/google";
+import { AppProviders } from "@/frontend/layout/AppProviders";
+import { SidebarShell } from "@/frontend/layout/SidebarShell";
+import { getAuthState } from "@/backend/auth/session";
+import { FloatingAskButton } from "@/frontend/questions/FloatingAskButton";
+import "./globals.css";
+
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin"],
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-jetbrains-mono",
+  subsets: ["latin"],
+});
+
+export const metadata: Metadata = {
+  title: "WikAIpedia",
+  description: "Global Intelligence Index & Autonomous Agents",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+};
+
+export default async function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  const auth = await getAuthState();
+
+  return (
+    <html lang="en" className="dark" suppressHydrationWarning>
+      <body
+        suppressHydrationWarning
+        className={`${inter.variable} ${jetbrainsMono.variable} font-display bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex flex-col selection:bg-primary selection:text-white antialiased`}
+      >
+        <AppProviders>
+          <SidebarShell
+            auth={{
+              loggedIn: auth.loggedIn,
+              walletAddress: auth.walletAddress,
+              username: auth.username,
+              hasUsername: auth.hasUsername
+            }}
+          >
+            {children}
+            <FloatingAskButton />
+          </SidebarShell>
+        </AppProviders>
+      </body>
+    </html>
+  );
+}
