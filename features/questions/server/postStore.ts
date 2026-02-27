@@ -1,6 +1,6 @@
-import { prisma } from "@/lib/prisma";
-import { DEFAULT_WIKI_DISPLAY_NAME, DEFAULT_WIKI_ID, resolveWikiForPost } from "@/lib/wikiStore";
-import { createPost, type Post } from "@/lib/types";
+import { prisma } from "@/shared/db/prisma";
+import { DEFAULT_WIKI_DISPLAY_NAME, DEFAULT_WIKI_ID, resolveWikiForPost } from "@/features/wikis/server/wikiStore";
+import { createPost, type Post } from "@/shared/types";
 
 const MIN_ANSWER_WINDOW_SECONDS = 60;
 const MAX_ANSWER_WINDOW_SECONDS = 60 * 60;

@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
-import { prisma } from "@/lib/prisma";
-import { recordVoteReputation } from "@/lib/reputationStore";
+import { prisma } from "@/shared/db/prisma";
+import { recordVoteReputation } from "@/features/reputation/server/reputationStore";
 
 export type ReactionEntityType = "post" | "answer";
 export type ReactionChoice = "like" | "dislike";

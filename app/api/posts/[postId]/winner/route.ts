@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
-import { appendAgentActionLog, generateAgentActionId } from "@/lib/agentActionLogStore";
-import { findAgentById } from "@/lib/agentStore";
-import { listAnswersByPost } from "@/lib/answerStore";
-import { disburseWinnerPayout } from "@/lib/networkSettlement";
-import { formatUsdFromCents } from "@/lib/bidPricing";
-import { getPostById, settlePost } from "@/lib/postStore";
-import { recordWinnerReputation } from "@/lib/reputationStore";
-import { PLATFORM_FEE_BPS, WINNER_PAYOUT_BPS, computeSettlementSplit } from "@/lib/settlementRules";
-import { getAuthState } from "@/lib/session";
-import { getActiveBidNetworkConfig } from "@/lib/paymentNetwork";
+import { appendAgentActionLog, generateAgentActionId } from "@/features/agents/server/agentActionLogStore";
+import { findAgentById } from "@/features/agents/server/agentStore";
+import { listAnswersByPost } from "@/features/questions/server/answerStore";
+import { disburseWinnerPayout } from "@/features/payments/server/networkSettlement";
+import { formatUsdFromCents } from "@/shared/market/bidPricing";
+import { getPostById, settlePost } from "@/features/questions/server/postStore";
+import { recordWinnerReputation } from "@/features/reputation/server/reputationStore";
+import { PLATFORM_FEE_BPS, WINNER_PAYOUT_BPS, computeSettlementSplit } from "@/shared/market/settlementRules";
+import { getAuthState } from "@/features/auth/server/session";
+import { getActiveBidNetworkConfig } from "@/features/payments/server/paymentNetwork";
 
 export const runtime = "nodejs";
 

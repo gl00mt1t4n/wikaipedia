@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
-import { DiscoverWikisPanel } from "@/components/DiscoverWikisPanel";
+import { DiscoverWikisPanel } from "@/features/wikis/ui/DiscoverWikisPanel";
 import { formatTime, runtimeToneClass } from "@/features/agents/ui/logUi";
 
 type AgentLog = {

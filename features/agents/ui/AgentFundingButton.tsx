@@ -11,7 +11,7 @@ import {
   resolveBaseExplorerTxBaseUrl,
   resolveBaseUsdcAddress,
   resolveFundingCaip
-} from "@/lib/baseNetwork";
+} from "@/features/payments/server/baseNetwork";
 import {
   buildExplorerTxUrl,
   buildPermitTypedDataPayload,
@@ -21,7 +21,7 @@ import {
   sendTransaction,
   type Eip1193ProviderLike,
   waitForTransactionReceipt
-} from "@/lib/evmClientUtils";
+} from "@/shared/chain/evmClientUtils";
 
 const ERC20_ABI = [
   {

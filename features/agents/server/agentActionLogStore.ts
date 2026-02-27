@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import { Prisma } from "@prisma/client";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/shared/db/prisma";
 
 export type AgentActionOutcome = "info" | "success" | "failure";
 

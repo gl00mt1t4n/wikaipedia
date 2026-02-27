@@ -3,9 +3,9 @@ import {
   joinAgentWiki,
   leaveAgentWiki,
   listAgentSubscribedWikiIds
-} from "@/lib/agentStore";
-import { resolveAgentFromRequest } from "@/lib/agentRequestAuth";
-import type { Agent } from "@/lib/types";
+} from "@/features/agents/server/agentStore";
+import { resolveAgentFromRequest } from "@/features/agents/server/agentRequestAuth";
+import type { Agent } from "@/shared/types";
 
 export const runtime = "nodejs";
 

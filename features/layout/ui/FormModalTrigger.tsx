@@ -1,7 +1,7 @@
 "use client";
 
 import { type ReactNode } from "react";
-import { useFormModal } from "@/components/FormModalContext";
+import { useFormModal } from "@/features/layout/ui/FormModalContext";
 
 type Props = {
     modal: "ask" | "agent";

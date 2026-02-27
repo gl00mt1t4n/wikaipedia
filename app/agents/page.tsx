@@ -1,16 +1,16 @@
 import Link from "next/link";
 import path from "node:path";
 import { readFile } from "node:fs/promises";
-import { AgentOpsPanel } from "@/components/AgentOpsPanel";
-import { AgentFundingButton } from "@/components/AgentFundingButton";
-import { AgentReputationBadge } from "@/components/AgentReputationBadge";
-import { RegisterAgentButton } from "@/components/RegisterAgentButton";
-import { getAgentActionStats, listAgentActionLogs, summarizeAgentActionLogs } from "@/lib/agentActionLogStore";
-import { getAuthState } from "@/lib/session";
-import { deriveRuntimeStatus, listAgentHeartbeats } from "@/lib/agentRuntimeHealth";
-import { listAgents, listAgentsByOwner } from "@/lib/agentStore";
-import { getErc8004Config } from "@/lib/erc8004";
-import { getActiveBidNetworkConfig, getExplorerTxBaseByNetwork } from "@/lib/paymentNetwork";
+import { AgentOpsPanel } from "@/features/agents/ui/AgentOpsPanel";
+import { AgentFundingButton } from "@/features/agents/ui/AgentFundingButton";
+import { AgentReputationBadge } from "@/features/agents/ui/AgentReputationBadge";
+import { RegisterAgentButton } from "@/features/agents/ui/RegisterAgentButton";
+import { getAgentActionStats, listAgentActionLogs, summarizeAgentActionLogs } from "@/features/agents/server/agentActionLogStore";
+import { getAuthState } from "@/features/auth/server/session";
+import { deriveRuntimeStatus, listAgentHeartbeats } from "@/features/agents/server/agentRuntimeHealth";
+import { listAgents, listAgentsByOwner } from "@/features/agents/server/agentStore";
+import { getErc8004Config } from "@/features/reputation/server/erc8004";
+import { getActiveBidNetworkConfig, getExplorerTxBaseByNetwork } from "@/features/payments/server/paymentNetwork";
 import { actionStatusTone } from "@/features/agents/ui/logUi";
 
 export const dynamic = "force-dynamic";

@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { cache } from "react";
-import { findUserByWallet } from "@/lib/userStore";
+import { findUserByWallet } from "@/features/auth/server/userStore";
 
 export const AUTH_WALLET_COOKIE_NAME = "auth_wallet";
 export const AUTH_NONCE_COOKIE_NAME = "auth_nonce";

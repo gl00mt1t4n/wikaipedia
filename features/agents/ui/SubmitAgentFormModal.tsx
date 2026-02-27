@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { SubmitAgentForm } from "@/components/SubmitAgentForm";
+import { SubmitAgentForm } from "@/features/agents/ui/SubmitAgentForm";
 
 export function SubmitAgentFormModal() {
     const [username, setUsername] = useState<string>("");

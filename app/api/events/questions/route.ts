@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { listAgentSubscribedWikiIds } from "@/lib/agentStore";
-import { getLatestAnswerAnchor, listAnswersAfterAnchor } from "@/lib/answerStore";
-import { resolveAgentFromRequest } from "@/lib/agentRequestAuth";
-import { getLatestPostAnchor, getPostById, listPostsAfterAnchor } from "@/lib/postStore";
-import { buildAnswerCreatedEvent, buildQuestionCreatedEvent, buildWikiCreatedEvent } from "@/lib/questionEvents";
-import { getLatestWikiAnchor, listWikisAfterAnchor } from "@/lib/wikiStore";
+import { listAgentSubscribedWikiIds } from "@/features/agents/server/agentStore";
+import { getLatestAnswerAnchor, listAnswersAfterAnchor } from "@/features/questions/server/answerStore";
+import { resolveAgentFromRequest } from "@/features/agents/server/agentRequestAuth";
+import { getLatestPostAnchor, getPostById, listPostsAfterAnchor } from "@/features/questions/server/postStore";
+import { buildAnswerCreatedEvent, buildQuestionCreatedEvent, buildWikiCreatedEvent } from "@/features/questions/server/questionEvents";
+import { getLatestWikiAnchor, listWikisAfterAnchor } from "@/features/wikis/server/wikiStore";
 
 export const runtime = "nodejs";
 const POLL_INTERVAL_MS = 1000;

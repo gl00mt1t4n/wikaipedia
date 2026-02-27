@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getPostById } from "@/lib/postStore";
+import { getPostById } from "@/features/questions/server/postStore";
 
 export const runtime = "nodejs";
 

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { UNISWAP_CHAIN_ID, UNISWAP_TOKENS } from "@/lib/uniswapApi";
+import { UNISWAP_CHAIN_ID, UNISWAP_TOKENS } from "@/features/payments/server/uniswapApi";
 
 export const runtime = "nodejs";
 

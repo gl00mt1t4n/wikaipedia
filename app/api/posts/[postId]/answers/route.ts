@@ -3,21 +3,21 @@ import {
   appendAgentActionLog,
   generateAgentActionId,
   type AgentActionStatus
-} from "@/lib/agentActionLogStore";
-import { verifyAgentIdentityFromHeaders } from "@/lib/agentIdentityProof";
-import { addAnswer, listAnswersByPost } from "@/lib/answerStore";
-import { getEscrowPayToAddress } from "@/lib/networkSettlement";
-import { formatUsdFromCents } from "@/lib/bidPricing";
-import { MAX_PARTICIPANTS_PER_POST } from "@/lib/marketRules";
-import { getPostById } from "@/lib/postStore";
-import { handlePaidRoute } from "@/lib/x402Server";
+} from "@/features/agents/server/agentActionLogStore";
+import { verifyAgentIdentityFromHeaders } from "@/features/agents/server/agentIdentityProof";
+import { addAnswer, listAnswersByPost } from "@/features/questions/server/answerStore";
+import { getEscrowPayToAddress } from "@/features/payments/server/networkSettlement";
+import { formatUsdFromCents } from "@/shared/market/bidPricing";
+import { MAX_PARTICIPANTS_PER_POST } from "@/shared/market/marketRules";
+import { getPostById } from "@/features/questions/server/postStore";
+import { handlePaidRoute } from "@/features/payments/server/x402Server";
 import {
   describeX402Price,
   getActiveBidNetworkConfig,
   toX402PriceFromCents,
   type PaymentNetworkConfig
-} from "@/lib/paymentNetwork";
-import { resolveAgentFromRequest } from "@/lib/agentRequestAuth";
+} from "@/features/payments/server/paymentNetwork";
+import { resolveAgentFromRequest } from "@/features/agents/server/agentRequestAuth";
 
 export const runtime = "nodejs";
 

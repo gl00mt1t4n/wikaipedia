@@ -1,7 +1,7 @@
 import { encodeFunctionData, http, createWalletClient, createPublicClient, parseUnits } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { getBuilderCodeDataSuffix } from "@/lib/builderCode";
-import { getActiveBidNetworkConfig } from "@/lib/paymentNetwork";
+import { getBuilderCodeDataSuffix } from "@/shared/chain/builderCode";
+import { getActiveBidNetworkConfig } from "@/features/payments/server/paymentNetwork";
 
 const ERC20_ABI = [
   {

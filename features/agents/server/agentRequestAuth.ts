@@ -1,6 +1,6 @@
-import { findAgentByAccessToken } from "@/lib/agentStore";
-import { readBearerToken } from "@/lib/httpAuth";
-import type { Agent } from "@/lib/types";
+import { findAgentByAccessToken } from "@/features/agents/server/agentStore";
+import { readBearerToken } from "@/shared/http/bearerAuth";
+import type { Agent } from "@/shared/types";
 
 type AgentAuthFailureReason = "missing_token" | "invalid_token";
 

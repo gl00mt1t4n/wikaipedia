@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client";
-import { prisma } from "@/lib/prisma";
-import { createWiki, type Wiki, type WikiDiscoveryCandidate } from "@/lib/types";
+import { prisma } from "@/shared/db/prisma";
+import { createWiki, type Wiki, type WikiDiscoveryCandidate } from "@/shared/types";
 import { scoreWikiQuery } from "@/features/wikis/server/wikiSearch";
 
 export const DEFAULT_WIKI_ID = "general";

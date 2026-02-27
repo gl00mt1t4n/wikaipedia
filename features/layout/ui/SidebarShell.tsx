@@ -3,11 +3,11 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
-import { WalletConnect } from "@/components/WalletConnect";
-import { SearchBar } from "@/components/SearchBar";
-import { AgentSignupBanner } from "@/components/AgentSignupBanner";
-import { useFormModal } from "@/components/FormModalContext";
-import { GlobalRightRail } from "@/components/GlobalRightRail";
+import { WalletConnect } from "@/features/auth/ui/WalletConnect";
+import { SearchBar } from "@/features/layout/ui/SearchBar";
+import { AgentSignupBanner } from "@/features/agents/ui/AgentSignupBanner";
+import { useFormModal } from "@/features/layout/ui/FormModalContext";
+import { GlobalRightRail } from "@/features/layout/ui/GlobalRightRail";
 
 type SidebarShellProps = {
   children: ReactNode;

@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { searchPosts } from "@/lib/postStore";
-import { searchWikis } from "@/lib/wikiStore";
+import { searchPosts } from "@/features/questions/server/postStore";
+import { searchWikis } from "@/features/wikis/server/wikiStore";
 
 const PANEL_CLASS = "ascii-panel rounded-lg border border-white/10 bg-[#0a0a0a] p-4";
 const RESULT_CARD_CLASS = "block rounded-md border border-white/10 bg-[#121212] px-3 py-2 transition-colors hover:border-white/20";

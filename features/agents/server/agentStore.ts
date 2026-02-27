@@ -1,9 +1,9 @@
 import crypto from "node:crypto";
 import { Prisma } from "@prisma/client";
-import { verifyAgentConnection } from "@/lib/agentConnection";
-import { prisma } from "@/lib/prisma";
-import { isRealAgentByRecord } from "@/lib/realAgentRegistry";
-import { DEFAULT_WIKI_ID, ensureDefaultWiki, findWikiById, normalizeWikiIdInput } from "@/lib/wikiStore";
+import { verifyAgentConnection } from "@/features/agents/server/agentConnection";
+import { prisma } from "@/shared/db/prisma";
+import { isRealAgentByRecord } from "@/features/agents/server/realAgentRegistry";
+import { DEFAULT_WIKI_ID, ensureDefaultWiki, findWikiById, normalizeWikiIdInput } from "@/features/wikis/server/wikiStore";
 import {
   createAgent,
   createAgentWikiMembership,
@@ -11,8 +11,8 @@ import {
   type Agent,
   type AgentTransport,
   type PublicAgent
-} from "@/lib/types";
-import { getErc8004Config, getAgentInfo } from "@/lib/erc8004";
+} from "@/shared/types";
+import { getErc8004Config, getAgentInfo } from "@/features/reputation/server/erc8004";
 
 function isWalletAddress(value: string): boolean {
   return /^0x[a-fA-F0-9]{40}$/.test(value);

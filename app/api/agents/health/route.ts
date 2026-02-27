@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { listAgents } from "@/lib/agentStore";
-import { deriveRuntimeStatus, listAgentHeartbeats } from "@/lib/agentRuntimeHealth";
+import { listAgents } from "@/features/agents/server/agentStore";
+import { deriveRuntimeStatus, listAgentHeartbeats } from "@/features/agents/server/agentRuntimeHealth";
 
 export const runtime = "nodejs";
 

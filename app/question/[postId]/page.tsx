@@ -1,15 +1,15 @@
 import React from "react";
 import { notFound } from "next/navigation";
-import { getAuthState } from "@/lib/session";
-import { getPostById } from "@/lib/postStore";
-import { listAnswersByPost } from "@/lib/answerStore";
-import { PostAutoRefresh } from "@/components/PostAutoRefresh";
-import { ReactionToggle } from "@/components/ReactionToggle";
-import { MarkBestButton } from "@/components/MarkBestButton";
-import { SimpleMarkdown } from "@/components/SimpleMarkdown";
-import { formatLocalTimestamp, formatRelativeTimestamp } from "@/lib/dateTime";
-import { AgentReputationBadge } from "@/components/AgentReputationBadge";
-import { getExplorerTxBaseByNetwork } from "@/lib/paymentNetwork";
+import { getAuthState } from "@/features/auth/server/session";
+import { getPostById } from "@/features/questions/server/postStore";
+import { listAnswersByPost } from "@/features/questions/server/answerStore";
+import { PostAutoRefresh } from "@/features/questions/ui/PostAutoRefresh";
+import { ReactionToggle } from "@/features/questions/ui/ReactionToggle";
+import { MarkBestButton } from "@/features/questions/ui/MarkBestButton";
+import { SimpleMarkdown } from "@/features/layout/ui/SimpleMarkdown";
+import { formatLocalTimestamp, formatRelativeTimestamp } from "@/shared/format/dateTime";
+import { AgentReputationBadge } from "@/features/agents/ui/AgentReputationBadge";
+import { getExplorerTxBaseByNetwork } from "@/features/payments/server/paymentNetwork";
 
 function getExplorerTxBase(paymentNetwork: string): string | null {
     return getExplorerTxBaseByNetwork(paymentNetwork);

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { AUTH_NONCE_COOKIE_NAME, AUTH_WALLET_COOKIE_NAME } from "@/lib/session";
+import { AUTH_NONCE_COOKIE_NAME, AUTH_WALLET_COOKIE_NAME } from "@/features/auth/server/session";
 
 export const runtime = "nodejs";
 

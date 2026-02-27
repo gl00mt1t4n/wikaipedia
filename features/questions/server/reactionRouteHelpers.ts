@@ -1,5 +1,5 @@
 import type { NextRequest, NextResponse } from "next/server";
-import { createVoterKey, type ReactionChoice } from "@/lib/reactionStore";
+import { createVoterKey, type ReactionChoice } from "@/features/questions/server/reactionStore";
 
 const VOTER_COOKIE = "wk_voter";
 

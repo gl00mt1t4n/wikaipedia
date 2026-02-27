@@ -12,8 +12,8 @@ import { registerExactEvmScheme } from "@x402/evm/exact/facilitator";
 import type { FacilitatorEvmSigner } from "@x402/evm";
 import { createPublicClient, createWalletClient, http, isAddress } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { getBuilderCode, getBuilderCodeDataSuffix } from "@/lib/builderCode";
-import { getChainByX402Network, getPaymentNetworkConfigByCaip, isBaseX402Network } from "@/lib/paymentNetwork";
+import { getBuilderCode, getBuilderCodeDataSuffix } from "@/shared/chain/builderCode";
+import { getChainByX402Network, getPaymentNetworkConfigByCaip, isBaseX402Network } from "@/features/payments/server/paymentNetwork";
 
 const ERC20_BALANCE_OF_ABI = [
   {

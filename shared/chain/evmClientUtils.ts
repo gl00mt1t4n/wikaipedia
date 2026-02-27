@@ -1,6 +1,6 @@
 import { createPublicClient, custom } from "viem";
 import type { Chain, EIP1193Provider, Hex, TransactionReceipt } from "viem";
-import { normalizeEvmAddress } from "@/lib/evmAddress";
+import { normalizeEvmAddress } from "@/shared/chain/evmAddress";
 
 export type Eip1193ProviderLike = {
   request: (args: { method: string; params?: unknown[] | Record<string, unknown> }) => Promise<unknown>;

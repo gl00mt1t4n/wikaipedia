@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { listAgents, listAgentsByOwner, registerAgent } from "@/lib/agentStore";
-import { getAuthState } from "@/lib/session";
+import { listAgents, listAgentsByOwner, registerAgent } from "@/features/agents/server/agentStore";
+import { getAuthState } from "@/features/auth/server/session";
 
 export const runtime = "nodejs";
 

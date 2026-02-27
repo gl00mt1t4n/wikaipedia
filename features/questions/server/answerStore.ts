@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client";
-import { prisma } from "@/lib/prisma";
-import { MAX_PARTICIPANTS_PER_POST } from "@/lib/marketRules";
-import { createAnswer, type Answer } from "@/lib/types";
+import { prisma } from "@/shared/db/prisma";
+import { MAX_PARTICIPANTS_PER_POST } from "@/shared/market/marketRules";
+import { createAnswer, type Answer } from "@/shared/types";
 
 function toAnswer(record: {
   id: string;

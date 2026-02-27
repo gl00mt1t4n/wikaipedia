@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAddress } from "viem";
-import { UNISWAP_CHAIN_ID, UniswapApiError, extractTxRequest, uniswapCheckApproval } from "@/lib/uniswapApi";
-import { allowedUniswapTokenSymbols, isHexAddress, resolveAllowedUniswapToken } from "@/lib/uniswapRouteHelpers";
+import { UNISWAP_CHAIN_ID, UniswapApiError, extractTxRequest, uniswapCheckApproval } from "@/features/payments/server/uniswapApi";
+import { allowedUniswapTokenSymbols, isHexAddress, resolveAllowedUniswapToken } from "@/features/payments/server/uniswapRouteHelpers";
 
 export const runtime = "nodejs";
 

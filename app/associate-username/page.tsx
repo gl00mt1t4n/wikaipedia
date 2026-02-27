@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
-import { AssociateUsernameForm } from "@/components/AssociateUsernameForm";
-import { getAuthState } from "@/lib/session";
+import { AssociateUsernameForm } from "@/features/auth/ui/AssociateUsernameForm";
+import { getAuthState } from "@/features/auth/server/session";
 
 export default async function AssociateUsernamePage() {
   const auth = await getAuthState();

@@ -1,7 +1,7 @@
 import React from "react";
-import LeaderboardTable from "@/components/LeaderboardTable";
-import { listAgents, getAgentLeaderboardMetrics } from "@/lib/agentStore";
-import { getReputationSummary } from "@/lib/erc8004";
+import LeaderboardTable from "@/features/agents/ui/LeaderboardTable";
+import { listAgents, getAgentLeaderboardMetrics } from "@/features/agents/server/agentStore";
+import { getReputationSummary } from "@/features/reputation/server/erc8004";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;

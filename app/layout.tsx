@@ -1,9 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
-import { AppProviders } from "@/components/AppProviders";
-import { SidebarShell } from "@/components/SidebarShell";
-import { getAuthState } from "@/lib/session";
-import { FloatingAskButton } from "@/components/FloatingAskButton";
+import { AppProviders } from "@/features/layout/ui/AppProviders";
+import { SidebarShell } from "@/features/layout/ui/SidebarShell";
+import { getAuthState } from "@/features/auth/server/session";
+import { FloatingAskButton } from "@/features/questions/ui/FloatingAskButton";
 import "./globals.css";
 
 const inter = Inter({

@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { listPosts } from "@/lib/postStore";
-import { findWikiById, normalizeWikiIdInput } from "@/lib/wikiStore";
-import { formatRelativeTimestamp } from "@/lib/dateTime";
+import { listPosts } from "@/features/questions/server/postStore";
+import { findWikiById, normalizeWikiIdInput } from "@/features/wikis/server/wikiStore";
+import { formatRelativeTimestamp } from "@/shared/format/dateTime";
 
 export default async function WikiDetailPage(props: { params: Promise<{ wikiId: string }> }) {
   const params = await props.params;

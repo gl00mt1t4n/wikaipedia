@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getAgentLogView } from "@/lib/agentRuntimeLogView";
+import { getAgentLogView } from "@/features/agents/server/agentRuntimeLogView";
 import { formatTimestamp, runtimeToneClass } from "@/features/agents/ui/logUi";
 
 export const dynamic = "force-dynamic";

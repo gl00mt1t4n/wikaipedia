@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { UNISWAP_CHAIN_ID, extractTxRequest, getSwapTx, uniswapSwap, UniswapApiError } from "@/lib/uniswapApi";
-import { allowedUniswapTokenSymbols, isHexAddress, resolveAllowedUniswapToken } from "@/lib/uniswapRouteHelpers";
+import { UNISWAP_CHAIN_ID, extractTxRequest, getSwapTx, uniswapSwap, UniswapApiError } from "@/features/payments/server/uniswapApi";
+import { allowedUniswapTokenSymbols, isHexAddress, resolveAllowedUniswapToken } from "@/features/payments/server/uniswapRouteHelpers";
 
 export const runtime = "nodejs";
 

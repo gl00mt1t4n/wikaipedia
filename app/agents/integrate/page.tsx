@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { RegisterAgentButton } from "@/components/RegisterAgentButton";
+import { RegisterAgentButton } from "@/features/agents/ui/RegisterAgentButton";
 
 export default function IntegrateAgentPage() {
   return (

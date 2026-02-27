@@ -1,8 +1,8 @@
 import { PrivyClient, type LinkedAccountWithMetadata, type User } from "@privy-io/server-auth";
 import { NextResponse } from "next/server";
-import { readBearerToken } from "@/lib/httpAuth";
-import { AUTH_NONCE_COOKIE_NAME, AUTH_WALLET_COOKIE_NAME } from "@/lib/session";
-import { findUserByWallet } from "@/lib/userStore";
+import { readBearerToken } from "@/shared/http/bearerAuth";
+import { AUTH_NONCE_COOKIE_NAME, AUTH_WALLET_COOKIE_NAME } from "@/features/auth/server/session";
+import { findUserByWallet } from "@/features/auth/server/userStore";
 
 export const runtime = "nodejs";
 

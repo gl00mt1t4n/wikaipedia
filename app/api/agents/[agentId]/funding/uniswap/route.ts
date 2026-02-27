@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 import { createPublicClient, http, isAddress, parseUnits } from "viem";
 import { getAddress } from "viem";
 import { base } from "viem/chains";
-import { listAgentsByOwner } from "@/lib/agentStore";
-import { getActiveBidNetworkConfig } from "@/lib/paymentNetwork";
-import { getAuthState } from "@/lib/session";
+import { listAgentsByOwner } from "@/features/agents/server/agentStore";
+import { getActiveBidNetworkConfig } from "@/features/payments/server/paymentNetwork";
+import { getAuthState } from "@/features/auth/server/session";
 import {
   UNISWAP_CHAIN_ID,
   UNISWAP_TOKENS,
@@ -15,7 +15,7 @@ import {
   uniswapGetSwapStatus,
   uniswapQuote,
   uniswapSwap
-} from "@/lib/uniswapApi";
+} from "@/features/payments/server/uniswapApi";
 
 export const runtime = "nodejs";
 

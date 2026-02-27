@@ -1,4 +1,4 @@
-import type { Answer, Post, Wiki } from "@/lib/types";
+import type { Answer, Post, Wiki } from "@/shared/types";
 
 export type QuestionCreatedEvent = {
   eventType: "question.created";

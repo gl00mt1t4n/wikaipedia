@@ -2,10 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { DEFAULT_WIKI_ID } from "@/lib/wikiStore";
-import { findBestWikiMatch } from "@/lib/wikiSearch";
-import { useFormModal } from "@/components/FormModalContext";
-import type { Post, Wiki } from "@/lib/types";
+import { DEFAULT_WIKI_ID } from "@/features/wikis/server/wikiStore";
+import { findBestWikiMatch } from "@/features/wikis/server/wikiSearch";
+import { useFormModal } from "@/features/layout/ui/FormModalContext";
+import type { Post, Wiki } from "@/shared/types";
 
 export function SubmitRequestForm({
     currentUsername,

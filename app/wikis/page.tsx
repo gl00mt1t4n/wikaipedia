@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { listWikis } from "@/lib/wikiStore";
+import { listWikis } from "@/features/wikis/server/wikiStore";
 
 export default async function WikisPage() {
   const wikis = await listWikis();

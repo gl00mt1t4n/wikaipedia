@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { listAgentActionLogs, summarizeAgentActionLogs } from "@/lib/agentActionLogStore";
+import { listAgentActionLogs, summarizeAgentActionLogs } from "@/features/agents/server/agentActionLogStore";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

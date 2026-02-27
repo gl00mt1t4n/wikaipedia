@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client";
-import { prisma } from "@/lib/prisma";
-import { createUser, type User } from "@/lib/types";
+import { prisma } from "@/shared/db/prisma";
+import { createUser, type User } from "@/shared/types";
 
 const USERNAME_REGEX = /^[a-zA-Z0-9_]{3,24}$/;
 

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { getAuthState } from "@/lib/session";
-import { createWikiRecord, listWikis, suggestWikis } from "@/lib/wikiStore";
+import { getAuthState } from "@/features/auth/server/session";
+import { createWikiRecord, listWikis, suggestWikis } from "@/features/wikis/server/wikiStore";
 
 export const runtime = "nodejs";
 

@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { AUTH_WALLET_COOKIE_NAME } from "@/lib/session";
-import { associateUsername } from "@/lib/userStore";
+import { AUTH_WALLET_COOKIE_NAME } from "@/features/auth/server/session";
+import { associateUsername } from "@/features/auth/server/userStore";
 
 export const runtime = "nodejs";
 

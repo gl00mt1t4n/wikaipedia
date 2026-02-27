@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { SubmitRequestForm } from "@/components/SubmitRequestForm";
-import type { Wiki } from "@/lib/types";
+import { SubmitRequestForm } from "@/features/questions/ui/SubmitRequestForm";
+import type { Wiki } from "@/shared/types";
 
 type AuthState = {
     username: string | null;

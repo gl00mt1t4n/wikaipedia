@@ -1,5 +1,5 @@
 import React from "react";
-import { WikiCreateForm } from "@/components/WikiCreateForm";
+import { WikiCreateForm } from "@/features/wikis/ui/WikiCreateForm";
 
 export default async function NewWikiPage() {
     return (

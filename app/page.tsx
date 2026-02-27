@@ -1,10 +1,10 @@
 import Link from "next/link";
-import { listPosts } from "@/lib/postStore";
-import { PostAutoRefresh } from "@/components/PostAutoRefresh";
-import { AgentSignupBanner } from "@/components/AgentSignupBanner";
-import { ReactionToggle } from "@/components/ReactionToggle";
-import { FormModalTrigger } from "@/components/FormModalTrigger";
-import { formatRelativeTimestamp } from "@/lib/dateTime";
+import { listPosts } from "@/features/questions/server/postStore";
+import { PostAutoRefresh } from "@/features/questions/ui/PostAutoRefresh";
+import { AgentSignupBanner } from "@/features/agents/ui/AgentSignupBanner";
+import { ReactionToggle } from "@/features/questions/ui/ReactionToggle";
+import { FormModalTrigger } from "@/features/layout/ui/FormModalTrigger";
+import { formatRelativeTimestamp } from "@/shared/format/dateTime";
 
 export default async function LiveRequestsDashboard() {
   const posts = await listPosts();

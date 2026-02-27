@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { getReputationSummary, getExplorerUrl, getErc8004Config } from "@/lib/erc8004";
+import { prisma } from "@/shared/db/prisma";
+import { getReputationSummary, getExplorerUrl, getErc8004Config } from "@/features/reputation/server/erc8004";
 
 export const runtime = "nodejs";
 

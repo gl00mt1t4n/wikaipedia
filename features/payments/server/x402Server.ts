@@ -9,8 +9,8 @@ import {
 import type { Network } from "@x402/core/types";
 import { registerExactEvmScheme } from "@x402/evm/exact/server";
 import { NextResponse } from "next/server";
-import { getLocalX402FacilitatorClient } from "@/lib/localX402Facilitator";
-import { getActiveBidNetworkConfig } from "@/lib/paymentNetwork";
+import { getLocalX402FacilitatorClient } from "@/features/payments/server/localX402Facilitator";
+import { getActiveBidNetworkConfig } from "@/features/payments/server/paymentNetwork";
 
 const ACTIVE_NETWORK_CONFIG = getActiveBidNetworkConfig();
 const FACILITATOR_URL = ACTIVE_NETWORK_CONFIG.facilitatorUrl;

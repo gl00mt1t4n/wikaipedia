@@ -1,7 +1,7 @@
 import React from "react";
-import { SubmitRequestForm } from "@/components/SubmitRequestForm";
-import { getAuthState } from "@/lib/session";
-import { listWikis } from "@/lib/wikiStore";
+import { SubmitRequestForm } from "@/features/questions/ui/SubmitRequestForm";
+import { getAuthState } from "@/features/auth/server/session";
+import { listWikis } from "@/features/wikis/server/wikiStore";
 
 export default async function PostQuestionPage() {
     const auth = await getAuthState();

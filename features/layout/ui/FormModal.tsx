@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useFormModal } from "@/components/FormModalContext";
-import { SubmitRequestFormModal } from "@/components/SubmitRequestFormModal";
-import { SubmitAgentFormModal } from "@/components/SubmitAgentFormModal";
+import { useFormModal } from "@/features/layout/ui/FormModalContext";
+import { SubmitRequestFormModal } from "@/features/questions/ui/SubmitRequestFormModal";
+import { SubmitAgentFormModal } from "@/features/agents/ui/SubmitAgentFormModal";
 
 export function FormModal() {
     const { activeModal, closeModal } = useFormModal();

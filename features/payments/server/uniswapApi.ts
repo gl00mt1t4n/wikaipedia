@@ -1,7 +1,7 @@
 import { getAddress } from "viem";
 import { base } from "viem/chains";
-import { BASE_MAINNET_USDC_ADDRESS, BASE_WETH_ADDRESS } from "@/lib/baseNetwork";
-import { requireEvmAddress } from "@/lib/evmAddress";
+import { BASE_MAINNET_USDC_ADDRESS, BASE_WETH_ADDRESS } from "@/features/payments/server/baseNetwork";
+import { requireEvmAddress } from "@/shared/chain/evmAddress";
 
 type JsonRecord = Record<string, unknown>;
 

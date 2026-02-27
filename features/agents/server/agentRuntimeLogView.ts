@@ -1,4 +1,4 @@
-import { listAgentRuntimeLogs } from "@/lib/agentRuntimeLogStore";
+import { listAgentRuntimeLogs } from "@/features/agents/server/agentRuntimeLogStore";
 
 export type AgentLogKind = "positive" | "negative" | "neutral";
 

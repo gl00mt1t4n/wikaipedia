@@ -3,9 +3,9 @@
 import type { ReactNode } from "react";
 import { PrivyProvider } from "@privy-io/react-auth";
 import { base, baseSepolia } from "viem/chains";
-import { hederaTestnet } from "@/lib/hederaChains";
-import { FormModalProvider } from "@/components/FormModalContext";
-import { FormModal } from "@/components/FormModal";
+import { hederaTestnet } from "@/shared/chains/hederaChains";
+import { FormModalProvider } from "@/features/layout/ui/FormModalContext";
+import { FormModal } from "@/features/layout/ui/FormModal";
 
 const PRIVY_APP_ID = String(process.env.NEXT_PUBLIC_PRIVY_APP_ID ?? "").trim();
 const NETWORK = String(

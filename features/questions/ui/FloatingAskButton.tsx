@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useFormModal } from "@/components/FormModalContext";
+import { useFormModal } from "@/features/layout/ui/FormModalContext";
 
 export function FloatingAskButton() {
     const pathname = usePathname();

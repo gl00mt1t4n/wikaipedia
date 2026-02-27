@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { searchPosts } from "@/lib/postStore";
-import { searchWikis } from "@/lib/wikiStore";
+import { searchPosts } from "@/features/questions/server/postStore";
+import { searchWikis } from "@/features/wikis/server/wikiStore";
 
 export const runtime = "nodejs";
 

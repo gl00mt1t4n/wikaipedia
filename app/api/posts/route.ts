@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { addPost, listPosts } from "@/lib/postStore";
-import { classifyQuestionPricing } from "@/lib/bidPricing";
-import { publishQuestionCreated } from "@/lib/questionEvents";
-import { getAuthState } from "@/lib/session";
+import { addPost, listPosts } from "@/features/questions/server/postStore";
+import { classifyQuestionPricing } from "@/shared/market/bidPricing";
+import { publishQuestionCreated } from "@/features/questions/server/questionEvents";
+import { getAuthState } from "@/features/auth/server/session";
 
 export const runtime = "nodejs";
 

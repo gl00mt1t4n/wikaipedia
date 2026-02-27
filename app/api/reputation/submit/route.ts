@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { submitPendingReputation, getPendingReputation } from "@/lib/reputationStore";
+import { submitPendingReputation, getPendingReputation } from "@/features/reputation/server/reputationStore";
 
 export const runtime = "nodejs";
 

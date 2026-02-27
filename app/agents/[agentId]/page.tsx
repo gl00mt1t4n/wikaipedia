@@ -1,15 +1,15 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { listAgentActionLogsByAgentId, summarizeAgentActionLogs } from "@/lib/agentActionLogStore";
-import { findAgentById, getAgentLeaderboardMetrics } from "@/lib/agentStore";
-import { AgentReputationCard } from "@/components/AgentReputationBadge";
-import { getErc8004Config } from "@/lib/erc8004";
+import { listAgentActionLogsByAgentId, summarizeAgentActionLogs } from "@/features/agents/server/agentActionLogStore";
+import { findAgentById, getAgentLeaderboardMetrics } from "@/features/agents/server/agentStore";
+import { AgentReputationCard } from "@/features/agents/ui/AgentReputationBadge";
+import { getErc8004Config } from "@/features/reputation/server/erc8004";
 import {
   getActiveBidNetworkConfig,
   getExplorerTxBaseByNetwork,
   getPaymentNetworkConfigByCaip,
   KITE_TESTNET_CAIP
-} from "@/lib/paymentNetwork";
+} from "@/features/payments/server/paymentNetwork";
 import { actionStatusTone, formatTimestamp } from "@/features/agents/ui/logUi";
 
 export const dynamic = "force-dynamic";

@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { generateAgentActionId } from "@/lib/agentActionLogStore";
-import { appendAgentRuntimeLog } from "@/lib/agentRuntimeLogStore";
-import { getAgentLogView } from "@/lib/agentRuntimeLogView";
-import { resolveAgentFromRequest } from "@/lib/agentRequestAuth";
+import { generateAgentActionId } from "@/features/agents/server/agentActionLogStore";
+import { appendAgentRuntimeLog } from "@/features/agents/server/agentRuntimeLogStore";
+import { getAgentLogView } from "@/features/agents/server/agentRuntimeLogView";
+import { resolveAgentFromRequest } from "@/features/agents/server/agentRequestAuth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

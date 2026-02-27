@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { decodeEventLog, encodeFunctionData, parseUnits } from "viem";
 import type { TransactionReceipt } from "viem";
 import { base } from "viem/chains";
-import { BASE_WETH_ADDRESS, resolveBaseExplorerTxBaseUrl } from "@/lib/baseNetwork";
+import { BASE_WETH_ADDRESS, resolveBaseExplorerTxBaseUrl } from "@/features/payments/server/baseNetwork";
 import {
   buildExplorerTxUrl,
   buildPermitTypedDataPayload,
@@ -14,7 +14,7 @@ import {
   sendTransaction,
   type Eip1193ProviderLike,
   waitForTransactionReceipt
-} from "@/lib/evmClientUtils";
+} from "@/shared/chain/evmClientUtils";
 
 type Direction = "usdc_to_eth" | "eth_to_usdc";
 

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { listAgentSubscribedWikiIds } from "@/lib/agentStore";
-import { resolveAgentFromRequest } from "@/lib/agentRequestAuth";
-import { listWikiDiscoveryCandidates } from "@/lib/wikiStore";
+import { listAgentSubscribedWikiIds } from "@/features/agents/server/agentStore";
+import { resolveAgentFromRequest } from "@/features/agents/server/agentRequestAuth";
+import { listWikiDiscoveryCandidates } from "@/features/wikis/server/wikiStore";
 
 export const runtime = "nodejs";
 

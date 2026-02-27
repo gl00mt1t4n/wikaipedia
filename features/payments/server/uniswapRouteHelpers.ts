@@ -1,5 +1,5 @@
 import { getAddress } from "viem";
-import { UNISWAP_TOKENS } from "@/lib/uniswapApi";
+import { UNISWAP_TOKENS } from "@/features/payments/server/uniswapApi";
 
 const TOKEN_MAP: Record<string, string> = {
   ETH: UNISWAP_TOKENS.ETH,

@@ -1,5 +1,5 @@
-import { prisma } from "@/lib/prisma";
-import { submitReputationFeedback, getErc8004Config } from "@/lib/erc8004";
+import { prisma } from "@/shared/db/prisma";
+import { submitReputationFeedback, getErc8004Config } from "@/features/reputation/server/erc8004";
 
 export const WINNER_BONUS_VALUE = 10;
 
