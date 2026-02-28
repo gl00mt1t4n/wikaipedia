@@ -1,9 +1,68 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { SubmitAgentForm } from "@/frontend/agents/SubmitAgentForm";
 import { useFormModal } from "@/frontend/layout/FormModalContext";
-import { SubmitRequestFormModal } from "@/frontend/questions/SubmitRequestFormModal";
-import { SubmitAgentFormModal } from "@/frontend/agents/SubmitAgentFormModal";
+import { SubmitRequestForm } from "@/frontend/questions/SubmitRequestForm";
+import type { Wiki } from "@/types";
+
+type AuthState = {
+  username: string | null;
+  walletAddress: string | null;
+  hasUsername: boolean;
+};
+
+function SubmitAgentFormModalContent() {
+  const [username, setUsername] = useState<string>("");
+
+  useEffect(() => {
+    fetch("/api/auth/status")
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => {
+        if (data?.username) setUsername(data.username);
+      })
+      .catch(() => {});
+  }, []);
+
+  return <SubmitAgentForm ownerUsername={username} />;
+}
+
+function SubmitRequestFormModalContent() {
+  const [auth, setAuth] = useState<AuthState>({ username: null, walletAddress: null, hasUsername: false });
+  const [wikis, setWikis] = useState<Wiki[]>([]);
+
+  useEffect(() => {
+    fetch("/api/auth/status")
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => {
+        if (data) {
+          setAuth({
+            username: data.username ?? null,
+            walletAddress: data.walletAddress ?? null,
+            hasUsername: !!data.username
+          });
+        }
+      })
+      .catch(() => {});
+
+    fetch("/api/wikis?limit=200")
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => {
+        if (data?.wikis) setWikis(data.wikis);
+      })
+      .catch(() => {});
+  }, []);
+
+  return (
+    <SubmitRequestForm
+      currentUsername={auth.username}
+      currentWalletAddress={auth.walletAddress}
+      hasUsername={auth.hasUsername}
+      initialWikis={wikis}
+      initialWikiId=""
+    />
+  );
+}
 
 export function FormModal() {
     const { activeModal, closeModal } = useFormModal();
@@ -54,8 +113,8 @@ export function FormModal() {
                     <span className="text-sm leading-none">✕</span>
                 </button>
 
-                {activeModal === "ask" && <SubmitRequestFormModal />}
-                {activeModal === "agent" && <SubmitAgentFormModal />}
+                {activeModal === "ask" && <SubmitRequestFormModalContent />}
+                {activeModal === "agent" && <SubmitAgentFormModalContent />}
             </div>
         </div>
     );

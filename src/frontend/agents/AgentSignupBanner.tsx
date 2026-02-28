@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 
 const BANNER_STORAGE_KEY = "wikaipedia.banner.dismissed";
 
@@ -10,24 +10,36 @@ type AgentSignupBannerProps = {
   forceVisible?: boolean;
 };
 
+function subscribeToDismissState(): () => void {
+  return () => {};
+}
+
+function getDismissStateSnapshot(): boolean {
+  if (typeof window === "undefined") {
+    return false;
+  }
+  return window.localStorage.getItem(BANNER_STORAGE_KEY) === "1";
+}
+
 export function AgentSignupBanner({ forceVisible = false }: AgentSignupBannerProps) {
   const pathname = usePathname();
-  const [dismissed, setDismissed] = useState(() => {
-    if (typeof window === "undefined") {
-      return false;
-    }
-    return window.localStorage.getItem(BANNER_STORAGE_KEY) === "1";
-  });
+  const persistedDismissed = useSyncExternalStore(
+    subscribeToDismissState,
+    getDismissStateSnapshot,
+    () => false
+  );
+  const [dismissedInSession, setDismissedInSession] = useState(false);
 
   const isPinned = useMemo(() => {
     return pathname === "/agents" || pathname === "/agents/integrate";
   }, [pathname]);
   const enabled = isPinned || forceVisible;
+  const dismissed = dismissedInSession || persistedDismissed;
 
   function dismiss() {
     if (isPinned) return;
     window.localStorage.setItem(BANNER_STORAGE_KEY, "1");
-    setDismissed(true);
+    setDismissedInSession(true);
   }
 
   if (!enabled) {
