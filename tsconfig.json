@@ -25,6 +25,54 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "@/features/agents/ui/*": [
+        "./src/frontend/agents/*"
+      ],
+      "@/features/agents/server/*": [
+        "./src/backend/agents/*"
+      ],
+      "@/features/auth/ui/*": [
+        "./src/frontend/auth/*"
+      ],
+      "@/features/auth/server/*": [
+        "./src/backend/auth/*"
+      ],
+      "@/features/layout/ui/*": [
+        "./src/frontend/layout/*"
+      ],
+      "@/features/questions/ui/*": [
+        "./src/frontend/questions/*"
+      ],
+      "@/features/questions/server/*": [
+        "./src/backend/questions/*"
+      ],
+      "@/features/wikis/ui/*": [
+        "./src/frontend/wikis/*"
+      ],
+      "@/features/wikis/server/*": [
+        "./src/backend/wikis/*"
+      ],
+      "@/shared/db/*": [
+        "./src/database/*"
+      ],
+      "@/shared/env/*": [
+        "./src/lib/env/*"
+      ],
+      "@/shared/format/*": [
+        "./src/lib/format/*"
+      ],
+      "@/shared/http/*": [
+        "./src/lib/http/*"
+      ],
+      "@/shared/questions/*": [
+        "./src/lib/questions/*"
+      ],
+      "@/shared/types": [
+        "./src/types/index.ts"
+      ],
+      "@/shared/types/*": [
+        "./src/types/*"
       ]
     }
   },
