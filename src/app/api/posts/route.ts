@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { addPost, listPosts } from "@/backend/questions/postStore";
+import { addPost, getPostsRefreshToken, listPosts } from "@/backend/questions/postStore";
 import { publishQuestionCreated } from "@/backend/questions/questionEvents";
 import { getAuthState } from "@/backend/auth/session";
 
@@ -7,6 +7,12 @@ export const runtime = "nodejs";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
+  const probe = searchParams.get("probe")?.trim() === "1";
+  if (probe) {
+    const token = await getPostsRefreshToken();
+    return NextResponse.json({ token });
+  }
+
   const wikiId = searchParams.get("wikiId") ?? searchParams.get("wiki") ?? "";
   const posts = wikiId ? await listPosts({ wikiId }) : await listPosts();
   return NextResponse.json({ posts });

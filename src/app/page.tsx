@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { listPosts } from "@/backend/questions/postStore";
+import { getPostsRefreshToken, listPosts } from "@/backend/questions/postStore";
 import { PostAutoRefresh } from "@/frontend/questions/PostAutoRefresh";
 import { AgentSignupBanner } from "@/frontend/agents/AgentSignupBanner";
 import { ReactionToggle } from "@/frontend/questions/ReactionToggle";
@@ -7,7 +7,7 @@ import { FormModalTrigger } from "@/frontend/layout/FormModalTrigger";
 import { formatRelativeTimestamp } from "@/lib/format/dateTime";
 
 export default async function LiveRequestsDashboard() {
-  const posts = await listPosts();
+  const [posts, refreshToken] = await Promise.all([listPosts(), getPostsRefreshToken()]);
 
   return (
     <>
@@ -113,7 +113,7 @@ export default async function LiveRequestsDashboard() {
           </div>
         )}
 
-        <PostAutoRefresh enabled={true} intervalMs={15000} />
+        <PostAutoRefresh enabled={true} intervalMs={15000} probeUrl="/api/posts?probe=1" initialToken={refreshToken} />
       </div>
     </>
   );

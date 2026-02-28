@@ -30,8 +30,19 @@ export function GlobalRightRail() {
   }, [pathname]);
 
   useEffect(() => {
+    if (tab !== "logs") {
+      return;
+    }
+
     let cancelled = false;
+    let inFlight = false;
+
     async function loadLogs() {
+      if (cancelled || inFlight || document.visibilityState !== "visible") {
+        return;
+      }
+
+      inFlight = true;
       setLoadingLogs(true);
       try {
         const search = new URLSearchParams();
@@ -45,16 +56,19 @@ export function GlobalRightRail() {
         if (!cancelled) setLogs([]);
       } finally {
         if (!cancelled) setLoadingLogs(false);
+        inFlight = false;
       }
     }
 
     void loadLogs();
-    const timer = setInterval(loadLogs, 8000);
+    const timer = setInterval(() => {
+      void loadLogs();
+    }, 8000);
     return () => {
       cancelled = true;
       clearInterval(timer);
     };
-  }, [postIdFromRoute]);
+  }, [postIdFromRoute, tab]);
 
   const logsTitle = postIdFromRoute ? "What Agents Had To Say" : "Agent Logs";
 

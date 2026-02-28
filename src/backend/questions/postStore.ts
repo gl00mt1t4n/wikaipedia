@@ -158,6 +158,119 @@ export async function getLatestPostAnchor(): Promise<{ id: string; createdAt: st
   };
 }
 
+export async function listPostWikiIdsByPostIds(postIds: string[]): Promise<Map<string, string>> {
+  const normalizedPostIds = postIds.map((value) => String(value).trim()).filter(Boolean);
+  if (normalizedPostIds.length === 0) {
+    return new Map();
+  }
+
+  const rows = await prisma.post.findMany({
+    where: {
+      id: {
+        in: normalizedPostIds
+      }
+    },
+    select: {
+      id: true,
+      wikiId: true
+    }
+  });
+
+  const wikiByPostId = new Map<string, string>();
+  for (const row of rows) {
+    wikiByPostId.set(row.id, normalizeWikiId(row.wikiId));
+  }
+
+  return wikiByPostId;
+}
+
+export async function getPostsRefreshToken(): Promise<string> {
+  const [latestPost, latestAnswer, postAggregate, settledCount] = await Promise.all([
+    prisma.post.findFirst({
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      select: { id: true, createdAt: true }
+    }),
+    prisma.answer.findFirst({
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      select: { id: true, createdAt: true }
+    }),
+    prisma.post.aggregate({
+      _sum: {
+        likesCount: true,
+        dislikesCount: true
+      },
+      _count: {
+        id: true
+      }
+    }),
+    prisma.post.count({
+      where: { settlementStatus: "settled" }
+    })
+  ]);
+
+  const latestPostSig = latestPost ? `${latestPost.id}:${latestPost.createdAt.toISOString()}` : "none";
+  const latestAnswerSig = latestAnswer ? `${latestAnswer.id}:${latestAnswer.createdAt.toISOString()}` : "none";
+  const likesSum = Number(postAggregate._sum.likesCount ?? 0);
+  const dislikesSum = Number(postAggregate._sum.dislikesCount ?? 0);
+  const postCount = Number(postAggregate._count.id ?? 0);
+
+  return [latestPostSig, latestAnswerSig, String(postCount), String(settledCount), String(likesSum), String(dislikesSum)].join("|");
+}
+
+export async function getPostRefreshToken(postId: string): Promise<string | null> {
+  const normalizedPostId = String(postId).trim();
+  if (!normalizedPostId) {
+    return null;
+  }
+
+  const [post, latestAnswer, answerAggregate] = await Promise.all([
+    prisma.post.findUnique({
+      where: { id: normalizedPostId },
+      select: {
+        id: true,
+        settlementStatus: true,
+        winnerAnswerId: true,
+        likesCount: true,
+        dislikesCount: true
+      }
+    }),
+    prisma.answer.findFirst({
+      where: { postId: normalizedPostId },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      select: { id: true, createdAt: true }
+    }),
+    prisma.answer.aggregate({
+      where: { postId: normalizedPostId },
+      _count: { id: true },
+      _sum: {
+        likesCount: true,
+        dislikesCount: true
+      }
+    })
+  ]);
+
+  if (!post) {
+    return null;
+  }
+
+  const latestAnswerSig = latestAnswer ? `${latestAnswer.id}:${latestAnswer.createdAt.toISOString()}` : "none";
+  const answerCount = Number(answerAggregate._count.id ?? 0);
+  const answerLikesSum = Number(answerAggregate._sum.likesCount ?? 0);
+  const answerDislikesSum = Number(answerAggregate._sum.dislikesCount ?? 0);
+
+  return [
+    post.id,
+    post.settlementStatus,
+    post.winnerAnswerId ?? "",
+    String(post.likesCount),
+    String(post.dislikesCount),
+    latestAnswerSig,
+    String(answerCount),
+    String(answerLikesSum),
+    String(answerDislikesSum)
+  ].join("|");
+}
+
 export async function listPostsAfterAnchor(
   anchor: { id: string; createdAt: string } | null,
   options?: { wikiIds?: string[] },

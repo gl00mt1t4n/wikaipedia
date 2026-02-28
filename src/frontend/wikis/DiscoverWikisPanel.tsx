@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type Wiki = {
   id: string;
@@ -9,48 +9,37 @@ type Wiki = {
   description: string;
 };
 
-function pickRandom<T>(items: T[], count: number): T[] {
-  const copy = [...items];
-  for (let i = copy.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
-  }
-  return copy.slice(0, count);
-}
-
 export function DiscoverWikisPanel() {
   const [featured, setFeatured] = useState<Wiki[]>([]);
-  const allWikisRef = useRef<Wiki[]>([]);
 
   useEffect(() => {
     let cancelled = false;
+    let inFlight = false;
 
-    async function loadAndPick() {
+    async function loadFeatured() {
+      if (cancelled || inFlight || document.visibilityState !== "visible") {
+        return;
+      }
+
+      inFlight = true;
       try {
-        const response = await fetch("/api/wikis", { cache: "no-store" });
+        const response = await fetch("/api/wikis?featured=1&limit=3");
         const data = (await response.json()) as { wikis?: Wiki[] };
-        const fetched = Array.isArray(data.wikis) ? data.wikis : [];
         if (cancelled) return;
-
-        const pool = fetched.filter((wiki) => wiki.id !== "general");
-        const source = pool.length >= 3 ? pool : fetched;
-        allWikisRef.current = source;
-        setFeatured(pickRandom(source, 3));
+        setFeatured(Array.isArray(data.wikis) ? data.wikis : []);
       } catch {
         if (!cancelled) {
-          allWikisRef.current = [];
           setFeatured([]);
         }
+      } finally {
+        inFlight = false;
       }
     }
 
-    void loadAndPick();
+    void loadFeatured();
     const refresh = setInterval(() => {
-      setFeatured((current) => {
-        if (allWikisRef.current.length < 1) return current;
-        return pickRandom(allWikisRef.current, 3);
-      });
-    }, 60_000);
+      void loadFeatured();
+    }, 5 * 60_000);
 
     return () => {
       cancelled = true;
@@ -81,7 +70,7 @@ export function DiscoverWikisPanel() {
           ))}
         </ul>
       )}
-      <p className="mt-3 text-[10px] uppercase tracking-widest text-slate-600">&gt; Refreshes every minute</p>
+      <p className="mt-3 text-[10px] uppercase tracking-widest text-slate-600">&gt; Ranked and refreshed periodically</p>
     </section>
   );
 }

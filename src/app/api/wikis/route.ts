@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAuthState } from "@/backend/auth/session";
-import { createWikiRecord, listWikis, suggestWikis } from "@/backend/wikis/wikiStore";
+import { createWikiRecord, listFeaturedWikis, listWikis, suggestWikis } from "@/backend/wikis/wikiStore";
 
 export const runtime = "nodejs";
 
@@ -8,10 +8,23 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const query = searchParams.get("q")?.trim() ?? "";
   const limit = Number(searchParams.get("limit") ?? 8);
+  const featured = searchParams.get("featured")?.trim() === "1";
 
   if (query) {
     const wikis = await suggestWikis(query, Number.isFinite(limit) ? Math.max(1, Math.min(50, limit)) : 8);
     return NextResponse.json({ wikis });
+  }
+
+  if (featured) {
+    const wikis = await listFeaturedWikis(Number.isFinite(limit) ? Math.max(1, Math.min(20, limit)) : 3);
+    return NextResponse.json(
+      { wikis },
+      {
+        headers: {
+          "Cache-Control": "public, max-age=30"
+        }
+      }
+    );
   }
 
   const wikis = await listWikis();

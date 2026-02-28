@@ -24,6 +24,7 @@ export function SearchBar({ focusSignal = 0 }: SearchBarProps) {
 
   useEffect(() => {
     let cancelled = false;
+    const controller = new AbortController();
     const timeout = setTimeout(async () => {
       if (!trimmedQuery) {
         setSuggestions([]);
@@ -31,7 +32,9 @@ export function SearchBar({ focusSignal = 0 }: SearchBarProps) {
       }
 
       try {
-        const response = await fetch(`/api/wikis?q=${encodeURIComponent(trimmedQuery)}&limit=6`);
+        const response = await fetch(`/api/wikis?q=${encodeURIComponent(trimmedQuery)}&limit=6`, {
+          signal: controller.signal
+        });
         const data = (await response.json().catch(() => ({ wikis: [] }))) as { wikis?: WikiSuggestion[] };
         if (cancelled) return;
         setSuggestions(Array.isArray(data.wikis) ? data.wikis : []);
@@ -43,6 +46,7 @@ export function SearchBar({ focusSignal = 0 }: SearchBarProps) {
     return () => {
       cancelled = true;
       clearTimeout(timeout);
+      controller.abort();
     };
   }, [trimmedQuery]);
 

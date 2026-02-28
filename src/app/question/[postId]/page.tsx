@@ -1,7 +1,7 @@
 import React from "react";
 import { notFound } from "next/navigation";
 import { getAuthState } from "@/backend/auth/session";
-import { getPostById } from "@/backend/questions/postStore";
+import { getPostById, getPostRefreshToken } from "@/backend/questions/postStore";
 import { listAnswersByPost } from "@/backend/questions/answerStore";
 import { PostAutoRefresh } from "@/frontend/questions/PostAutoRefresh";
 import { ReactionToggle } from "@/frontend/questions/ReactionToggle";
@@ -19,7 +19,10 @@ export default async function QuestionDetailPage(props: { params: Promise<{ post
     notFound();
   }
 
-  const answers = await listAnswersByPost(post.id);
+  const [answers, refreshToken] = await Promise.all([
+    listAnswersByPost(post.id),
+    getPostRefreshToken(post.id)
+  ]);
   const isOwner = Boolean(auth.username && post.poster && auth.username === post.poster);
   const postedAtRelative = formatRelativeTimestamp(post.createdAt);
   const postedAtLocal = formatLocalTimestamp(post.createdAt);
@@ -83,7 +86,12 @@ export default async function QuestionDetailPage(props: { params: Promise<{ post
         )}
       </section>
 
-      <PostAutoRefresh enabled={post.settlementStatus === "open"} intervalMs={8000} />
+      <PostAutoRefresh
+        enabled={post.settlementStatus === "open"}
+        intervalMs={8000}
+        probeUrl={`/api/posts/${post.id}?probe=1`}
+        initialToken={refreshToken ?? `${post.id}:bootstrap`}
+      />
     </div>
   );
 }

@@ -2,8 +2,6 @@ import { NextResponse } from "next/server";
 import { appendAgentActionLog, generateAgentActionId } from "@/backend/agents/agentActionLogStore";
 import { resolveAgentFromRequest } from "@/backend/agents/agentRequestAuth";
 import { addAnswer, listAnswersByPost } from "@/backend/questions/answerStore";
-import { getPostById } from "@/backend/questions/postStore";
-import { MAX_RESPONSES_PER_POST } from "@/lib/questions/constants";
 
 export const runtime = "nodejs";
 
@@ -48,28 +46,6 @@ export async function POST(request: Request, props: { params: Promise<{ postId: 
     agentName: agent.name
   });
 
-  const post = await getPostById(params.postId);
-  if (!post) {
-    return NextResponse.json({ error: "Post not found." }, { status: 404 });
-  }
-
-  if (post.settlementStatus !== "open") {
-    return NextResponse.json({ error: "This post is closed for new answers." }, { status: 400 });
-  }
-
-  if (new Date() > new Date(post.answersCloseAt)) {
-    return NextResponse.json({ error: "Answer window has ended for this post." }, { status: 400 });
-  }
-
-  const answers = await listAnswersByPost(params.postId);
-  if (answers.some((answer) => answer.agentId === agent.id)) {
-    return NextResponse.json({ error: "Agent already answered this question." }, { status: 400 });
-  }
-
-  if (answers.length >= MAX_RESPONSES_PER_POST) {
-    return NextResponse.json({ error: `Response cap reached for this post (${MAX_RESPONSES_PER_POST}).` }, { status: 400 });
-  }
-
   let body: { content?: string };
   try {
     body = (await request.clone().json()) as { content?: string };
@@ -85,6 +61,14 @@ export async function POST(request: Request, props: { params: Promise<{ postId: 
   });
 
   if (!result.ok) {
+    const rawError = String(result.error ?? "").trim();
+    const notFound = rawError === "Post does not exist.";
+    const normalizedError =
+      rawError === "Bidding is closed for this post."
+        ? "This post is closed for new answers."
+        : rawError || "Could not submit answer.";
+    const status = notFound ? 404 : 400;
+
     await safeLog({
       actionId,
       actionType: "answer_submission",
@@ -96,12 +80,12 @@ export async function POST(request: Request, props: { params: Promise<{ postId: 
       postId: params.postId,
       agentId: agent.id,
       agentName: agent.name,
-      errorMessage: result.error,
+      errorMessage: normalizedError,
       failureCode: "answer_write_failed",
-      failureMessage: result.error,
-      httpStatus: 400
+      failureMessage: normalizedError,
+      httpStatus: status
     });
-    return NextResponse.json({ error: result.error }, { status: 400 });
+    return NextResponse.json({ error: normalizedError }, { status });
   }
 
   await safeLog({

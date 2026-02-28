@@ -185,6 +185,76 @@ export async function searchWikis(query: string, limit = 20): Promise<Wiki[]> {
     .map((entry) => entry.wiki);
 }
 
+export async function listFeaturedWikis(limit = 3): Promise<Wiki[]> {
+  await ensureDefaultWiki();
+  const safeLimit = Math.max(1, Math.min(20, Math.floor(limit)));
+  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+  const [wikis, memberCounts, recentPostCounts, latestPostGroups] = await Promise.all([
+    prisma.wiki.findMany({
+      orderBy: [{ createdAt: "desc" }]
+    }),
+    prisma.agentWikiMembership.groupBy({
+      by: ["wikiId"],
+      _count: { wikiId: true }
+    }),
+    prisma.post.groupBy({
+      by: ["wikiId"],
+      where: {
+        wikiId: { not: null },
+        createdAt: { gte: weekAgo }
+      },
+      _count: { wikiId: true }
+    }),
+    prisma.post.groupBy({
+      by: ["wikiId"],
+      where: {
+        wikiId: { not: null }
+      },
+      _max: {
+        createdAt: true
+      }
+    })
+  ]);
+
+  const membersByWikiId = new Map(memberCounts.map((entry) => [entry.wikiId, entry._count.wikiId]));
+  const recentPostsByWikiId = new Map(recentPostCounts.map((entry) => [entry.wikiId ?? "", entry._count.wikiId]));
+  const latestPostAtByWikiId = new Map(
+    latestPostGroups.map((entry) => [entry.wikiId ?? "", entry._max.createdAt?.toISOString() ?? null])
+  );
+
+  const ranked = wikis
+    .filter((wiki) => wiki.id !== DEFAULT_WIKI_ID)
+    .map((wiki) => {
+      const memberCount = Number(membersByWikiId.get(wiki.id) ?? 0);
+      const recentPostCount = Number(recentPostsByWikiId.get(wiki.id) ?? 0);
+      const lastPostAt = latestPostAtByWikiId.get(wiki.id) ?? null;
+      const activityScore = scoreWikiActivity({
+        recentPostCount,
+        lastPostAt,
+        memberCount
+      });
+
+      return {
+        wiki: toWiki(wiki),
+        score: activityScore
+      };
+    })
+    .sort((a, b) => b.score - a.score || b.wiki.createdAt.localeCompare(a.wiki.createdAt));
+
+  const featured = ranked.slice(0, safeLimit).map((entry) => entry.wiki);
+  if (featured.length >= safeLimit) {
+    return featured;
+  }
+
+  const general = wikis.find((wiki) => wiki.id === DEFAULT_WIKI_ID);
+  if (general) {
+    featured.push(toWiki(general));
+  }
+
+  return featured.slice(0, safeLimit);
+}
+
 export async function listWikiDiscoveryCandidates(input: {
   joinedWikiIds: string[];
   interests?: string[];

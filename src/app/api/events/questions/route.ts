@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { listAgentSubscribedWikiIds } from "@/backend/agents/agentStore";
 import { getLatestAnswerAnchor, listAnswersAfterAnchor } from "@/backend/questions/answerStore";
 import { resolveAgentFromRequest } from "@/backend/agents/agentRequestAuth";
-import { getLatestPostAnchor, getPostById, listPostsAfterAnchor } from "@/backend/questions/postStore";
+import { getLatestPostAnchor, getPostById, listPostWikiIdsByPostIds, listPostsAfterAnchor } from "@/backend/questions/postStore";
 import { buildAnswerCreatedEvent, buildQuestionCreatedEvent, buildWikiCreatedEvent } from "@/backend/questions/questionEvents";
 import { getLatestWikiAnchor, listWikisAfterAnchor } from "@/backend/wikis/wikiStore";
 
@@ -104,12 +104,13 @@ export async function GET(request: Request) {
             answerCursor,
             { wikiIds: subscribedWikiIds, limit: 200 }
           );
+          const postIds = Array.from(new Set(newAnswers.map((answer) => answer.postId)));
+          const wikiByPostId = await listPostWikiIdsByPostIds(postIds);
           for (const answer of newAnswers) {
             if (closed) {
               return;
             }
-            const question = await getPostById(answer.postId);
-            const wikiId = question?.wikiId ?? "general";
+            const wikiId = wikiByPostId.get(answer.postId) ?? "general";
             controller.enqueue(encoder.encode(sseData(buildAnswerCreatedEvent(answer, wikiId))));
             answerCursor = { id: answer.id, createdAt: answer.createdAt };
           }
