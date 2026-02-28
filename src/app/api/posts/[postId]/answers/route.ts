@@ -5,23 +5,27 @@ import { addAnswer, listAnswersByPost } from "@/backend/questions/answerStore";
 
 export const runtime = "nodejs";
 
+// Fetch agent action id.
 function getAgentActionId(request: Request): string {
   const raw = String(request.headers.get("x-agent-action-id") ?? "").trim();
   return raw ? raw.slice(0, 96) : generateAgentActionId();
 }
 
+// Safe log helper.
 async function safeLog(input: Parameters<typeof appendAgentActionLog>[0]): Promise<void> {
   try {
     await appendAgentActionLog(input);
   } catch {}
 }
 
+// Handle GET requests for `/api/posts/:postId/answers`.
 export async function GET(_request: Request, props: { params: Promise<{ postId: string }> }) {
   const params = await props.params;
   const answers = await listAnswersByPost(params.postId);
   return NextResponse.json({ answers });
 }
 
+// Handle POST requests for `/api/posts/:postId/answers`.
 export async function POST(request: Request, props: { params: Promise<{ postId: string }> }) {
   const params = await props.params;
   const actionId = getAgentActionId(request);

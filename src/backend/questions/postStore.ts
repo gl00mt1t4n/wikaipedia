@@ -5,6 +5,7 @@ import { createPost, type Post } from "@/types";
 const MIN_ANSWER_WINDOW_SECONDS = 60;
 const MAX_ANSWER_WINDOW_SECONDS = 60 * 60;
 
+// Normalize wiki id into canonical form.
 function normalizeWikiId(rawWikiId: string | null | undefined): string {
   const value = String(rawWikiId ?? "")
     .trim()
@@ -13,6 +14,7 @@ function normalizeWikiId(rawWikiId: string | null | undefined): string {
   return value || DEFAULT_WIKI_ID;
 }
 
+// Fetch fallback wiki display name.
 function getFallbackWikiDisplayName(wikiId: string): string {
   if (wikiId === DEFAULT_WIKI_ID) {
     return DEFAULT_WIKI_DISPLAY_NAME;
@@ -25,6 +27,7 @@ function getFallbackWikiDisplayName(wikiId: string): string {
     .join(" ");
 }
 
+// Map raw input into post shape.
 function toPost(record: {
   id: string;
   poster: string;
@@ -103,6 +106,7 @@ function toPost(record: {
   };
 }
 
+// Return a list of posts.
 export async function listPosts(options?: { wikiId?: string | null }): Promise<Post[]> {
   const wikiId = options?.wikiId ? normalizeWikiId(options.wikiId) : null;
   const posts = await prisma.post.findMany({
@@ -142,6 +146,7 @@ export async function listPosts(options?: { wikiId?: string | null }): Promise<P
   return posts.map((post) => toPost(post));
 }
 
+// Fetch latest post anchor.
 export async function getLatestPostAnchor(): Promise<{ id: string; createdAt: string } | null> {
   const post = await prisma.post.findFirst({
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
@@ -158,6 +163,7 @@ export async function getLatestPostAnchor(): Promise<{ id: string; createdAt: st
   };
 }
 
+// Return a list of post wiki ids by post ids.
 export async function listPostWikiIdsByPostIds(postIds: string[]): Promise<Map<string, string>> {
   const normalizedPostIds = postIds.map((value) => String(value).trim()).filter(Boolean);
   if (normalizedPostIds.length === 0) {
@@ -184,6 +190,7 @@ export async function listPostWikiIdsByPostIds(postIds: string[]): Promise<Map<s
   return wikiByPostId;
 }
 
+// Fetch posts refresh token.
 export async function getPostsRefreshToken(): Promise<string> {
   const [latestPost, latestAnswer, postAggregate, settledCount] = await Promise.all([
     prisma.post.findFirst({
@@ -217,6 +224,7 @@ export async function getPostsRefreshToken(): Promise<string> {
   return [latestPostSig, latestAnswerSig, String(postCount), String(settledCount), String(likesSum), String(dislikesSum)].join("|");
 }
 
+// Fetch post refresh token.
 export async function getPostRefreshToken(postId: string): Promise<string | null> {
   const normalizedPostId = String(postId).trim();
   if (!normalizedPostId) {
@@ -271,6 +279,7 @@ export async function getPostRefreshToken(postId: string): Promise<string | null
   ].join("|");
 }
 
+// Return a list of posts after anchor.
 export async function listPostsAfterAnchor(
   anchor: { id: string; createdAt: string } | null,
   options?: { wikiIds?: string[] },
@@ -334,6 +343,7 @@ export async function listPostsAfterAnchor(
   return posts.map((post) => toPost(post));
 }
 
+// Fetch post by id.
 export async function getPostById(postId: string): Promise<Post | null> {
   const post = await prisma.post.findUnique({
     where: { id: postId },
@@ -365,6 +375,7 @@ export async function getPostById(postId: string): Promise<Post | null> {
   return post ? toPost(post) : null;
 }
 
+// Add post helper.
 export async function addPost(input: {
   poster: string;
   wikiName?: string;
@@ -451,6 +462,7 @@ export async function addPost(input: {
   return { ok: true, post: toPost(created) };
 }
 
+// Update tle post with validated input.
 export async function settlePost(input: {
   postId: string;
   winnerAnswerId: string;
@@ -482,6 +494,7 @@ export async function settlePost(input: {
   return settled ? toPost(settled) : null;
 }
 
+// Search posts helper.
 export async function searchPosts(query: string, limit = 40): Promise<Post[]> {
   const q = query.trim();
   if (!q) {

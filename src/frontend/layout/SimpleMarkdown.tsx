@@ -1,5 +1,6 @@
 import React from "react";
 
+// Escape html helper.
 function escapeHtml(value: string): string {
   return value
     .replaceAll("&", "&amp;")
@@ -9,10 +10,12 @@ function escapeHtml(value: string): string {
     .replaceAll("'", "&#39;");
 }
 
+// Escape attr helper.
 function escapeAttr(value: string): string {
   return escapeHtml(value);
 }
 
+// Safe url helper.
 function safeUrl(url: string): string | null {
   const trimmed = url.trim();
   if (/^https?:\/\//i.test(trimmed) || /^mailto:/i.test(trimmed)) {
@@ -21,6 +24,7 @@ function safeUrl(url: string): string | null {
   return null;
 }
 
+// Render inline helper.
 function renderInline(text: string): string {
   let html = escapeHtml(text);
 
@@ -38,6 +42,7 @@ function renderInline(text: string): string {
   return html;
 }
 
+// Code block helper.
 function codeBlock(language: string, codeLines: string[], key: string) {
   return (
     <pre key={key}>
@@ -46,6 +51,7 @@ function codeBlock(language: string, codeLines: string[], key: string) {
   );
 }
 
+// Simple markdown helper.
 export function SimpleMarkdown({ content }: { content: string }) {
   const lines = content.replaceAll("\r\n", "\n").split("\n");
   const elements: React.ReactNode[] = [];

@@ -3,6 +3,7 @@ import { handleReactionGet, handleReactionPost } from "@/backend/questions/react
 
 export const runtime = "nodejs";
 
+// Handle GET requests for `/api/posts/:postId/reactions`.
 export async function GET(request: NextRequest, props: { params: Promise<{ postId: string }> }) {
   const params = await props.params;
   return handleReactionGet({
@@ -13,6 +14,7 @@ export async function GET(request: NextRequest, props: { params: Promise<{ postI
   });
 }
 
+// Handle POST requests for `/api/posts/:postId/reactions`.
 export async function POST(request: NextRequest, props: { params: Promise<{ postId: string }> }) {
   const params = await props.params;
   return handleReactionPost({

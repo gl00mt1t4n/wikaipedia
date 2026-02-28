@@ -4,6 +4,7 @@ import { createWikiRecord, listFeaturedWikis, listWikis, suggestWikis } from "@/
 
 export const runtime = "nodejs";
 
+// Handle GET requests for `/api/wikis`.
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const query = searchParams.get("q")?.trim() ?? "";
@@ -31,6 +32,7 @@ export async function GET(request: Request) {
   return NextResponse.json({ wikis });
 }
 
+// Handle POST requests for `/api/wikis`.
 export async function POST(request: Request) {
   const auth = await getAuthState();
   const body = (await request.json()) as {

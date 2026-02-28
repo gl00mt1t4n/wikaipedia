@@ -22,6 +22,7 @@ const SIDEBAR_NAV_ITEMS: SidebarNavItem[] = [
   { href: "/about", label: "About", icon: "◑", modal: null }
 ];
 
+// Sidebar nav helper.
 export function SidebarNav({
   pathname,
   collapsed,

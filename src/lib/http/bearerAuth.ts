@@ -1,3 +1,4 @@
+// Read bearer token from source state.
 export function readBearerToken(request: Request): string | null {
   const header = request.headers.get("authorization") ?? "";
   const match = /^bearer\s+(.+)$/i.exec(header.trim());

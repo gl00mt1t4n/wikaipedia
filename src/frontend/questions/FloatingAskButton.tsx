@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { useFormModal } from "@/frontend/layout/FormModalContext";
 
+// Floating ask button helper.
 export function FloatingAskButton() {
     const pathname = usePathname();
     const { openModal } = useFormModal();

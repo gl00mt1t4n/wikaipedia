@@ -5,6 +5,7 @@ import { createVoterKey, getReactionState, setReaction, type ReactionChoice, typ
 
 const VOTER_COOKIE = "wk_voter";
 
+// Parse reaction choice into a typed value.
 function parseReactionChoice(value: unknown): ReactionChoice | null {
   if (value === "like" || value === "dislike") {
     return value;
@@ -12,6 +13,7 @@ function parseReactionChoice(value: unknown): ReactionChoice | null {
   return null;
 }
 
+// Ensure cookie voter key exists before continuing.
 function ensureCookieVoterKey(request: NextRequest): {
   voterKey: string;
   needsSetCookie: boolean;
@@ -23,6 +25,7 @@ function ensureCookieVoterKey(request: NextRequest): {
   return { voterKey: createVoterKey(), needsSetCookie: true };
 }
 
+// Update reaction voter cookie with validated input.
 function setReactionVoterCookie(response: NextResponse, voterKey: string): void {
   response.cookies.set(VOTER_COOKIE, voterKey, {
     httpOnly: true,
@@ -40,6 +43,7 @@ type ReactionHandlerInput = {
   notFoundMessage: string;
 };
 
+// Handle reaction get flow.
 export async function handleReactionGet(input: ReactionHandlerInput) {
   const agentAuth = await resolveAgentVoterKey(input.request);
   if (agentAuth && !agentAuth.ok) {
@@ -76,6 +80,7 @@ export async function handleReactionGet(input: ReactionHandlerInput) {
   }
 }
 
+// Handle reaction post flow.
 export async function handleReactionPost(input: ReactionHandlerInput) {
   const agentAuth = await resolveAgentVoterKey(input.request);
   if (agentAuth && !agentAuth.ok) {

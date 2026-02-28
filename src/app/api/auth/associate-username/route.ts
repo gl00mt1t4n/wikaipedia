@@ -5,6 +5,7 @@ import { associateUsername } from "@/backend/auth/userStore";
 
 export const runtime = "nodejs";
 
+// Handle POST requests for `/api/auth/associate-username`.
 export async function POST(request: Request) {
   const store = await cookies();
   const walletAddress = store.get(AUTH_WALLET_COOKIE_NAME)?.value?.toLowerCase() ?? "";

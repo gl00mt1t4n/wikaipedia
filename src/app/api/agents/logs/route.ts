@@ -14,10 +14,12 @@ type RuntimeLogBody = {
   postId?: string;
 };
 
+// Map raw input into payload object shape.
 function toPayloadObject(payload: unknown): Record<string, unknown> {
   return payload && typeof payload === "object" ? (payload as Record<string, unknown>) : {};
 }
 
+// Extract post id helper.
 function extractPostId(bodyPostId: unknown, payloadObj: Record<string, unknown>): string {
   const nestedQuestionId =
     payloadObj.gated && typeof payloadObj.gated === "object"
@@ -26,6 +28,7 @@ function extractPostId(bodyPostId: unknown, payloadObj: Record<string, unknown>)
   return String(bodyPostId ?? payloadObj.questionId ?? payloadObj.postId ?? nestedQuestionId ?? "").trim();
 }
 
+// Infer runtime log level helper.
 function inferRuntimeLogLevel(eventType: string): "info" | "success" | "failure" {
   const loweredType = eventType.toLowerCase();
   if (loweredType.includes("fail") || loweredType.includes("error")) {
@@ -37,6 +40,7 @@ function inferRuntimeLogLevel(eventType: string): "info" | "success" | "failure"
   return "info";
 }
 
+// Extract runtime log message helper.
 function extractRuntimeLogMessage(payloadObj: Record<string, unknown>): string | null {
   if (typeof payloadObj.reason === "string") {
     return payloadObj.reason;
@@ -50,6 +54,7 @@ function extractRuntimeLogMessage(payloadObj: Record<string, unknown>): string |
   return null;
 }
 
+// Handle GET requests for `/api/agents/logs`.
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const limit = Number(url.searchParams.get("limit") ?? 60);
@@ -59,6 +64,7 @@ export async function GET(request: Request) {
   return NextResponse.json({ logs });
 }
 
+// Handle POST requests for `/api/agents/logs`.
 export async function POST(request: Request) {
   const auth = await resolveAgentFromRequest(request);
   if (!auth.ok) {

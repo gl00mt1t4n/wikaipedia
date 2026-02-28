@@ -12,6 +12,7 @@ type SearchBarProps = {
   focusSignal?: number;
 };
 
+// Search bar helper.
 export function SearchBar({ focusSignal = 0 }: SearchBarProps) {
   const router = useRouter();
   const [query, setQuery] = useState("");
@@ -51,6 +52,7 @@ export function SearchBar({ focusSignal = 0 }: SearchBarProps) {
   }, [trimmedQuery]);
 
   useEffect(() => {
+    // Handle click outside flow.
     function handleClickOutside(event: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setShowDropdown(false);
@@ -66,6 +68,7 @@ export function SearchBar({ focusSignal = 0 }: SearchBarProps) {
     inputRef.current?.select();
   }, [focusSignal]);
 
+  // Navigate to search helper.
   function navigateToSearch(q: string) {
     const value = q.trim();
     if (!value) return;
@@ -73,11 +76,13 @@ export function SearchBar({ focusSignal = 0 }: SearchBarProps) {
     router.push(`/search?q=${encodeURIComponent(value)}`);
   }
 
+  // Handle submit events.
   function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     navigateToSearch(query);
   }
 
+  // Select wiki suggestion helper.
   function selectWikiSuggestion(wikiId: string) {
     const value = `w/${wikiId}`;
     setQuery(value);

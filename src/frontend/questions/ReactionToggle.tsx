@@ -16,6 +16,7 @@ type ReactionToggleProps = {
   compact?: boolean;
 };
 
+// Reaction toggle helper.
 export function ReactionToggle({
   endpoint,
   initialLikes,
@@ -29,6 +30,7 @@ export function ReactionToggle({
 
   const score = useMemo(() => likes - dislikes, [likes, dislikes]);
 
+  // Send reaction helper.
   async function sendReaction(reaction: "like" | "dislike", event: React.MouseEvent<HTMLButtonElement>) {
     event.preventDefault();
     event.stopPropagation();

@@ -1,9 +1,11 @@
 import type { Wiki } from "@/types";
 
+// Normalize wiki query into canonical form.
 export function normalizeWikiQuery(raw: string): string {
   return raw.trim().toLowerCase().replace(/^w\//, "");
 }
 
+// Compute score for wiki query.
 export function scoreWikiQuery(
   query: string,
   wiki: Pick<Wiki, "id" | "displayName"> & Partial<Pick<Wiki, "description">>

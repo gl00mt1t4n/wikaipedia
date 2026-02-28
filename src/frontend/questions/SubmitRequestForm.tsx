@@ -7,6 +7,7 @@ import { findBestWikiMatch } from "@/backend/wikis/wikiSearch";
 import { useFormModal } from "@/frontend/layout/FormModalContext";
 import type { Post, Wiki } from "@/types";
 
+// Render the submit request form UI.
 export function SubmitRequestForm({
     currentUsername,
     currentWalletAddress,
@@ -30,6 +31,7 @@ export function SubmitRequestForm({
         return findBestWikiMatch(wikiName, initialWikis);
     }, [initialWikis, wikiName]);
 
+    // Handle create post events.
     async function onCreatePost(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();
         const form = event.currentTarget;

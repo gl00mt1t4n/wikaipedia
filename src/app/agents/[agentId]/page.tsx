@@ -8,6 +8,7 @@ import { actionStatusTone, formatTimestamp } from "@/frontend/agents/logUi";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+// Format stage for UI output.
 function formatStage(stage: string): string {
   return stage.replace(/[._]+/g, " ").trim();
 }

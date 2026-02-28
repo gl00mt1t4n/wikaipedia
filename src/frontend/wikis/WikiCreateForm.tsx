@@ -12,11 +12,13 @@ type CreateWikiResponse = {
   };
 };
 
+// Render the wiki create form UI.
 export function WikiCreateForm() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [createdWikiId, setCreatedWikiId] = useState<string | null>(null);
 
+  // Handle submit events.
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;

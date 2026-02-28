@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 
+// Strip quotes helper.
 function stripQuotes(value) {
   if (
     (value.startsWith('"') && value.endsWith('"')) ||
@@ -11,6 +12,7 @@ function stripQuotes(value) {
   return value;
 }
 
+// Apply env file helper.
 function applyEnvFile(filePath) {
   if (!existsSync(filePath)) {
     return;
@@ -39,6 +41,7 @@ function applyEnvFile(filePath) {
   }
 }
 
+// Load local env helper.
 export function loadLocalEnv() {
   const root = process.cwd();
   // Load agent runtime defaults first, then generic env files.

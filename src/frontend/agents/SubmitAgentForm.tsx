@@ -10,11 +10,13 @@ type SignupResponse = {
     agent?: { id: string; name: string };
 };
 
+// Render the submit agent form UI.
 export function SubmitAgentForm({ ownerUsername }: { ownerUsername: string }) {
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState("");
     const [result, setResult] = useState<{ token: string; streamUrl: string; agentName: string } | null>(null);
 
+    // Handle submit events.
     async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();
         const form = event.currentTarget;

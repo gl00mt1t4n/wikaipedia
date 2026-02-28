@@ -22,10 +22,12 @@ const runtime = {
   }
 };
 
+// Now iso helper.
 function nowIso() {
   return new Date().toISOString();
 }
 
+// Fail helper.
 function fail(message, status = 400, details = undefined) {
   const error = { ok: false, error: message };
   if (details !== undefined) {
@@ -34,6 +36,7 @@ function fail(message, status = 400, details = undefined) {
   return { status, body: error };
 }
 
+// Json response helper.
 function jsonResponse(res, status, body, extraHeaders = {}) {
   const payload = JSON.stringify(body);
   res.writeHead(status, {
@@ -44,10 +47,12 @@ function jsonResponse(res, status, body, extraHeaders = {}) {
   res.end(payload);
 }
 
+// Minute key helper.
 function minuteKey() {
   return new Date().toISOString().slice(0, 16);
 }
 
+// Check rate limit helper.
 function checkRateLimit() {
   const key = minuteKey();
   const current = Number(runtime.state.callsByMinute.get(key) ?? 0);
@@ -61,6 +66,7 @@ function checkRateLimit() {
   return true;
 }
 
+// Ensure runtime files exists before continuing.
 async function ensureRuntimeFiles() {
   await mkdir(LOG_DIR, { recursive: true });
   try {
@@ -70,11 +76,13 @@ async function ensureRuntimeFiles() {
   }
 }
 
+// Log action helper.
 async function logAction(event, payload = {}) {
   const line = JSON.stringify({ ts: nowIso(), event, ...payload });
   await appendFile(ACTION_LOG_FILE, `${line}\n`, "utf8");
 }
 
+// Fetch json helper.
 async function fetchJson(pathname, options = {}) {
   const response = await fetch(`${APP_BASE_URL}${pathname}`, {
     ...options,
@@ -89,6 +97,7 @@ async function fetchJson(pathname, options = {}) {
   return { response, body };
 }
 
+// Map raw input into ol list open questions shape.
 async function tool_list_open_questions(args) {
   const wikiId = String(args?.wikiId ?? "").trim();
   const query = wikiId ? `?wikiId=${encodeURIComponent(wikiId)}` : "";
@@ -105,6 +114,7 @@ async function tool_list_open_questions(args) {
   };
 }
 
+// Map raw input into ol get question shape.
 async function tool_get_question(args) {
   const postId = String(args?.postId ?? "").trim();
   if (!postId) {
@@ -123,6 +133,7 @@ async function tool_get_question(args) {
   };
 }
 
+// Map raw input into ol post answer shape.
 async function tool_post_answer(args) {
   const postId = String(args?.postId ?? "").trim();
   const content = String(args?.content ?? "").trim();
@@ -175,6 +186,7 @@ async function tool_post_answer(args) {
   };
 }
 
+// Map raw input into ol get current post state shape.
 async function tool_get_current_post_state(args) {
   const postId = String(args?.postId ?? "").trim();
   if (!postId) return fail("postId is required.");
@@ -210,6 +222,7 @@ const tools = {
   get_current_post_state: tool_get_current_post_state
 };
 
+// Mcp tool list helper.
 function mcpToolList() {
   return [
     {
@@ -254,6 +267,7 @@ function mcpToolList() {
   ];
 }
 
+// Handle mcp flow.
 async function handleMcp(req, res, body) {
   const payload = body ? JSON.parse(body) : {};
   const method = String(payload?.method ?? "");

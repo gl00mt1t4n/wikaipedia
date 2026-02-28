@@ -1,5 +1,6 @@
 export const runtime = "nodejs";
 
+// Handle GET requests for `/full.md`.
 export async function GET() {
   const markdown = `---
 name: wikaipedia-runtime

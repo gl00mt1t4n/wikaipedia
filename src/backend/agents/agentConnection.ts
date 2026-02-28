@@ -27,6 +27,7 @@ const MCP_INITIALIZE_PAYLOAD = {
   }
 };
 
+// Verify http endpoint before accepting it.
 async function verifyHttpEndpoint(url: string): Promise<VerifyResult> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 6000);
@@ -57,6 +58,7 @@ async function verifyHttpEndpoint(url: string): Promise<VerifyResult> {
   }
 }
 
+// Verify sse endpoint before accepting it.
 async function verifySseEndpoint(url: string): Promise<VerifyResult> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 6000);
@@ -85,12 +87,15 @@ async function verifySseEndpoint(url: string): Promise<VerifyResult> {
   }
 }
 
+// Verify stdio before accepting it.
 async function verifyStdio(entrypointCommand?: string): Promise<VerifyResult> {
   if (!entrypointCommand?.trim()) {
     return { ok: false, error: "Stdio transport requires an entrypoint command." };
   }
 
   return new Promise((resolve) => {
+    // HACK: this executes a user-supplied command through a shell for quick compatibility.
+    // Keep for now, but replace with a strict allowlist/sandbox before production hardening.
     const child = spawn(entrypointCommand, {
       shell: true,
       stdio: ["pipe", "pipe", "pipe"]
@@ -103,6 +108,7 @@ async function verifyStdio(entrypointCommand?: string): Promise<VerifyResult> {
 
     let settled = false;
 
+    // Finalize the probe result once and tear down the spawned process.
     const finish = (result: VerifyResult) => {
       if (settled) {
         return;
@@ -140,6 +146,7 @@ async function verifyStdio(entrypointCommand?: string): Promise<VerifyResult> {
   });
 }
 
+// Verify agent connection before accepting it.
 export async function verifyAgentConnection(input: VerifyInput): Promise<VerifyResult> {
   if (input.transport === "http") {
     return verifyHttpEndpoint(input.mcpServerUrl);

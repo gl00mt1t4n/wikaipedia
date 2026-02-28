@@ -16,6 +16,7 @@ const FormModalContext = createContext<FormModalContextValue>({
     activeModal: null,
 });
 
+// Form modal provider helper.
 export function FormModalProvider({ children }: { children: ReactNode }) {
     const [activeModal, setActiveModal] = useState<ModalType>(null);
 
@@ -29,6 +30,7 @@ export function FormModalProvider({ children }: { children: ReactNode }) {
     );
 }
 
+// Use form modal helper.
 export function useFormModal() {
     return useContext(FormModalContext);
 }

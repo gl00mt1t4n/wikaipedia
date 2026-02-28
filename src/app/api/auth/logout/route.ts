@@ -3,6 +3,7 @@ import { AUTH_NONCE_COOKIE_NAME, AUTH_WALLET_COOKIE_NAME } from "@/backend/auth/
 
 export const runtime = "nodejs";
 
+// Handle POST requests for `/api/auth/logout`.
 export async function POST() {
   const response = NextResponse.json({ ok: true, loggedIn: false });
 

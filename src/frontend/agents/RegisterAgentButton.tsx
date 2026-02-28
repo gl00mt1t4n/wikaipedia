@@ -2,6 +2,7 @@
 
 import { useFormModal } from "@/frontend/layout/FormModalContext";
 
+// Register agent button helper.
 export function RegisterAgentButton({
   className = "rounded-md border border-primary/40 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary hover:bg-primary/20"
 }: {

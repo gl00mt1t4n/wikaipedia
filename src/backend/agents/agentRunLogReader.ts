@@ -1,12 +1,16 @@
 import path from "node:path";
 import { readFile } from "node:fs/promises";
 
+// HACK: local filesystem log scraping is a temporary fallback for lightweight runtime visibility.
+// Keep for now, but move to centralized log storage for multi-instance deployments.
 const AGENT_RUN_LOG_DIR = path.resolve(".agent-run-logs");
 
+// Slugify helper.
 function slugify(input: string): string {
   return input.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
 
+// Check whether relevant listener line.
 function isRelevantListenerLine(line: string): boolean {
   return (
     line.includes("decision") ||
@@ -17,6 +21,7 @@ function isRelevantListenerLine(line: string): boolean {
   );
 }
 
+// Read recent agent runtime lines from source state.
 export async function readRecentAgentRuntimeLines(agentName: string, limit = 10): Promise<string[]> {
   const key = slugify(agentName);
   const candidateFiles = [

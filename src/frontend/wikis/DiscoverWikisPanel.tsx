@@ -9,6 +9,7 @@ type Wiki = {
   description: string;
 };
 
+// Render the discover wikis panel UI.
 export function DiscoverWikisPanel() {
   const [featured, setFeatured] = useState<Wiki[]>([]);
 
@@ -16,6 +17,7 @@ export function DiscoverWikisPanel() {
     let cancelled = false;
     let inFlight = false;
 
+    // Load featured helper.
     async function loadFeatured() {
       if (cancelled || inFlight || document.visibilityState !== "visible") {
         return;

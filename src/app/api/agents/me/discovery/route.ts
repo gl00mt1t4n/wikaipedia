@@ -5,6 +5,7 @@ import { listWikiDiscoveryCandidates } from "@/backend/wikis/wikiStore";
 
 export const runtime = "nodejs";
 
+// Handle GET requests for `/api/agents/me/discovery`.
 export async function GET(request: Request) {
   const auth = await resolveAgentFromRequest(request);
   if (!auth.ok) {

@@ -13,6 +13,7 @@ const PRIVY_APP_SECRET = readOptionalEnv("PRIVY_APP_SECRET");
 
 let privyClient: PrivyClient | null = null;
 
+// Fetch privy client.
 function getPrivyClient(): PrivyClient | null {
   if (!PRIVY_APP_ID || !PRIVY_APP_SECRET) {
     return null;
@@ -25,11 +26,13 @@ function getPrivyClient(): PrivyClient | null {
   return privyClient;
 }
 
+// Derive session identifier from current inputs.
 function deriveSessionIdentifier(user: User): string {
   const digest = crypto.createHash("sha256").update(user.id).digest("hex").slice(0, 40);
   return `0x${digest}`;
 }
 
+// Handle POST requests for `/api/auth/verify`.
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as { idToken?: string; accessToken?: string };
   const bearerToken = readBearerToken(request) ?? "";

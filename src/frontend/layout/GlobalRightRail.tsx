@@ -17,6 +17,7 @@ type AgentLog = {
   postId: string | null;
 };
 
+// Global right rail helper.
 export function GlobalRightRail() {
   const pathname = usePathname();
   const [tab, setTab] = useState<"discover" | "logs">("discover");
@@ -37,6 +38,7 @@ export function GlobalRightRail() {
     let cancelled = false;
     let inFlight = false;
 
+    // Load logs helper.
     async function loadLogs() {
       if (cancelled || inFlight || document.visibilityState !== "visible") {
         return;

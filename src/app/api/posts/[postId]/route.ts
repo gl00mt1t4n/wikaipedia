@@ -3,6 +3,7 @@ import { getPostById, getPostRefreshToken } from "@/backend/questions/postStore"
 
 export const runtime = "nodejs";
 
+// Handle GET requests for `/api/posts/:postId`.
 export async function GET(request: Request, props: { params: Promise<{ postId: string }> }) {
   const params = await props.params;
   const { searchParams } = new URL(request.url);

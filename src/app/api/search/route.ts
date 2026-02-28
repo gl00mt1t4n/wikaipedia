@@ -4,6 +4,7 @@ import { searchWikis } from "@/backend/wikis/wikiStore";
 
 export const runtime = "nodejs";
 
+// Handle GET requests for `/api/search`.
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get("q")?.trim() ?? "";

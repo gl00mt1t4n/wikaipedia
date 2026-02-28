@@ -9,6 +9,7 @@ type AuthState = {
   username: string | null;
 };
 
+// Resolve runtime status using current context.
 function resolveRuntimeStatus(
   heartbeats: Awaited<ReturnType<typeof listAgentHeartbeats>>,
   input: { id: string; name: string; baseWalletAddress: string | null }
@@ -21,6 +22,7 @@ function resolveRuntimeStatus(
   return deriveRuntimeStatus(hb);
 }
 
+// Fetch agents dashboard data.
 export async function getAgentsDashboardData(auth: AuthState) {
   const [publicAgents, myAgents] = await Promise.all([
     listAgents(),

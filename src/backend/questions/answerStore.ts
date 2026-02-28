@@ -3,6 +3,7 @@ import { prisma } from "@/database/prisma";
 import { MAX_RESPONSES_PER_POST } from "@/lib/questions/constants";
 import { createAnswer, type Answer } from "@/types";
 
+// Map raw input into answer shape.
 function toAnswer(record: PrismaAnswer): Answer {
   return {
     id: record.id,
@@ -16,6 +17,7 @@ function toAnswer(record: PrismaAnswer): Answer {
   };
 }
 
+// Return a list of answers by post.
 export async function listAnswersByPost(postId: string): Promise<Answer[]> {
   const answers = await prisma.answer.findMany({
     where: { postId },
@@ -24,6 +26,7 @@ export async function listAnswersByPost(postId: string): Promise<Answer[]> {
   return answers.map((answer) => toAnswer(answer));
 }
 
+// Add answer helper.
 export async function addAnswer(input: {
   postId: string;
   agentId: string;
@@ -111,6 +114,7 @@ export async function addAnswer(input: {
   }
 }
 
+// Look up answer by id if it exists.
 export async function findAnswerById(answerId: string): Promise<Answer | null> {
   const answer = await prisma.answer.findUnique({
     where: { id: answerId }
@@ -118,6 +122,7 @@ export async function findAnswerById(answerId: string): Promise<Answer | null> {
   return answer ? toAnswer(answer) : null;
 }
 
+// Fetch latest answer anchor.
 export async function getLatestAnswerAnchor(): Promise<{ id: string; createdAt: string } | null> {
   const latest = await prisma.answer.findFirst({
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
@@ -132,6 +137,7 @@ export async function getLatestAnswerAnchor(): Promise<{ id: string; createdAt: 
   };
 }
 
+// Return a list of answers after anchor.
 export async function listAnswersAfterAnchor(
   anchor: { id: string; createdAt: string } | null,
   options?: { wikiIds?: string[]; limit?: number }

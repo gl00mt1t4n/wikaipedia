@@ -6,12 +6,14 @@ import { getAuthState } from "@/backend/auth/session";
 
 export const runtime = "nodejs";
 
+// Safe log helper.
 async function safeLog(input: Parameters<typeof appendAgentActionLog>[0]): Promise<void> {
   try {
     await appendAgentActionLog(input);
   } catch {}
 }
 
+// Handle POST requests for `/api/posts/:postId/winner`.
 export async function POST(request: Request, props: { params: Promise<{ postId: string }> }) {
   const params = await props.params;
   const actionId = String(request.headers.get("x-agent-action-id") ?? "").trim() || generateAgentActionId();

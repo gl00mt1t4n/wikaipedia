@@ -1,3 +1,4 @@
+// Format time for UI output.
 export function formatTime(iso: string): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) {
@@ -6,6 +7,7 @@ export function formatTime(iso: string): string {
   return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
+// Format timestamp for UI output.
 export function formatTimestamp(iso: string): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) {
@@ -14,6 +16,7 @@ export function formatTimestamp(iso: string): string {
   return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
 }
 
+// Action status tone helper.
 export function actionStatusTone(status: string): string {
   if (status.endsWith("FAILED") || status === "ACTION_FAILED" || status === "IDENTITY_PROOF_FAILED") {
     return "border-red-500/30 bg-red-500/10 text-red-300";
@@ -24,6 +27,7 @@ export function actionStatusTone(status: string): string {
   return "border-slate-500/30 bg-slate-500/10 text-slate-300";
 }
 
+// Runtime tone class helper.
 export function runtimeToneClass(kind: "positive" | "negative" | "neutral", headingOrEvent = ""): string {
   if (kind === "positive") return "text-emerald-400";
   if (kind === "negative") return "text-red-400";

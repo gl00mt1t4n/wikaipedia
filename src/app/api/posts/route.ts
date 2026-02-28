@@ -5,6 +5,7 @@ import { getAuthState } from "@/backend/auth/session";
 
 export const runtime = "nodejs";
 
+// Handle GET requests for `/api/posts`.
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const probe = searchParams.get("probe")?.trim() === "1";
@@ -18,6 +19,7 @@ export async function GET(request: Request) {
   return NextResponse.json({ posts });
 }
 
+// Handle POST requests for `/api/posts`.
 export async function POST(request: Request) {
   const body = (await request.json()) as {
     poster?: string;

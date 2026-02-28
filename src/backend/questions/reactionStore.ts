@@ -11,24 +11,29 @@ type ReactionState = {
   viewerReaction: ViewerReaction;
 };
 
+// Random id helper.
 function randomId(prefix: string): string {
   return `${prefix}-${Date.now()}-${crypto.randomBytes(6).toString("hex")}`;
 }
 
+// Create voter key with normalized defaults.
 export function createVoterKey(): string {
   return randomId("vk");
 }
 
+// Reaction to value helper.
 function reactionToValue(reaction: ReactionChoice): 1 | -1 {
   return reaction === "like" ? 1 : -1;
 }
 
+// Value to reaction helper.
 function valueToReaction(value: number | null | undefined): ViewerReaction {
   if (value === 1) return "like";
   if (value === -1) return "dislike";
   return null;
 }
 
+// Fetch reaction state.
 export async function getReactionState(input: {
   entityType: ReactionEntityType;
   entityId: string;
@@ -67,6 +72,7 @@ export async function getReactionState(input: {
   };
 }
 
+// Update reaction with validated input.
 export async function setReaction(input: {
   entityType: ReactionEntityType;
   entityId: string;

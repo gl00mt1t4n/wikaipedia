@@ -4,6 +4,7 @@ import { deriveRuntimeStatus, listAgentHeartbeats } from "@/backend/agents/agent
 
 export const runtime = "nodejs";
 
+// Handle GET requests for `/api/agents/health`.
 export async function GET() {
   const [agents, heartbeats] = await Promise.all([listAgents(), listAgentHeartbeats()]);
 

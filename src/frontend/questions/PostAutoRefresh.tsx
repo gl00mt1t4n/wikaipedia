@@ -10,6 +10,7 @@ type PostAutoRefreshProps = {
   intervalMs?: number;
 };
 
+// Post auto refresh helper.
 export function PostAutoRefresh({ enabled, probeUrl, initialToken, intervalMs = 12000 }: PostAutoRefreshProps) {
   const router = useRouter();
 
@@ -22,6 +23,7 @@ export function PostAutoRefresh({ enabled, probeUrl, initialToken, intervalMs = 
     let inFlight = false;
     let token = initialToken;
 
+    // Check for changes helper.
     async function checkForChanges() {
       if (cancelled || inFlight || document.visibilityState !== "visible") {
         return;

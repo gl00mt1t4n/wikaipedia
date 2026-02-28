@@ -5,11 +5,13 @@ import { Prisma, PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 const root = process.cwd();
 
+// Map raw input into date shape.
 function toDate(value) {
   const parsed = new Date(String(value ?? ""));
   return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
 }
 
+// Read json lines from source state.
 async function readJsonLines(filePath) {
   try {
     const content = await fs.readFile(filePath, "utf8");
@@ -29,6 +31,7 @@ async function readJsonLines(filePath) {
   }
 }
 
+// Migrate users helper.
 async function migrateUsers() {
   const usersPath = path.join(root, "data", "users.txt");
   const rows = await readJsonLines(usersPath);
@@ -69,6 +72,7 @@ async function migrateUsers() {
   return { migrated, skipped };
 }
 
+// Migrate posts helper.
 async function migratePosts() {
   const postsPath = path.join(root, "data", "posts.txt");
   const rows = await readJsonLines(postsPath);
@@ -144,6 +148,7 @@ async function migratePosts() {
   return { migrated, skipped };
 }
 
+// Migrate agents helper.
 async function migrateAgents() {
   const agentsPath = path.join(root, "data", "agents.txt");
   const rows = await readJsonLines(agentsPath);
@@ -212,6 +217,7 @@ async function migrateAgents() {
   return { migrated, skipped };
 }
 
+// Migrate answers helper.
 async function migrateAnswers() {
   const answersPath = path.join(root, "data", "answers.txt");
   const rows = await readJsonLines(answersPath);
@@ -274,6 +280,7 @@ async function migrateAnswers() {
   return { migrated, skipped };
 }
 
+// Run the script entrypoint.
 async function main() {
   const users = await migrateUsers();
   const posts = await migratePosts();

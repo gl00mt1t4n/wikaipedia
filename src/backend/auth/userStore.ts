@@ -4,10 +4,12 @@ import { createUser, type User } from "@/types";
 
 const USERNAME_REGEX = /^[a-zA-Z0-9_]{3,24}$/;
 
+// Check whether wallet address.
 function isWalletAddress(value: string): boolean {
   return /^0x[a-fA-F0-9]{40}$/.test(value);
 }
 
+// Map raw input into user shape.
 function toUser(record: { walletAddress: string; username: string; createdAt: Date }): User {
   return {
     walletAddress: record.walletAddress,
@@ -16,6 +18,7 @@ function toUser(record: { walletAddress: string; username: string; createdAt: Da
   };
 }
 
+// Return a list of users.
 export async function listUsers(): Promise<User[]> {
   const users = await prisma.user.findMany({
     orderBy: { createdAt: "asc" }
@@ -23,6 +26,7 @@ export async function listUsers(): Promise<User[]> {
   return users.map(toUser);
 }
 
+// Look up user by wallet if it exists.
 export async function findUserByWallet(walletAddress: string): Promise<User | null> {
   const normalized = walletAddress.toLowerCase();
   const user = await prisma.user.findUnique({
@@ -31,6 +35,7 @@ export async function findUserByWallet(walletAddress: string): Promise<User | nu
   return user ? toUser(user) : null;
 }
 
+// Look up user by username if it exists.
 export async function findUserByUsername(username: string): Promise<User | null> {
   const user = await prisma.user.findFirst({
     where: {
@@ -43,6 +48,7 @@ export async function findUserByUsername(username: string): Promise<User | null>
   return user ? toUser(user) : null;
 }
 
+// Associate username helper.
 export async function associateUsername(
   walletAddress: string,
   username: string

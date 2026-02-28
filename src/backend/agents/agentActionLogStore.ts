@@ -61,16 +61,19 @@ export type AgentActionStats = {
   failureReasons: Array<{ failureCode: string; count: number }>;
 };
 
+// Generate agent action id helper.
 export function generateAgentActionId(): string {
   const timestamp = Date.now().toString(36);
   const suffix = crypto.randomBytes(6).toString("hex");
   return `act_${timestamp}_${suffix}`;
 }
 
+// Generate log id helper.
 function generateLogId(): string {
   return `aal_${Date.now().toString(36)}_${crypto.randomBytes(8).toString("hex")}`;
 }
 
+// Map raw input into metadata shape.
 function toMetadata(value: unknown): Prisma.InputJsonValue | undefined {
   if (value === undefined) {
     return undefined;
@@ -83,6 +86,7 @@ function toMetadata(value: unknown): Prisma.InputJsonValue | undefined {
   }
 }
 
+// Derive status from current inputs.
 function deriveStatus(stage: string, outcome: AgentActionOutcome): AgentActionStatus {
   const normalizedStage = stage.trim().toUpperCase();
 
@@ -110,6 +114,7 @@ function deriveStatus(stage: string, outcome: AgentActionOutcome): AgentActionSt
   return "ACTION_REQUESTED";
 }
 
+// Check whether missing table or column error.
 function isMissingTableOrColumnError(error: unknown): boolean {
   return (
     error instanceof Prisma.PrismaClientKnownRequestError &&
@@ -128,6 +133,7 @@ type LegacyActionMetadata = {
   identitySubject?: string;
 };
 
+// Read legacy metadata from source state.
 function readLegacyMetadata(metadata: Prisma.JsonValue | null): LegacyActionMetadata {
   if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
     return {};
@@ -145,6 +151,7 @@ function readLegacyMetadata(metadata: Prisma.JsonValue | null): LegacyActionMeta
   };
 }
 
+// Append agent action log helper.
 export async function appendAgentActionLog(input: {
   actionId: string;
   actionType?: string;
@@ -206,6 +213,7 @@ type AgentActionLogRow = Awaited<
   ReturnType<typeof prisma.agentActionLog.findMany>
 >[number];
 
+// Map raw input into agent action log entry shape.
 function toAgentActionLogEntry(record: AgentActionLogRow): AgentActionLogEntry {
   const outcome = record.outcome === "success" || record.outcome === "failure" ? record.outcome : "info";
   const legacy = readLegacyMetadata(record.metadata);
@@ -236,6 +244,7 @@ function toAgentActionLogEntry(record: AgentActionLogRow): AgentActionLogEntry {
   };
 }
 
+// Return a list of agent action logs by agent id.
 export async function listAgentActionLogsByAgentId(
   agentId: string,
   options?: { limit?: number; status?: string }
@@ -263,6 +272,7 @@ export async function listAgentActionLogsByAgentId(
   }
 }
 
+// Return a list of agent action logs.
 export async function listAgentActionLogs(options?: {
   limit?: number;
   postId?: string;
@@ -300,6 +310,7 @@ export async function listAgentActionLogs(options?: {
   }
 }
 
+// Summarize agent action logs helper.
 export function summarizeAgentActionLogs(logs: AgentActionLogEntry[]): AgentActionSummary[] {
   const grouped = new Map<string, AgentActionLogEntry[]>();
 
@@ -340,6 +351,7 @@ export function summarizeAgentActionLogs(logs: AgentActionLogEntry[]): AgentActi
     .sort((a, b) => b.lastAt.localeCompare(a.lastAt));
 }
 
+// Fetch agent action stats.
 export async function getAgentActionStats(): Promise<AgentActionStats> {
   try {
     const [total, success, failure, byStageRows, failedRows] = await Promise.all([

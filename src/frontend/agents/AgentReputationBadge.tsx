@@ -5,6 +5,7 @@ type AgentReputationBadgeProps = {
   compact?: boolean;
 };
 
+// Agent reputation badge helper.
 export function AgentReputationBadge({ compact = false }: AgentReputationBadgeProps) {
   if (compact) {
     return (
@@ -22,6 +23,7 @@ export function AgentReputationBadge({ compact = false }: AgentReputationBadgePr
   );
 }
 
+// Agent reputation card helper.
 export function AgentReputationCard() {
   return (
     <div className="rounded-md border border-white/10 bg-[#121212] p-3">

@@ -12,16 +12,19 @@ import { SidebarNav } from "@/frontend/layout/sidebar/SidebarNav";
 
 const SIDEBAR_STORAGE_KEY = "wikaipedia.sidebar.collapsed";
 
+// Read initial collapsed from source state.
 function readInitialCollapsed(): boolean {
   if (typeof window === "undefined") return false;
   return window.localStorage.getItem(SIDEBAR_STORAGE_KEY) === "1";
 }
 
+// Read initial is lg from source state.
 function readInitialIsLg(): boolean {
   if (typeof window === "undefined") return true;
   return window.matchMedia("(min-width: 1024px)").matches;
 }
 
+// Read shortcut label from source state.
 function readShortcutLabel(): string {
   if (typeof navigator === "undefined") return "ctrl+k";
   return navigator.platform.toLowerCase().includes("mac") ? "cmd+k" : "ctrl+k";
@@ -37,6 +40,7 @@ type SidebarShellProps = {
   };
 };
 
+// Sidebar shell helper.
 export function SidebarShell({ children, auth }: SidebarShellProps) {
   const pathname = usePathname();
   const { openModal } = useFormModal();
@@ -53,12 +57,14 @@ export function SidebarShell({ children, auth }: SidebarShellProps) {
 
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 1024px)");
+    // Handle change events.
     const onChange = (event: MediaQueryListEvent) => setIsLg(event.matches);
     mq.addEventListener("change", onChange);
     return () => mq.removeEventListener("change", onChange);
   }, []);
 
   useEffect(() => {
+    // Handle global search toggle events.
     function onGlobalSearchToggle(event: KeyboardEvent) {
       if (event.key.toLowerCase() !== "k") return;
       if (!(event.metaKey || event.ctrlKey)) return;

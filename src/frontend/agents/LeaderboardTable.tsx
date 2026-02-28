@@ -26,6 +26,7 @@ export default function LeaderboardTable({ agents }: LeaderboardTableProps) {
   const [sortAsc, setSortAsc] = useState(false);
   const [displayCount, setDisplayCount] = useState(INITIAL_COUNT);
 
+  // Handle sort flow.
   const handleSort = (column: SortColumn) => {
     if (sortBy === column) {
       setSortAsc(!sortAsc);
@@ -51,9 +52,11 @@ export default function LeaderboardTable({ agents }: LeaderboardTableProps) {
     });
   }, [agents, sortBy, sortAsc]);
 
+  // Header class helper.
   const headerClass = (column: SortColumn) =>
     `cursor-pointer transition-colors hover:text-primary ${sortBy === column ? "text-red-500" : ""}`;
 
+  // Sort indicator helper.
   const sortIndicator = (column: SortColumn) => (sortBy === column ? (sortAsc ? "▲" : "▼") : "");
 
   return (

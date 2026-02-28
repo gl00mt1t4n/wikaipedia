@@ -4,6 +4,7 @@ import { getAuthState } from "@/backend/auth/session";
 
 export const runtime = "nodejs";
 
+// Handle GET requests for `/api/agents`.
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const scope = searchParams.get("scope");
@@ -22,6 +23,7 @@ export async function GET(request: Request) {
   return NextResponse.json({ agents });
 }
 
+// Handle POST requests for `/api/agents`.
 export async function POST(request: Request) {
   const auth = await getAuthState();
 

@@ -12,14 +12,17 @@ import {
   type PublicAgent
 } from "@/types";
 
+// Check whether wallet address.
 function isWalletAddress(value: string): boolean {
   return /^0x[a-fA-F0-9]{40}$/.test(value);
 }
 
+// Derive deterministic agent identity from current inputs.
 function deriveDeterministicAgentIdentity(seed: string): string {
   return `0x${crypto.createHash("sha256").update(seed).digest("hex").slice(0, 40)}`;
 }
 
+// Normalize agent identity into canonical form.
 function normalizeAgentIdentity(input: {
   providedIdentity: string;
   ownerWalletAddress: string;
@@ -41,10 +44,12 @@ function normalizeAgentIdentity(input: {
   );
 }
 
+// Check whether valid transport.
 function isValidTransport(value: string): value is AgentTransport {
   return value === "http" || value === "sse" || value === "stdio";
 }
 
+// Check whether valid mcp endpoint.
 function isValidMcpEndpoint(value: string): boolean {
   if (value.startsWith("http://") || value.startsWith("https://")) {
     return true;
@@ -57,14 +62,17 @@ function isValidMcpEndpoint(value: string): boolean {
   return false;
 }
 
+// Hash token helper.
 function hashToken(token: string): string {
   return crypto.createHash("sha256").update(token).digest("hex");
 }
 
+// Generate agent token helper.
 function generateAgentToken(): string {
   return `ag_${crypto.randomBytes(24).toString("hex")}`;
 }
 
+// Map raw input into agent shape.
 function toAgent(record: PrismaAgent): Agent {
   return {
     id: record.id,
@@ -94,6 +102,7 @@ function toAgent(record: PrismaAgent): Agent {
   };
 }
 
+// Return a list of agents raw.
 export async function listAgentsRaw(): Promise<Agent[]> {
   const agents = await prisma.agent.findMany({
     orderBy: { createdAt: "desc" }
@@ -101,6 +110,7 @@ export async function listAgentsRaw(): Promise<Agent[]> {
   return agents.map((agent) => toAgent(agent));
 }
 
+// Return a list of agents.
 export async function listAgents(): Promise<PublicAgent[]> {
   const all = await listAgentsRaw();
   return all.map(toPublicAgent);
@@ -115,6 +125,7 @@ export type AgentLeaderboardMetrics = {
 
 const DEFAULT_OWNER_DELEGATION = "sahil:local_test_owner";
 
+// Parse controlled owner usernames into a typed value.
 function parseControlledOwnerUsernames(controllerUsername: string | null | undefined): string[] {
   const normalizedController = String(controllerUsername ?? "").trim().toLowerCase();
   if (!normalizedController) {
@@ -148,6 +159,7 @@ function parseControlledOwnerUsernames(controllerUsername: string | null | undef
   return Array.from(controlled);
 }
 
+// Fetch agent leaderboard metrics.
 export async function getAgentLeaderboardMetrics(): Promise<Map<string, AgentLeaderboardMetrics>> {
   const [replyCounts, winData] = await Promise.all([
     prisma.answer.groupBy({
@@ -197,6 +209,7 @@ export async function getAgentLeaderboardMetrics(): Promise<Map<string, AgentLea
   return metricsMap;
 }
 
+// Return a list of agents by owner.
 export async function listAgentsByOwner(
   ownerWalletAddress: string,
   options?: { ownerUsername?: string | null }
@@ -224,6 +237,7 @@ export async function listAgentsByOwner(
   return agents.map((agent) => toAgent(agent)).map(toPublicAgent);
 }
 
+// Return a list of agent subscribed wiki ids.
 export async function listAgentSubscribedWikiIds(agentId: string): Promise<string[]> {
   await ensureDefaultWiki();
   const memberships = await prisma.agentWikiMembership.findMany({
@@ -234,6 +248,7 @@ export async function listAgentSubscribedWikiIds(agentId: string): Promise<strin
   return memberships.map((entry) => entry.wikiId);
 }
 
+// Ensure agent default wiki membership exists before continuing.
 export async function ensureAgentDefaultWikiMembership(agentId: string): Promise<void> {
   await ensureDefaultWiki();
   const membership = createAgentWikiMembership({
@@ -258,6 +273,7 @@ export async function ensureAgentDefaultWikiMembership(agentId: string): Promise
   });
 }
 
+// Join agent wiki helper.
 export async function joinAgentWiki(input: {
   agentId: string;
   wikiQuery: string;
@@ -296,6 +312,7 @@ export async function joinAgentWiki(input: {
   return { ok: true, wikiId };
 }
 
+// Leave agent wiki helper.
 export async function leaveAgentWiki(input: {
   agentId: string;
   wikiQuery: string;
@@ -315,6 +332,7 @@ export async function leaveAgentWiki(input: {
   return { ok: true, wikiId };
 }
 
+// Look up agent by access token if it exists.
 export async function findAgentByAccessToken(token: string): Promise<Agent | null> {
   const tokenHash = hashToken(token);
   const agent = await prisma.agent.findUnique({
@@ -327,11 +345,13 @@ export async function findAgentByAccessToken(token: string): Promise<Agent | nul
   return toAgent(agent);
 }
 
+// Look up agent by id if it exists.
 export async function findAgentById(agentId: string): Promise<Agent | null> {
   const agent = await prisma.agent.findUnique({ where: { id: agentId } });
   return agent ? toAgent(agent) : null;
 }
 
+// Register agent helper.
 export async function registerAgent(input: {
   ownerWalletAddress: string;
   ownerUsername: string;

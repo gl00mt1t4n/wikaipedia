@@ -20,10 +20,12 @@ export type AgentRuntimeLogEntry = {
 
 let ensureTablePromise: Promise<void> | null = null;
 
+// Generate runtime log id helper.
 function generateRuntimeLogId(): string {
   return `arl_${Date.now().toString(36)}_${crypto.randomBytes(8).toString("hex")}`;
 }
 
+// Map raw input into metadata shape.
 function toMetadata(value: unknown): Prisma.InputJsonValue | null {
   try {
     return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
@@ -32,6 +34,9 @@ function toMetadata(value: unknown): Prisma.InputJsonValue | null {
   }
 }
 
+// Ensure runtime log table exists before continuing.
+// HACK: runtime DDL was added to keep hackathon environments self-healing without migrations.
+// Keep for now, but move table/index creation to Prisma migrations for production rollout.
 async function ensureRuntimeLogTable(): Promise<void> {
   if (ensureTablePromise) {
     await ensureTablePromise;
@@ -71,6 +76,7 @@ async function ensureRuntimeLogTable(): Promise<void> {
   await ensureTablePromise;
 }
 
+// Append agent runtime log helper.
 export async function appendAgentRuntimeLog(input: {
   actionId: string;
   agentId?: string | null;
@@ -105,6 +111,7 @@ export async function appendAgentRuntimeLog(input: {
   );
 }
 
+// Return a list of agent runtime logs.
 export async function listAgentRuntimeLogs(options?: {
   limit?: number;
   postId?: string;

@@ -12,6 +12,7 @@ const DEFAULT_WIKI_ENSURE_TTL_MS = 60_000;
 let cachedDefaultWiki: { wiki: Wiki; expiresAtMs: number } | null = null;
 let defaultWikiEnsureInFlight: Promise<Wiki> | null = null;
 
+// Normalize wiki id input into canonical form.
 export function normalizeWikiIdInput(input: string): string {
   return input
     .trim()
@@ -22,6 +23,7 @@ export function normalizeWikiIdInput(input: string): string {
     .replace(/^[-_]+|[-_]+$/g, "");
 }
 
+// Map raw input into wiki shape.
 function toWiki(record: {
   id: string;
   displayName: string;
@@ -38,6 +40,7 @@ function toWiki(record: {
   };
 }
 
+// Map raw input into iso or null shape.
 function toIsoOrNull(value: Date | string | null | undefined): string | null {
   if (!value) {
     return null;
@@ -49,12 +52,14 @@ function toIsoOrNull(value: Date | string | null | undefined): string | null {
   return date.toISOString();
 }
 
+// Pick latest iso helper.
 function pickLatestIso(a: string | null, b: string | null): string | null {
   if (!a) return b;
   if (!b) return a;
   return new Date(a).getTime() >= new Date(b).getTime() ? a : b;
 }
 
+// Cache default wiki helper.
 function cacheDefaultWiki(wiki: Wiki): Wiki {
   cachedDefaultWiki = {
     wiki,
@@ -63,6 +68,7 @@ function cacheDefaultWiki(wiki: Wiki): Wiki {
   return wiki;
 }
 
+// Ensure default wiki exists before continuing.
 export async function ensureDefaultWiki(): Promise<Wiki> {
   const now = Date.now();
   if (cachedDefaultWiki && cachedDefaultWiki.expiresAtMs > now) {
@@ -92,6 +98,7 @@ export async function ensureDefaultWiki(): Promise<Wiki> {
   return defaultWikiEnsureInFlight;
 }
 
+// Return a list of wikis.
 export async function listWikis(): Promise<Wiki[]> {
   await ensureDefaultWiki();
   const rows = await prisma.wiki.findMany({
@@ -100,6 +107,7 @@ export async function listWikis(): Promise<Wiki[]> {
   return rows.map(toWiki);
 }
 
+// Look up wiki by id if it exists.
 export async function findWikiById(wikiId: string): Promise<Wiki | null> {
   const normalized = normalizeWikiIdInput(wikiId);
   if (!normalized) {
@@ -112,6 +120,7 @@ export async function findWikiById(wikiId: string): Promise<Wiki | null> {
   return row ? toWiki(row) : null;
 }
 
+// Fetch latest wiki anchor.
 export async function getLatestWikiAnchor(): Promise<{ id: string; createdAt: string } | null> {
   const row = await prisma.wiki.findFirst({
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
@@ -126,6 +135,7 @@ export async function getLatestWikiAnchor(): Promise<{ id: string; createdAt: st
   };
 }
 
+// Return a list of wikis after anchor.
 export async function listWikisAfterAnchor(
   anchor: { id: string; createdAt: string } | null,
   limit = 200
@@ -146,6 +156,7 @@ export async function listWikisAfterAnchor(
   return rows.map(toWiki);
 }
 
+// Compute score for wiki interests.
 function scoreWikiInterests(interests: string[], wiki: Pick<Wiki, "id" | "displayName" | "description">): number {
   if (interests.length === 0) {
     return 0;
@@ -167,6 +178,7 @@ function scoreWikiInterests(interests: string[], wiki: Pick<Wiki, "id" | "displa
   return Math.min(score, 60);
 }
 
+// Compute score for wiki activity.
 function scoreWikiActivity(input: {
   recentPostCount: number;
   lastPostAt: string | null;
@@ -189,6 +201,7 @@ function scoreWikiActivity(input: {
   return Math.min(score, 40);
 }
 
+// Suggest wikis helper.
 export async function suggestWikis(query: string, limit = 8): Promise<Wiki[]> {
   const q = query.trim();
   if (!q) {
@@ -204,6 +217,7 @@ export async function suggestWikis(query: string, limit = 8): Promise<Wiki[]> {
     .map((entry) => entry.wiki);
 }
 
+// Search wikis helper.
 export async function searchWikis(query: string, limit = 20): Promise<Wiki[]> {
   const q = query.trim();
   if (!q) {
@@ -219,6 +233,7 @@ export async function searchWikis(query: string, limit = 20): Promise<Wiki[]> {
     .map((entry) => entry.wiki);
 }
 
+// Return a list of featured wikis.
 export async function listFeaturedWikis(limit = 3): Promise<Wiki[]> {
   await ensureDefaultWiki();
   const safeLimit = Math.max(1, Math.min(20, Math.floor(limit)));
@@ -289,6 +304,7 @@ export async function listFeaturedWikis(limit = 3): Promise<Wiki[]> {
   return featured.slice(0, safeLimit);
 }
 
+// Return a list of wiki discovery candidates.
 export async function listWikiDiscoveryCandidates(input: {
   joinedWikiIds: string[];
   interests?: string[];
@@ -410,6 +426,7 @@ export async function listWikiDiscoveryCandidates(input: {
   return ranked.sort((a, b) => b.score - a.score || a.wiki.id.localeCompare(b.wiki.id)).slice(0, limit);
 }
 
+// Create wiki record with normalized defaults.
 export async function createWikiRecord(input: {
   rawName: string;
   createdBy: string;
@@ -450,6 +467,7 @@ export async function createWikiRecord(input: {
   }
 }
 
+// Resolve wiki for post using current context.
 export async function resolveWikiForPost(input: {
   wikiQuery: string;
 }): Promise<{ ok: true; wiki: Wiki } | { ok: false; error: string }> {

@@ -1,7 +1,9 @@
+// Pad2 helper.
 function pad2(value: number): string {
   return String(value).padStart(2, "0");
 }
 
+// Format utc timestamp for UI output.
 export function formatUtcTimestamp(input: string | Date): string {
   const date = input instanceof Date ? input : new Date(input);
   if (Number.isNaN(date.getTime())) {
@@ -18,6 +20,7 @@ export function formatUtcTimestamp(input: string | Date): string {
   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds} UTC`;
 }
 
+// Format local timestamp for UI output.
 export function formatLocalTimestamp(input: string | Date): string {
   const date = input instanceof Date ? input : new Date(input);
   if (Number.isNaN(date.getTime())) {
@@ -30,6 +33,7 @@ export function formatLocalTimestamp(input: string | Date): string {
   });
 }
 
+// Format relative timestamp for UI output.
 export function formatRelativeTimestamp(input: string | Date, nowInput: Date = new Date()): string {
   const date = input instanceof Date ? input : new Date(input);
   if (Number.isNaN(date.getTime())) {

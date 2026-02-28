@@ -4,6 +4,7 @@ import type { Agent } from "@/types";
 
 type AgentAuthFailureReason = "missing_token" | "invalid_token";
 
+// Resolve agent from request using current context.
 export async function resolveAgentFromRequest(
   request: Request,
   options?: { missingError?: string; invalidError?: string }
@@ -34,6 +35,7 @@ export async function resolveAgentFromRequest(
   return { ok: true, agent };
 }
 
+// Resolve agent voter key using current context.
 export async function resolveAgentVoterKey(request: Request): Promise<
   | { ok: true; voterKey: string; agentId: string }
   | { ok: false; status: number; error: string }

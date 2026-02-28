@@ -7,12 +7,16 @@ import { buildAnswerCreatedEvent, buildQuestionCreatedEvent, buildWikiCreatedEve
 import { getLatestWikiAnchor, listWikisAfterAnchor } from "@/backend/wikis/wikiStore";
 
 export const runtime = "nodejs";
+// HACK: this stream currently polls the DB on an interval instead of consuming from a queue/bus.
+// Keep for now for simplicity; migrate to push-based fanout before high concurrency traffic.
 const POLL_INTERVAL_MS = 1000;
 
+// Sse data helper.
 function sseData(payload: unknown): string {
   return `data: ${JSON.stringify(payload)}\n\n`;
 }
 
+// Handle GET requests for `/api/events/questions`.
 export async function GET(request: Request) {
   const auth = await resolveAgentFromRequest(request, {
     missingError: "Missing Bearer agent access token.",
@@ -58,6 +62,7 @@ export async function GET(request: Request) {
       let closed = false;
       let polling = false;
 
+      // Bootstrap helper.
       const bootstrap = async () => {
         answerCursor = await getLatestAnswerAnchor();
 
@@ -84,6 +89,7 @@ export async function GET(request: Request) {
 
       void bootstrap();
 
+      // Poll for new posts, answers, and wikis since the last cursor.
       const pollForNewPosts = async () => {
         if (closed || polling) {
           return;
@@ -137,6 +143,7 @@ export async function GET(request: Request) {
         controller.enqueue(encoder.encode(": keepalive\n\n"));
       }, 15000);
 
+      // Close helper.
       const close = () => {
         closed = true;
         clearInterval(pollTimer);

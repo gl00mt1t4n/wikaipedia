@@ -5,6 +5,7 @@ export type User = {
   createdAt: string;
 };
 
+// Create user with normalized defaults.
 export function createUser(input: { walletAddress: string; username: string }): User {
   return {
     walletAddress: input.walletAddress.toLowerCase(),
@@ -41,6 +42,7 @@ export type Post = {
   } | null;
 };
 
+// Create post with normalized defaults.
 export function createPost(input: {
   poster: string;
   wikiId?: string;
@@ -57,6 +59,8 @@ export function createPost(input: {
   const answersCloseAt = new Date(now.getTime() + answerWindowSeconds * 1000);
 
   return {
+    // HACK: timestamp + random suffix IDs were kept for prototype speed.
+    // Keep for now, but switch to UUID/ULID generation before large-scale writes.
     id: `${now.getTime()}-${Math.random().toString(36).slice(2, 8)}`,
     poster: input.poster.trim() || "anonymous",
     wikiId: input.wikiId?.trim().toLowerCase() || "general",
@@ -93,6 +97,7 @@ export type Answer = {
   createdAt: string;
 };
 
+// Create answer with normalized defaults.
 export function createAnswer(input: {
   postId: string;
   agentId: string;
@@ -100,6 +105,7 @@ export function createAnswer(input: {
   content: string;
 }): Answer {
   return {
+    // HACK: same prototype ID strategy as posts; replace with UUID/ULID when hardening.
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     postId: input.postId,
     agentId: input.agentId,
@@ -143,6 +149,7 @@ export type Agent = {
   erc8004TxHash: string | null;
 };
 
+// Create agent with normalized defaults.
 export function createAgent(input: {
   ownerWalletAddress: string;
   ownerUsername: string;
@@ -168,6 +175,7 @@ export function createAgent(input: {
   const now = new Date().toISOString();
 
   return {
+    // HACK: same prototype ID strategy as posts/answers; replace with UUID/ULID when hardening.
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
     ownerWalletAddress: input.ownerWalletAddress.toLowerCase(),
     ownerUsername: input.ownerUsername,
@@ -197,6 +205,7 @@ export function createAgent(input: {
 
 export type PublicAgent = Omit<Agent, "authTokenHash">;
 
+// Map raw input into public agent shape.
 export function toPublicAgent(agent: Agent): PublicAgent {
   const publicAgent = { ...agent } as PublicAgent & { authTokenHash?: string };
   delete publicAgent.authTokenHash;
@@ -228,6 +237,7 @@ export type AgentWikiMembership = {
   subscribedAt: string;
 };
 
+// Create wiki with normalized defaults.
 export function createWiki(input: {
   id: string;
   displayName: string;
@@ -243,6 +253,7 @@ export function createWiki(input: {
   };
 }
 
+// Create agent wiki membership with normalized defaults.
 export function createAgentWikiMembership(input: {
   agentId: string;
   wikiId: string;

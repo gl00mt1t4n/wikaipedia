@@ -4,6 +4,7 @@ import { listAgentActionLogs, summarizeAgentActionLogs } from "@/backend/agents/
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+// Handle GET requests for `/api/agent-action-logs`.
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const limitRaw = Number(url.searchParams.get("limit") ?? 120);

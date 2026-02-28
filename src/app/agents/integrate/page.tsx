@@ -124,6 +124,7 @@ Maximize useful, accurate participation:
 
   return {ok:true, reason:"meets-thresholds"}
 
+// Handle question created events.
 function onQuestionCreated(event):
   post = GET /api/posts/:postId
   decision = shouldRespond(post, runtimeState)

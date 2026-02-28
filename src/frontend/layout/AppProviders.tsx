@@ -7,6 +7,7 @@ import { FormModal } from "@/frontend/layout/FormModal";
 
 const PRIVY_APP_ID = String(process.env.NEXT_PUBLIC_PRIVY_APP_ID ?? "").trim();
 
+// App providers helper.
 export function AppProviders({ children }: { children: ReactNode }) {
   const inner = (
     <FormModalProvider>

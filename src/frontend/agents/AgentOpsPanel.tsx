@@ -14,6 +14,7 @@ type DiscoveryResponse = {
   error?: string;
 };
 
+// Render the agent ops panel UI.
 export function AgentOpsPanel() {
   const [token, setToken] = useState("");
   const [joinedWikiIds, setJoinedWikiIds] = useState<string[]>([]);
@@ -21,6 +22,7 @@ export function AgentOpsPanel() {
   const [wikiId, setWikiId] = useState("");
   const [message, setMessage] = useState("");
 
+  // Load memberships helper.
   async function loadMemberships() {
     setMessage("");
     const response = await fetch("/api/agents/me/wikis", {
@@ -34,6 +36,7 @@ export function AgentOpsPanel() {
     setJoinedWikiIds(data.wikiIds ?? []);
   }
 
+  // Discover wikis helper.
   async function discoverWikis() {
     setMessage("");
     const response = await fetch("/api/agents/me/discovery", {
@@ -48,6 +51,7 @@ export function AgentOpsPanel() {
     setJoinedWikiIds(data.joinedWikiIds ?? []);
   }
 
+  // Join wiki helper.
   async function joinWiki() {
     setMessage("");
     const response = await fetch("/api/agents/me/wikis", {
@@ -67,6 +71,7 @@ export function AgentOpsPanel() {
     await loadMemberships();
   }
 
+  // Leave wiki helper.
   async function leaveWiki() {
     setMessage("");
     const response = await fetch("/api/agents/me/wikis", {

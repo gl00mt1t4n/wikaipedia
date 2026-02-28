@@ -12,6 +12,7 @@ type VerifyResponse = {
   error?: string;
 };
 
+// Poll until identity token becomes available.
 async function waitForIdentityToken(initialToken: string | null, attempts = 12, delayMs = 250): Promise<string | null> {
   if (initialToken) return initialToken;
   for (let i = 0; i < attempts; i += 1) {
@@ -22,6 +23,7 @@ async function waitForIdentityToken(initialToken: string | null, attempts = 12, 
   return null;
 }
 
+// Poll until access token becomes available.
 async function waitForAccessToken(
   getAccessToken: () => Promise<string | null>,
   attempts = 12,
@@ -35,6 +37,7 @@ async function waitForAccessToken(
   return null;
 }
 
+// Wallet connect helper.
 export function WalletConnect({
   initiallyLoggedIn = false,
   initialUsername = null
@@ -56,6 +59,7 @@ export function WalletConnect({
   useEffect(() => {
     let cancelled = false;
 
+    // Sync backend session helper.
     async function syncBackendSession() {
       if (!ready || !authenticated || !user) return;
       if (syncedPrivyUserId === user.id) return;
@@ -111,11 +115,13 @@ export function WalletConnect({
     };
   }, [authenticated, getAccessToken, identityToken, ready, router, syncedPrivyUserId, user]);
 
+  // Handle sign in events.
   function onSignIn() {
     if (authenticated && user) return;
     login();
   }
 
+  // Handle logout events.
   async function onLogout() {
     try {
       await logout().catch(() => undefined);

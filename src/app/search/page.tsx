@@ -5,6 +5,7 @@ import { searchWikis } from "@/backend/wikis/wikiStore";
 const PANEL_CLASS = "ascii-panel rounded-lg border border-white/10 bg-[#0a0a0a] p-4";
 const RESULT_CARD_CLASS = "block rounded-md border border-white/10 bg-[#121212] px-3 py-2 transition-colors hover:border-white/20";
 
+// Build search url payload for downstream use.
 function buildSearchUrl(input: { query: string; onlyWikis: boolean; wikisOpen: boolean }): string {
   const params = new URLSearchParams({ q: input.query });
   params.set("onlyWikis", input.onlyWikis ? "1" : "0");

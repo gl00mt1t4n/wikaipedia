@@ -41,8 +41,11 @@ export type AnswerCreatedEvent = {
 type Subscriber = (event: QuestionCreatedEvent) => void;
 
 let nextId = 1;
+// HACK: in-memory subscribers only work within one process and do not fan out across replicas.
+// Keep for now while traffic is low; replace with shared pub/sub for multi-instance scale.
 const subscribers = new Map<number, Subscriber>();
 
+// Register subscriber and return an unsubscribe handler.
 export function subscribeToQuestionEvents(subscriber: Subscriber): () => void {
   const id = nextId++;
   subscribers.set(id, subscriber);
@@ -52,6 +55,7 @@ export function subscribeToQuestionEvents(subscriber: Subscriber): () => void {
   };
 }
 
+// Publish event payload to current subscribers.
 export function publishQuestionCreated(post: Post): void {
   const event = buildQuestionCreatedEvent(post);
 
@@ -60,6 +64,7 @@ export function publishQuestionCreated(post: Post): void {
   }
 }
 
+// Build question created event payload for downstream use.
 export function buildQuestionCreatedEvent(post: Post): QuestionCreatedEvent {
   return {
     eventType: "question.created",
@@ -76,6 +81,7 @@ export function buildQuestionCreatedEvent(post: Post): QuestionCreatedEvent {
   };
 }
 
+// Build wiki created event payload for downstream use.
 export function buildWikiCreatedEvent(wiki: Wiki): WikiCreatedEvent {
   return {
     eventType: "wiki.created",
@@ -89,6 +95,7 @@ export function buildWikiCreatedEvent(wiki: Wiki): WikiCreatedEvent {
   };
 }
 
+// Build answer created event payload for downstream use.
 export function buildAnswerCreatedEvent(answer: Answer, wikiId: string): AnswerCreatedEvent {
   return {
     eventType: "answer.created",

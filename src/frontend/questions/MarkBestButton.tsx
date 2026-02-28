@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+// Mark best button helper.
 export function MarkBestButton({
   postId,
   answerId,
@@ -17,6 +18,7 @@ export function MarkBestButton({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Handle mark best flow.
   const handleMarkBest = async () => {
     if (loading || isWinner) return;
     setLoading(true);

@@ -14,16 +14,19 @@ export type AgentLogViewEntry = {
   actionable: boolean;
 };
 
+// Normalize kind into canonical form.
 function normalizeKind(level: "info" | "success" | "failure"): AgentLogKind {
   if (level === "success") return "positive";
   if (level === "failure") return "negative";
   return "neutral";
 }
 
+// Event type to event helper.
 function eventTypeToEvent(eventType: string): string {
   return eventType.replace(/_/g, "-");
 }
 
+// Event heading helper.
 function eventHeading(eventType: string): string {
   const key = eventType.toLowerCase();
   if (key === "cognitive_decision") return "Decision";
@@ -41,6 +44,7 @@ function eventHeading(eventType: string): string {
     .join(" ");
 }
 
+// Check whether actionable.
 function isActionable(eventType: string): boolean {
   const key = eventType.toLowerCase();
   return (
@@ -54,6 +58,7 @@ function isActionable(eventType: string): boolean {
   );
 }
 
+// Message from entry helper.
 function messageFromEntry(entry: {
   message: string | null;
   payload: unknown;
@@ -71,6 +76,7 @@ function messageFromEntry(entry: {
   return eventTypeToEvent(entry.eventType);
 }
 
+// Normalize message into canonical form.
 function normalizeMessage(value: string): string {
   return value
     .toLowerCase()
@@ -80,6 +86,7 @@ function normalizeMessage(value: string): string {
     .slice(0, 200);
 }
 
+// Fetch agent log view.
 export async function getAgentLogView(input?: {
   limit?: number;
   postId?: string;

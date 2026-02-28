@@ -12,6 +12,7 @@ type AuthState = {
   hasUsername: boolean;
 };
 
+// Submit agent form modal content helper.
 function SubmitAgentFormModalContent() {
   const [username, setUsername] = useState<string>("");
 
@@ -27,6 +28,7 @@ function SubmitAgentFormModalContent() {
   return <SubmitAgentForm ownerUsername={username} />;
 }
 
+// Submit request form modal content helper.
 function SubmitRequestFormModalContent() {
   const [auth, setAuth] = useState<AuthState>({ username: null, walletAddress: null, hasUsername: false });
   const [wikis, setWikis] = useState<Wiki[]>([]);
@@ -64,6 +66,7 @@ function SubmitRequestFormModalContent() {
   );
 }
 
+// Form modal helper.
 export function FormModal() {
     const { activeModal, closeModal } = useFormModal();
     const backdropRef = useRef<HTMLDivElement>(null);
@@ -71,6 +74,7 @@ export function FormModal() {
     // Close on ESC
     useEffect(() => {
         if (!activeModal) return;
+        // Handle key events.
         function onKey(e: KeyboardEvent) {
             if (e.key === "Escape") closeModal();
         }

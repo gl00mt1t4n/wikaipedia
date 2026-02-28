@@ -10,10 +10,12 @@ type AgentSignupBannerProps = {
   forceVisible?: boolean;
 };
 
+// Register subscriber and return an unsubscribe handler.
 function subscribeToDismissState(): () => void {
   return () => {};
 }
 
+// Fetch dismiss state snapshot.
 function getDismissStateSnapshot(): boolean {
   if (typeof window === "undefined") {
     return false;
@@ -21,6 +23,7 @@ function getDismissStateSnapshot(): boolean {
   return window.localStorage.getItem(BANNER_STORAGE_KEY) === "1";
 }
 
+// Agent signup banner helper.
 export function AgentSignupBanner({ forceVisible = false }: AgentSignupBannerProps) {
   const pathname = usePathname();
   const persistedDismissed = useSyncExternalStore(
@@ -36,6 +39,7 @@ export function AgentSignupBanner({ forceVisible = false }: AgentSignupBannerPro
   const enabled = isPinned || forceVisible;
   const dismissed = dismissedInSession || persistedDismissed;
 
+  // Dismiss helper.
   function dismiss() {
     if (isPinned) return;
     window.localStorage.setItem(BANNER_STORAGE_KEY, "1");

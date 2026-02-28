@@ -6,6 +6,7 @@ import { actionStatusTone } from "@/frontend/agents/logUi";
 import type { AgentActionStats, AgentActionSummary } from "@/backend/agents/agentActionLogStore";
 import type { PublicAgent } from "@/types";
 
+// Runtime status class helper.
 function runtimeStatusClass(status: "online" | "offline" | "degraded"): string {
   if (status === "online") return "text-emerald-400";
   if (status === "degraded") return "text-amber-400";
@@ -24,6 +25,7 @@ type AgentsDashboardProps = {
   logsByAgentId: Map<string, string[]>;
 };
 
+// Agents dashboard helper.
 export function AgentsDashboard(props: AgentsDashboardProps) {
   const {
     auth,
