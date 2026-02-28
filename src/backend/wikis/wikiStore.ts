@@ -7,6 +7,10 @@ export const DEFAULT_WIKI_ID = "general";
 export const DEFAULT_WIKI_TAG = `w/${DEFAULT_WIKI_ID}`;
 export const DEFAULT_WIKI_DISPLAY_NAME = "General";
 const WIKI_ID_REGEX = /^[a-z0-9][a-z0-9-_]{1,30}[a-z0-9]$/;
+const DEFAULT_WIKI_ENSURE_TTL_MS = 60_000;
+
+let cachedDefaultWiki: { wiki: Wiki; expiresAtMs: number } | null = null;
+let defaultWikiEnsureInFlight: Promise<Wiki> | null = null;
 
 export function normalizeWikiIdInput(input: string): string {
   return input
@@ -34,28 +38,58 @@ function toWiki(record: {
   };
 }
 
-function wikiPostWhereClause(wikiId: string): Prisma.PostWhereInput {
-  if (wikiId === DEFAULT_WIKI_ID) {
-    return {
-      OR: [{ wikiId: DEFAULT_WIKI_ID }, { wikiId: null }]
-    };
+function toIsoOrNull(value: Date | string | null | undefined): string | null {
+  if (!value) {
+    return null;
   }
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+  return date.toISOString();
+}
 
-  return { wikiId };
+function pickLatestIso(a: string | null, b: string | null): string | null {
+  if (!a) return b;
+  if (!b) return a;
+  return new Date(a).getTime() >= new Date(b).getTime() ? a : b;
+}
+
+function cacheDefaultWiki(wiki: Wiki): Wiki {
+  cachedDefaultWiki = {
+    wiki,
+    expiresAtMs: Date.now() + DEFAULT_WIKI_ENSURE_TTL_MS
+  };
+  return wiki;
 }
 
 export async function ensureDefaultWiki(): Promise<Wiki> {
-  const row = await prisma.wiki.upsert({
-    where: { id: DEFAULT_WIKI_ID },
-    update: {},
-    create: {
-      id: DEFAULT_WIKI_ID,
-      displayName: DEFAULT_WIKI_DISPLAY_NAME,
-      description: "General wiki for broad questions.",
-      createdBy: "system"
-    }
-  });
-  return toWiki(row);
+  const now = Date.now();
+  if (cachedDefaultWiki && cachedDefaultWiki.expiresAtMs > now) {
+    return cachedDefaultWiki.wiki;
+  }
+
+  if (defaultWikiEnsureInFlight) {
+    return defaultWikiEnsureInFlight;
+  }
+
+  defaultWikiEnsureInFlight = prisma.wiki
+    .upsert({
+      where: { id: DEFAULT_WIKI_ID },
+      update: {},
+      create: {
+        id: DEFAULT_WIKI_ID,
+        displayName: DEFAULT_WIKI_DISPLAY_NAME,
+        description: "General wiki for broad questions.",
+        createdBy: "system"
+      }
+    })
+    .then((row) => cacheDefaultWiki(toWiki(row)))
+    .finally(() => {
+      defaultWikiEnsureInFlight = null;
+    });
+
+  return defaultWikiEnsureInFlight;
 }
 
 export async function listWikis(): Promise<Wiki[]> {
@@ -272,47 +306,106 @@ export async function listWikiDiscoveryCandidates(input: {
   const allWikis = await listWikis();
   const candidates = allWikis.filter((wiki) => !joined.has(wiki.id));
 
-  const ranked = await Promise.all(
-    candidates.map(async (wiki) => {
-      const [memberCount, recentPostCount, latestPost] = await Promise.all([
-        prisma.agentWikiMembership.count({
-          where: { wikiId: wiki.id }
-        }),
-        prisma.post.count({
-          where: {
-            AND: [wikiPostWhereClause(wiki.id), { createdAt: { gte: weekAgo } }]
+  if (candidates.length === 0) {
+    return [];
+  }
+
+  const candidateWikiIds = candidates.map((wiki) => wiki.id);
+  const includeDefaultWiki = candidateWikiIds.includes(DEFAULT_WIKI_ID);
+
+  const postMetricWikiIds = includeDefaultWiki
+    ? candidateWikiIds
+    : candidateWikiIds.filter((wikiId) => wikiId !== DEFAULT_WIKI_ID);
+  const postMetricWhere = postMetricWikiIds.length
+    ? {
+        wikiId: {
+          in: postMetricWikiIds
+        }
+      }
+    : undefined;
+
+  const [memberCounts, recentPostCounts, latestPostGroups, nullWikiRecentPosts, nullWikiLatestPost] =
+    await Promise.all([
+      prisma.agentWikiMembership.groupBy({
+        by: ["wikiId"],
+        where: {
+          wikiId: {
+            in: candidateWikiIds
           }
-        }),
-        prisma.post.findFirst({
-          where: wikiPostWhereClause(wiki.id),
-          orderBy: [{ createdAt: "desc" }],
-          select: { createdAt: true }
-        })
-      ]);
+        },
+        _count: { wikiId: true }
+      }),
+      postMetricWhere
+        ? prisma.post.groupBy({
+            by: ["wikiId"],
+            where: {
+              ...postMetricWhere,
+              createdAt: { gte: weekAgo }
+            },
+            _count: { wikiId: true }
+          })
+        : Promise.resolve([]),
+      postMetricWhere
+        ? prisma.post.groupBy({
+            by: ["wikiId"],
+            where: postMetricWhere,
+            _max: { createdAt: true }
+          })
+        : Promise.resolve([]),
+      includeDefaultWiki
+        ? prisma.post.count({
+            where: {
+              wikiId: null,
+              createdAt: { gte: weekAgo }
+            }
+          })
+        : Promise.resolve(0),
+      includeDefaultWiki
+        ? prisma.post.aggregate({
+            where: { wikiId: null },
+            _max: { createdAt: true }
+          })
+        : Promise.resolve({ _max: { createdAt: null as Date | null } })
+    ]);
 
-      const relevanceScore = Math.min(
-        60,
-        scoreWikiInterests(interests, wiki) + (query ? Math.min(30, scoreWikiQuery(query, wiki)) : 0)
-      );
-      const lastPostAt = latestPost?.createdAt?.toISOString() ?? null;
-      const activityScore = scoreWikiActivity({
-        recentPostCount,
-        lastPostAt,
-        memberCount
-      });
-      const score = Math.min(100, relevanceScore + activityScore);
-
-      return {
-        wiki,
-        memberCount,
-        recentPostCount,
-        lastPostAt,
-        relevanceScore,
-        activityScore,
-        score
-      };
-    })
+  const membersByWikiId = new Map(memberCounts.map((entry) => [entry.wikiId, entry._count.wikiId]));
+  const recentPostsByWikiId = new Map(recentPostCounts.map((entry) => [entry.wikiId ?? "", entry._count.wikiId]));
+  const latestPostAtByWikiId = new Map(
+    latestPostGroups.map((entry) => [entry.wikiId ?? "", toIsoOrNull(entry._max.createdAt)])
   );
+  const nullWikiLatestPostAt = toIsoOrNull(nullWikiLatestPost._max.createdAt);
+
+  const ranked = candidates.map((wiki) => {
+    const memberCount = Number(membersByWikiId.get(wiki.id) ?? 0);
+    const recentPostCountBase = Number(recentPostsByWikiId.get(wiki.id) ?? 0);
+    const lastPostAtBase = latestPostAtByWikiId.get(wiki.id) ?? null;
+
+    const recentPostCount =
+      wiki.id === DEFAULT_WIKI_ID ? recentPostCountBase + Number(nullWikiRecentPosts) : recentPostCountBase;
+    const lastPostAt =
+      wiki.id === DEFAULT_WIKI_ID ? pickLatestIso(lastPostAtBase, nullWikiLatestPostAt) : lastPostAtBase;
+
+    const relevanceScore = Math.min(
+      60,
+      scoreWikiInterests(interests, wiki) + (query ? Math.min(30, scoreWikiQuery(query, wiki)) : 0)
+    );
+    const activityScore = scoreWikiActivity({
+      recentPostCount,
+      lastPostAt,
+      memberCount
+    });
+    const score = Math.min(100, relevanceScore + activityScore);
+
+    return {
+      wiki,
+      memberCount,
+      recentPostCount,
+      lastPostAt,
+      relevanceScore,
+      activityScore,
+      score
+    };
+  });
 
   return ranked.sort((a, b) => b.score - a.score || a.wiki.id.localeCompare(b.wiki.id)).slice(0, limit);
 }

@@ -33,7 +33,9 @@ export async function getAgentsDashboardData(auth: AuthState) {
   ]);
 
   const actionSummaries = summarizeAgentActionLogs(actionLogs).slice(0, 20);
-  const allAgents = [...myAgents, ...publicAgents];
+  const allAgents = Array.from(
+    new Map([...myAgents, ...publicAgents].map((agent) => [agent.id, agent] as const)).values()
+  );
   const logsEntries = await Promise.all(
     allAgents.map(async (agent) => [agent.id, await readRecentAgentRuntimeLines(agent.name, 12)] as const)
   );
