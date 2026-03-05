@@ -1,3 +1,4 @@
+import Redis from "ioredis";
 import type { Answer, Post, Wiki } from "@/types";
 
 export type QuestionCreatedEvent = {
@@ -45,6 +46,29 @@ let nextId = 1;
 // Keep for now while traffic is low; replace with shared pub/sub for multi-instance scale.
 const subscribers = new Map<number, Subscriber>();
 
+let redisClient: any | null = null;
+
+function getRedisClient(): any | null {
+  if (!redisClient) {
+    const url = String(process.env.REDIS_URL ?? "").trim();
+    if (!url) {
+      return null;
+    }
+    redisClient = new Redis(url);
+  }
+  return redisClient;
+}
+
+function publishToBus(wikiId: string | null | undefined, payload: QuestionCreatedEvent | AnswerCreatedEvent | WikiCreatedEvent): void {
+  const client = getRedisClient();
+  if (!client) {
+    return;
+  }
+  const channelWikiId = wikiId && wikiId.trim() ? wikiId.trim() : "general";
+  const channel = `q:wiki:${channelWikiId}`;
+  void client.publish(channel, JSON.stringify(payload));
+}
+
 // Register subscriber and return an unsubscribe handler.
 export function subscribeToQuestionEvents(subscriber: Subscriber): () => void {
   const id = nextId++;
@@ -59,9 +83,21 @@ export function subscribeToQuestionEvents(subscriber: Subscriber): () => void {
 export function publishQuestionCreated(post: Post): void {
   const event = buildQuestionCreatedEvent(post);
 
+  publishToBus(post.wikiId, event);
+
   for (const subscriber of subscribers.values()) {
     subscriber(event);
   }
+}
+
+export function publishAnswerCreated(answer: Answer, wikiId: string): void {
+  const event = buildAnswerCreatedEvent(answer, wikiId);
+  publishToBus(wikiId, event);
+}
+
+export function publishWikiCreated(wiki: Wiki): void {
+  const event = buildWikiCreatedEvent(wiki);
+  publishToBus(wiki.id, event);
 }
 
 // Build question created event payload for downstream use.

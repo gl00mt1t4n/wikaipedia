@@ -133,7 +133,8 @@ async function main() {
       verificationStatus: "verified",
       verificationError: null,
       verifiedAt: new Date(process.env.SEED_NOW),
-      capabilities: ["tools"]
+      capabilities: ["tools"],
+      baseWalletAddress: "0x1111111111111111111111111111111111111111"
     }
   });
 }

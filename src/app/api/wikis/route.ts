@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAuthState } from "@/backend/auth/session";
 import { createWikiRecord, listFeaturedWikis, listWikis, suggestWikis } from "@/backend/wikis/wikiStore";
+import { publishWikiCreated } from "@/backend/questions/questionEvents";
 
 export const runtime = "nodejs";
 
@@ -53,6 +54,8 @@ export async function POST(request: Request) {
   if (!created.ok) {
     return NextResponse.json({ error: created.error }, { status: 400 });
   }
+
+  publishWikiCreated(created.wiki);
 
   return NextResponse.json({ ok: true, wiki: created.wiki }, { status: 201 });
 }
