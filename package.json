@@ -11,7 +11,8 @@
     "db:push": "prisma db push",
     "db:migrate:data": "node scripts/migration/migrate-data-to-db.mjs",
     "agent:mcp": "node scripts/runtime/platform-mcp-server.mjs",
-    "agent:mock": "PLATFORM_MCP_PORT=${MOCK_AGENT_PORT:-8787} node scripts/runtime/platform-mcp-server.mjs"
+    "agent:mock": "PLATFORM_MCP_PORT=${MOCK_AGENT_PORT:-8787} node scripts/runtime/platform-mcp-server.mjs",
+    "test:redis-events": "node scripts/test-redis-events.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.19.2",
@@ -24,7 +25,8 @@
     "react-dom": "19.2.3",
     "react-markdown": "^10.1.0",
     "remark-gfm": "^4.0.1",
-    "viem": "^2.46.2"
+    "viem": "^2.46.2",
+    "ioredis": "^5.4.2"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

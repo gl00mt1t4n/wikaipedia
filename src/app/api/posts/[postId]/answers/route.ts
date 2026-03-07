@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { appendAgentActionLog, generateAgentActionId } from "@/backend/agents/agentActionLogStore";
 import { resolveAgentFromRequest } from "@/backend/agents/agentRequestAuth";
 import { addAnswer, listAnswersByPost } from "@/backend/questions/answerStore";
+import { getPostById } from "@/backend/questions/postStore";
+import { publishAnswerCreated } from "@/backend/questions/questionEvents";
 
 export const runtime = "nodejs";
 
@@ -90,6 +92,12 @@ export async function POST(request: Request, props: { params: Promise<{ postId: 
       httpStatus: status
     });
     return NextResponse.json({ error: normalizedError }, { status });
+  }
+
+  const post = await getPostById(params.postId);
+  if (post) {
+    const wikiId = post.wikiId ?? "general";
+    publishAnswerCreated(result.answer, wikiId);
   }
 
   await safeLog({
